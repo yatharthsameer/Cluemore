@@ -51,29 +51,23 @@
             color: #888;
         }
 
-        .auth-tabs {
-            display: flex;
-            margin-bottom: 20px;
-            border-bottom: 1px solid #555;
-        }
-
-        .auth-tab {
-            flex: 1;
-            padding: 12px;
+        .auth-switch {
             text-align: center;
-            cursor: pointer;
-            border-bottom: 2px solid transparent;
-            transition: all 0.2s;
-            font-size: 14px;
+            margin-top: 20px;
+            font: 12px monospace;
+            color: #888;
         }
 
-        .auth-tab:hover {
-            background: rgba(60, 60, 60, 0.5);
-        }
-
-        .auth-tab.active {
-            border-bottom-color: #70a1d4;
+        .auth-switch a {
             color: #70a1d4;
+            text-decoration: none;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+
+        .auth-switch a:hover {
+            color: #89c4f4;
+            text-decoration: underline;
         }
 
         .auth-form {
@@ -212,12 +206,12 @@
             color: #666;
         }
 
-        body.light-theme .auth-tabs {
-            border-bottom: 1px solid #ccc;
+        body.light-theme .auth-switch a {
+            color: #4682b4;
         }
 
-        body.light-theme .auth-tab:hover {
-            background: rgba(220, 220, 220, 0.5);
+        body.light-theme .auth-switch a:hover {
+            color: #2c5aa0;
         }
 
         body.light-theme .form-label {
@@ -244,11 +238,6 @@
                 <div class="auth-subtitle">Secure interview assistance</div>
             </div>
 
-            <div class="auth-tabs">
-                <div class="auth-tab active" data-tab="login">Login</div>
-                <div class="auth-tab" data-tab="signup">Sign Up</div>
-            </div>
-
             <div id="errorMessage" class="error-message"></div>
             <div id="successMessage" class="success-message"></div>
 
@@ -266,6 +255,9 @@
                 </div>
                 <button id="loginButton" class="form-button">Login</button>
                 <div id="loginLoading" class="loading">Logging in</div>
+                <div class="auth-switch">
+                    Don't have an account? <a href="#" id="showSignup">Sign up here</a>
+                </div>
             </div>
 
             <!-- Signup Form -->
@@ -287,6 +279,9 @@
                 </div>
                 <button id="signupButton" class="form-button">Sign Up</button>
                 <div id="signupLoading" class="loading">Creating account</div>
+                <div class="auth-switch">
+                    Already have an account? <a href="#" id="showLogin">Login here</a>
+                </div>
             </div>
         </div>
     </div>
@@ -298,25 +293,24 @@
             document.body.classList.add('light-theme');
         }
 
-        // Tab switching
-        const tabs = document.querySelectorAll('.auth-tab');
+            // Form switching
         const forms = document.querySelectorAll('.auth-form');
 
-        tabs.forEach(tab => {
-            tab.addEventListener('click', () => {
-                const targetTab = tab.dataset.tab;
-
-                // Update active tab
-                tabs.forEach(t => t.classList.remove('active'));
-                tab.classList.add('active');
-
-                // Update active form
+            function showForm(formName) {
                 forms.forEach(f => f.classList.remove('active'));
-                document.getElementById(targetTab + 'Form').classList.add('active');
+            document.getElementById(formName + 'Form').classList.add('active');
+            hideMessages();
+            }
 
-                // Clear messages
-                hideMessages();
-            });
+            // Navigation link event listeners
+            document.getElementById('showSignup').addEventListener('click', (e) => {
+                e.preventDefault();
+                showForm('signup');
+        });
+
+    document.getElementById('showLogin').addEventListener('click', (e) => {
+        e.preventDefault();
+        showForm('login');
         });
 
         // Message handling
