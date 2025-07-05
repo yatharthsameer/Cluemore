@@ -1,4 +1,4 @@
-# ClueMore - AI Interview Helper
+# ChatAura - AI Interview Helper
 
 A desktop application that helps you during coding interviews by providing AI-powered assistance. Built with Electron and Python Flask backend, featuring real-time screenshot analysis and chat capabilities.
 
@@ -15,14 +15,14 @@ A desktop application that helps you during coding interviews by providing AI-po
 ## Project Structure
 
 ```
-cluemore/
-├── electronapp/          # Electron frontend application
+chataura/
+├── Frontend/            # Electron frontend application
 │   ├── main.js          # Main Electron process
 │   ├── preload.js       # Preload script for IPC
 │   ├── index.html       # Main app interface
 │   ├── auth.html        # Authentication interface
 │   └── package.json     # Frontend dependencies
-└── electronbackend/     # Python Flask backend
+└── Backend/             # Python Flask backend
     ├── server.py        # Main Flask server
     ├── auth.py          # Authentication logic
     ├── database.py      # Database operations
@@ -44,15 +44,15 @@ cluemore/
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/yourusername/cluemore.git
-cd cluemore
+git clone https://github.com/yourusername/chataura.git
+cd chataura
 ```
 
 ### 2. Backend Setup
 
 ```bash
 # Navigate to backend directory
-cd electronbackend
+cd Backend
 
 # Create virtual environment (recommended)
 python -m venv venv
@@ -71,7 +71,7 @@ pip install -r requirements.txt
 
 ```bash
 # Navigate to frontend directory
-cd electronapp
+cd Frontend
 
 # Install Node.js dependencies
 npm install
@@ -79,10 +79,10 @@ npm install
 
 ### 4. Environment Configuration
 
-Create a `.env` file in the `electronbackend` directory:
+Create a `.env` file in the `Backend` directory:
 
 ```bash
-# electronbackend/.env
+# Backend/.env
 GEMINI_API_KEY=your_gemini_api_key_here
 OPENAI_API_KEY=your_openai_api_key_here
 JWT_SECRET=your_jwt_secret_here
@@ -113,7 +113,7 @@ No additional database setup is required!
 ### Start the Backend Server
 
 ```bash
-cd electronbackend
+cd Backend
 python server.py
 ```
 
@@ -124,7 +124,7 @@ The backend will start on `http://localhost:3000`
 In a new terminal:
 
 ```bash
-cd electronapp
+cd Frontend
 npm start
 ```
 
@@ -171,7 +171,7 @@ Right-click the system tray icon to access:
 ### Backend Development
 
 ```bash
-cd electronbackend
+cd Backend
 python server.py
 ```
 
@@ -180,7 +180,7 @@ The Flask server runs with debug mode enabled for development.
 ### Frontend Development
 
 ```bash
-cd electronapp
+cd Frontend
 npm run dev
 ```
 

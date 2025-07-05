@@ -9,7 +9,7 @@ let currentUser = null;
 let jwtToken = null;
 // Backend URL configuration
 const BACKEND_URL = 'http://localhost:3000';
-const SERVICE_NAME = 'StealthNotes';
+const SERVICE_NAME = 'ChatAura';
 const ACCOUNT_NAME = 'user_jwt_token';
 
 // Helper function to make HTTP requests
@@ -176,7 +176,7 @@ function createAuthWindow() {
     height: 700,
     resizable: false,
     alwaysOnTop: true,
-    title: 'Stealth Notes - Login',
+    title: 'ChatAura - Login',
     transparent: true,
     frame: false,
     show: false,
@@ -214,7 +214,7 @@ function createMainWindow() {
     height: 600,
     resizable: false,
     alwaysOnTop: true,
-    title: 'Stealth Notes',
+    title: 'ChatAura',
     skipTaskbar: true,
     transparent: true,
     frame: false,
