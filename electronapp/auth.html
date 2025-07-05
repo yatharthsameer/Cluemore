@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>Stealth Notes - Authentication</title>
+    <style>
+        html,
+        body {
+            margin: 0;
+            height: 100%;
+            background: rgba(30, 30, 30, .95);
+            font-family: monospace;
+            color: #eee;
+            overflow: hidden;
+        }
+
+        #authContainer {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .auth-card {
+            background: rgba(40, 40, 40, .9);
+            border: 1px solid #555;
+            border-radius: 8px;
+            padding: 30px;
+            width: 100%;
+            max-width: 400px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        .auth-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .auth-title {
+            font-size: 24px;
+            color: #fff;
+            margin-bottom: 8px;
+        }
+
+        .auth-subtitle {
+            font-size: 14px;
+            color: #888;
+        }
+
+        .auth-tabs {
+            display: flex;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #555;
+        }
+
+        .auth-tab {
+            flex: 1;
+            padding: 12px;
+            text-align: center;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+            font-size: 14px;
+        }
+
+        .auth-tab:hover {
+            background: rgba(60, 60, 60, 0.5);
+        }
+
+        .auth-tab.active {
+            border-bottom-color: #70a1d4;
+            color: #70a1d4;
+        }
+
+        .auth-form {
+            display: none;
+        }
+
+        .auth-form.active {
+            display: block;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 6px;
+            font-size: 12px;
+            color: #ccc;
+            font-weight: bold;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 12px;
+            background: rgba(60, 60, 60, .8);
+            color: #eee;
+            border: 1px solid #666;
+            border-radius: 4px;
+            font: 14px monospace;
+            outline: none;
+            box-sizing: border-box;
+            transition: border-color 0.2s;
+        }
+
+        .form-input:focus {
+            border-color: #70a1d4;
+        }
+
+        .form-button {
+            width: 100%;
+            padding: 12px;
+            background: rgba(70, 130, 180, .8);
+            color: #fff;
+            border: 1px solid #5a9fd4;
+            border-radius: 4px;
+            cursor: pointer;
+            font: 14px monospace;
+            font-weight: bold;
+            transition: all 0.2s;
+        }
+
+        .form-button:hover {
+            background: rgba(90, 150, 200, .9);
+        }
+
+        .form-button:disabled {
+            background: rgba(50, 50, 50, .5);
+            border-color: #666;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
+        .error-message {
+            background: rgba(220, 53, 69, 0.1);
+            border: 1px solid rgba(220, 53, 69, 0.3);
+            color: #dc3545;
+            padding: 12px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            font-size: 12px;
+            display: none;
+        }
+
+        .success-message {
+            background: rgba(40, 167, 69, 0.1);
+            border: 1px solid rgba(40, 167, 69, 0.3);
+            color: #28a745;
+            padding: 12px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            font-size: 12px;
+            display: none;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            color: #70a1d4;
+            font-size: 12px;
+            margin-top: 10px;
+        }
+
+        .loading::after {
+            content: '';
+            animation: dots 1.5s steps(5, end) infinite;
+        }
+
+        @keyframes dots {
+
+            0%,
+            20% {
+                content: '.';
+            }
+
+            40% {
+                content: '..';
+            }
+
+            60% {
+                content: '...';
+            }
+
+            80%,
+            100% {
+                content: '';
+            }
+        }
+
+        /* Light theme support */
+        body.light-theme {
+            background: rgba(240, 240, 240, .95);
+            color: #333;
+        }
+
+        body.light-theme .auth-card {
+            background: rgba(250, 250, 250, .9);
+            border: 1px solid #ccc;
+        }
+
+        body.light-theme .auth-title {
+            color: #333;
+        }
+
+        body.light-theme .auth-subtitle {
+            color: #666;
+        }
+
+        body.light-theme .auth-tabs {
+            border-bottom: 1px solid #ccc;
+        }
+
+        body.light-theme .auth-tab:hover {
+            background: rgba(220, 220, 220, 0.5);
+        }
+
+        body.light-theme .form-label {
+            color: #666;
+        }
+
+        body.light-theme .form-input {
+            background: rgba(230, 230, 230, .8);
+            color: #333;
+            border: 1px solid #ccc;
+        }
+
+        body.light-theme .form-input:focus {
+            border-color: #70a1d4;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="authContainer">
+        <div class="auth-card">
+            <div class="auth-header">
+                <div class="auth-title">🕵️ Stealth Notes</div>
+                <div class="auth-subtitle">Secure interview assistance</div>
+            </div>
+
+            <div class="auth-tabs">
+                <div class="auth-tab active" data-tab="login">Login</div>
+                <div class="auth-tab" data-tab="signup">Sign Up</div>
+            </div>
+
+            <div id="errorMessage" class="error-message"></div>
+            <div id="successMessage" class="success-message"></div>
+
+            <!-- Login Form -->
+            <div id="loginForm" class="auth-form active">
+                <div class="form-group">
+                    <label class="form-label" for="loginUsername">Username or Email</label>
+                    <input type="text" id="loginUsername" class="form-input" placeholder="Enter your username or email"
+                        required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="loginPassword">Password</label>
+                    <input type="password" id="loginPassword" class="form-input" placeholder="Enter your password"
+                        required>
+                </div>
+                <button id="loginButton" class="form-button">Login</button>
+                <div id="loginLoading" class="loading">Logging in</div>
+            </div>
+
+            <!-- Signup Form -->
+            <div id="signupForm" class="auth-form">
+                <div class="form-group">
+                    <label class="form-label" for="signupUsername">Username</label>
+                    <input type="text" id="signupUsername" class="form-input"
+                        placeholder="Choose a username (min 3 chars)" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="signupEmail">Email</label>
+                    <input type="email" id="signupEmail" class="form-input" placeholder="Enter your email address"
+                        required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="signupPassword">Password</label>
+                    <input type="password" id="signupPassword" class="form-input"
+                        placeholder="Create a password (min 6 chars)" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="signupConfirmPassword">Confirm Password</label>
+                    <input type="password" id="signupConfirmPassword" class="form-input"
+                        placeholder="Confirm your password" required>
+                </div>
+                <button id="signupButton" class="form-button">Sign Up</button>
+                <div id="signupLoading" class="loading">Creating account</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Check for saved theme
+        const savedTheme = localStorage.getItem('theme') || 'dark';
+        if (savedTheme === 'light') {
+            document.body.classList.add('light-theme');
+        }
+
+        // Tab switching
+        const tabs = document.querySelectorAll('.auth-tab');
+        const forms = document.querySelectorAll('.auth-form');
+
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                const targetTab = tab.dataset.tab;
+
+                // Update active tab
+                tabs.forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+
+                // Update active form
+                forms.forEach(f => f.classList.remove('active'));
+                document.getElementById(targetTab + 'Form').classList.add('active');
+
+                // Clear messages
+                hideMessages();
+            });
+        });
+
+        // Message handling
+        function showError(message) {
+            const errorEl = document.getElementById('errorMessage');
+            errorEl.textContent = message;
+            errorEl.style.display = 'block';
+            document.getElementById('successMessage').style.display = 'none';
+        }
+
+        function showSuccess(message) {
+            const successEl = document.getElementById('successMessage');
+            successEl.textContent = message;
+            successEl.style.display = 'block';
+            document.getElementById('errorMessage').style.display = 'none';
+        }
+
+        function hideMessages() {
+            document.getElementById('errorMessage').style.display = 'none';
+            document.getElementById('successMessage').style.display = 'none';
+        }
+
+        function setLoading(isLogin, loading) {
+            const button = document.getElementById(isLogin ? 'loginButton' : 'signupButton');
+            const loadingEl = document.getElementById(isLogin ? 'loginLoading' : 'signupLoading');
+
+            button.disabled = loading;
+            loadingEl.style.display = loading ? 'block' : 'none';
+        }
+
+        // Login handling
+        document.getElementById('loginButton').addEventListener('click', async () => {
+            const username = document.getElementById('loginUsername').value.trim();
+            const password = document.getElementById('loginPassword').value;
+
+            if (!username || !password) {
+                showError('Please fill in all fields');
+                return;
+            }
+
+            setLoading(true, true);
+            hideMessages();
+
+            try {
+                if (window.electronAPI && window.electronAPI.login) {
+                    const result = await window.electronAPI.login(username, password);
+
+                    if (result.success) {
+                        showSuccess('Login successful! Opening app...');
+                        setTimeout(() => {
+                            window.electronAPI.openMainApp();
+                        }, 1000);
+                    } else {
+                        showError(result.error || 'Login failed');
+                    }
+                } else {
+                    showError('Authentication service not available');
+                }
+            } catch (error) {
+                showError('Network error: ' + error.message);
+            } finally {
+                setLoading(true, false);
+            }
+        });
+
+        // Signup handling
+        document.getElementById('signupButton').addEventListener('click', async () => {
+            const username = document.getElementById('signupUsername').value.trim();
+            const email = document.getElementById('signupEmail').value.trim();
+            const password = document.getElementById('signupPassword').value;
+            const confirmPassword = document.getElementById('signupConfirmPassword').value;
+
+            if (!username || !email || !password || !confirmPassword) {
+                showError('Please fill in all fields');
+                return;
+            }
+
+            if (password !== confirmPassword) {
+                showError('Passwords do not match');
+                return;
+            }
+
+            if (username.length < 3) {
+                showError('Username must be at least 3 characters');
+                return;
+            }
+
+            if (password.length < 6) {
+                showError('Password must be at least 6 characters');
+                return;
+            }
+
+            setLoading(false, true);
+            hideMessages();
+
+            try {
+                if (window.electronAPI && window.electronAPI.register) {
+                    const result = await window.electronAPI.register(username, email, password);
+
+                    if (result.success) {
+                        showSuccess('Account created successfully! Opening app...');
+                        setTimeout(() => {
+                            window.electronAPI.openMainApp();
+                        }, 1000);
+                    } else {
+                        showError(result.error || 'Registration failed');
+                    }
+                } else {
+                    showError('Authentication service not available');
+                }
+            } catch (error) {
+                showError('Network error: ' + error.message);
+            } finally {
+                setLoading(false, false);
+            }
+        });
+
+        // Enter key handling
+        document.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                const activeForm = document.querySelector('.auth-form.active');
+                if (activeForm.id === 'loginForm') {
+                    document.getElementById('loginButton').click();
+                } else {
+                    document.getElementById('signupButton').click();
+                }
+            }
+        });
+    </script>
+</body>
+
+</html>

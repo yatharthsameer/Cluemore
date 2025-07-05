@@ -1,0 +1,25 @@
+{
+  "name": "electronapp",
+  "version": "1.0.0",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron . --inspect=5858",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "devDependencies": {
+    "electron": "^37.1.0"
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.2",
+    "electron-screenshot": "^1.0.5",
+    "jsonwebtoken": "^9.0.2",
+    "keytar": "^7.9.0",
+    "marked": "^16.0.0",
+    "node-screenshots": "^0.2.1"
+  }
+}
