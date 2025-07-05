@@ -110,11 +110,11 @@ class AuthManager:
         """Verify a password against its hash"""
         return bcrypt.checkpw(password.encode("utf-8"), password_hash.encode("utf-8"))
 
-    def generate_jwt_token(self, user_id, username):
+    def generate_jwt_token(self, user_id, email):
         """Generate a JWT token for a user"""
         payload = {
             "user_id": user_id,
-            "username": username,
+            "email": email,
             "exp": datetime.utcnow() + timedelta(hours=JWT_EXPIRATION_HOURS),
             "iat": datetime.utcnow(),
         }
@@ -130,18 +130,12 @@ class AuthManager:
         except jwt.InvalidTokenError:
             return None
 
-    def register_user(self, username, email, password):
+    def register_user(self, email, password):
         """Register a new user"""
         try:
             # Validate input
-            if not username or not email or not password:
-                return {"success": False, "error": "All fields are required"}
-
-            if len(username) < 3:
-                return {
-                    "success": False,
-                    "error": "Username must be at least 3 characters",
-                }
+            if not email or not password:
+                return {"success": False, "error": "Email and password are required"}
 
             if len(password) < 6:
                 return {
@@ -154,24 +148,25 @@ class AuthManager:
             cursor = conn.cursor()
 
             cursor.execute(
-                "SELECT id FROM users WHERE username = ? OR email = ?",
-                (username, email),
+                "SELECT id FROM users WHERE email = ?",
+                (email,),
             )
             existing_user = cursor.fetchone()
 
             if existing_user:
                 conn.close()
-                return {"success": False, "error": "Username or email already exists"}
+                return {"success": False, "error": "Email already exists"}
 
             # Hash password and create user
             password_hash = self.hash_password(password)
 
+            # Use email as username for backward compatibility
             cursor.execute(
                 """
                 INSERT INTO users (username, email, password_hash)
                 VALUES (?, ?, ?)
             """,
-                (username, email, password_hash),
+                (email, email, password_hash),
             )
 
             user_id = cursor.lastrowid
@@ -179,45 +174,45 @@ class AuthManager:
             conn.close()
 
             # Generate JWT token
-            token = self.generate_jwt_token(user_id, username)
+            token = self.generate_jwt_token(user_id, email)
 
             return {
                 "success": True,
                 "token": token,
-                "user": {"id": user_id, "username": username, "email": email},
+                "user": {"id": user_id, "email": email},
             }
 
         except Exception as e:
             return {"success": False, "error": f"Registration failed: {str(e)}"}
 
-    def login_user(self, username, password):
+    def login_user(self, email, password):
         """Login a user"""
         try:
             conn = sqlite3.connect(DB_PATH)
             cursor = conn.cursor()
 
-            # Find user by username or email
+            # Find user by email
             cursor.execute(
                 """
                 SELECT id, username, email, password_hash, is_active 
                 FROM users 
-                WHERE (username = ? OR email = ?) AND is_active = 1
+                WHERE email = ? AND is_active = 1
             """,
-                (username, username),
+                (email,),
             )
 
             user = cursor.fetchone()
 
             if not user:
                 conn.close()
-                return {"success": False, "error": "Invalid username/email or password"}
+                return {"success": False, "error": "Invalid email or password"}
 
             user_id, user_username, email, password_hash, is_active = user
 
             # Verify password
             if not self.verify_password(password, password_hash):
                 conn.close()
-                return {"success": False, "error": "Invalid username/email or password"}
+                return {"success": False, "error": "Invalid email or password"}
 
             # Update last login
             cursor.execute(
@@ -228,12 +223,12 @@ class AuthManager:
             conn.close()
 
             # Generate JWT token
-            token = self.generate_jwt_token(user_id, user_username)
+            token = self.generate_jwt_token(user_id, email)
 
             return {
                 "success": True,
                 "token": token,
-                "user": {"id": user_id, "username": user_username, "email": email},
+                "user": {"id": user_id, "email": email},
             }
 
         except Exception as e:
@@ -270,7 +265,6 @@ class AuthManager:
 
                 return {
                     "id": user_id,
-                    "username": username,
                     "email": email,
                     "is_active": is_active,
                     "is_blocked": is_blocked,
@@ -375,7 +369,7 @@ class AuthManager:
 
             cursor.execute(
                 """
-                SELECT u.id, u.username, u.email, u.is_blocked,
+                SELECT u.id, u.email, u.is_blocked,
                        COALESCE(SUM(t.total_tokens), 0) as total_tokens,
                        COALESCE(SUM(t.cost_estimate), 0) as total_cost,
                        COALESCE(COUNT(t.id), 0) as request_count
@@ -383,7 +377,7 @@ class AuthManager:
                 LEFT JOIN token_usage t ON u.id = t.user_id 
                     AND t.timestamp >= datetime('now', '-{} days')
                 WHERE u.is_active = 1
-                GROUP BY u.id, u.username, u.email, u.is_blocked
+                GROUP BY u.id, u.email, u.is_blocked
                 ORDER BY total_tokens DESC
             """.format(
                     days
@@ -398,12 +392,11 @@ class AuthManager:
                 users_usage.append(
                     {
                         "user_id": row[0],
-                        "username": row[1],
-                        "email": row[2],
-                        "is_blocked": bool(row[3]),
-                        "total_tokens": row[4],
-                        "total_cost": row[5],
-                        "request_count": row[6],
+                        "email": row[1],
+                        "is_blocked": bool(row[2]),
+                        "total_tokens": row[3],
+                        "total_cost": row[4],
+                        "request_count": row[5],
                     }
                 )
 

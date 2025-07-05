@@ -112,7 +112,7 @@ async function verifyStoredToken() {
 
     if (response.success && response.valid) {
       currentUser = response.user;
-      console.log('Token verified, user:', currentUser.username);
+      console.log('Token verified, user:', currentUser.email);
       return true;
     } else {
       console.log('Token verification failed, removing stored token');
@@ -126,17 +126,17 @@ async function verifyStoredToken() {
   }
 }
 
-async function authenticateUser(username, password) {
+async function authenticateUser(email, password) {
   try {
     const response = await makeRequest(`${BACKEND_URL}/api/auth/login`, {
       method: 'POST',
-      body: { username, password }
+      body: { email, password }
     });
 
     if (response.success && response.token) {
       await storeToken(response.token);
       currentUser = response.user;
-      console.log('User authenticated successfully:', currentUser.username);
+      console.log('User authenticated successfully:', currentUser.email);
       return { success: true, user: currentUser, token: response.token };
     } else {
       console.log('Authentication failed:', response.error);
@@ -148,17 +148,17 @@ async function authenticateUser(username, password) {
   }
 }
 
-async function registerUser(username, email, password) {
+async function registerUser(email, password) {
   try {
     const response = await makeRequest(`${BACKEND_URL}/api/auth/register`, {
       method: 'POST',
-      body: { username, email, password }
+      body: { email, password }
     });
 
     if (response.success && response.token) {
       await storeToken(response.token);
       currentUser = response.user;
-      console.log('User registered successfully:', currentUser.username);
+      console.log('User registered successfully:', currentUser.email);
       return { success: true, user: currentUser, token: response.token };
     } else {
       console.log('Registration failed:', response.error);
@@ -491,12 +491,12 @@ app.whenReady().then(async () => {
   }
 
   // Authentication IPC Handlers
-  ipcMain.handle('auth:login', async (event, username, password) => {
-    return await authenticateUser(username, password);
+  ipcMain.handle('auth:login', async (event, email, password) => {
+    return await authenticateUser(email, password);
   });
 
-  ipcMain.handle('auth:register', async (event, username, email, password) => {
-    return await registerUser(username, email, password);
+  ipcMain.handle('auth:register', async (event, email, password) => {
+    return await registerUser(email, password);
   });
 
   ipcMain.handle('auth:logout', async (event) => {

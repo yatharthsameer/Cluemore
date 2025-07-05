@@ -511,20 +511,19 @@ def api_register():
         log.info("=== User Registration API called ===")
         j = request.get_json(force=True, silent=True) or {}
 
-        username = j.get("username", "").strip()
         email = j.get("email", "").strip()
         password = j.get("password", "").strip()
 
-        log.info(f"Registration attempt for username: {username}, email: {email}")
+        log.info(f"Registration attempt for email: {email}")
 
         # Register user
-        result = auth_manager.register_user(username, email, password)
+        result = auth_manager.register_user(email, password)
 
         if result["success"]:
-            log.info(f"User {username} registered successfully")
+            log.info(f"User {email} registered successfully")
             return jsonify(result), 200
         else:
-            log.warning(f"Registration failed for {username}: {result['error']}")
+            log.warning(f"Registration failed for {email}: {result['error']}")
             return jsonify(result), 400
 
     except Exception as e:
@@ -539,19 +538,19 @@ def api_login():
         log.info("=== User Login API called ===")
         j = request.get_json(force=True, silent=True) or {}
 
-        username = j.get("username", "").strip()
+        email = j.get("email", "").strip()
         password = j.get("password", "").strip()
 
-        log.info(f"Login attempt for: {username}")
+        log.info(f"Login attempt for: {email}")
 
         # Login user
-        result = auth_manager.login_user(username, password)
+        result = auth_manager.login_user(email, password)
 
         if result["success"]:
-            log.info(f"User {username} logged in successfully")
+            log.info(f"User {email} logged in successfully")
             return jsonify(result), 200
         else:
-            log.warning(f"Login failed for {username}: {result['error']}")
+            log.warning(f"Login failed for {email}: {result['error']}")
             return jsonify(result), 401
 
     except Exception as e:
@@ -575,7 +574,7 @@ def api_verify_token():
         user = auth_manager.get_user_from_token(token)
 
         if user:
-            log.info(f"Token verified for user: {user['username']}")
+            log.info(f"Token verified for user: {user['email']}")
             return jsonify({"success": True, "user": user, "valid": True}), 200
         else:
             log.warning("Token verification failed")
@@ -601,7 +600,7 @@ def api_get_current_user(current_user):
     """Get current user info (requires authentication)"""
     try:
         log.info("=== Get Current User API called ===")
-        log.info(f"Returning user info for: {current_user['username']}")
+        log.info(f"Returning user info for: {current_user['email']}")
         return jsonify({"success": True, "user": current_user}), 200
 
     except Exception as e:
@@ -616,7 +615,7 @@ def api_chat_protected(current_user):
     """Protected chat endpoint with token tracking and usage limits."""
     try:
         log.info(
-            f"=== Protected Chat API called by user {current_user['id']} ({current_user['username']}) ==="
+            f"=== Protected Chat API called by user {current_user['id']} ({current_user['email']}) ==="
         )
 
         # Check user limits before processing
@@ -836,7 +835,7 @@ def api_screenshot_protected(current_user):
     """Protected screenshot endpoint with token tracking"""
     try:
         log.info(
-            f"=== Protected Screenshot API called by user {current_user['id']} ({current_user['username']}) ==="
+            f"=== Protected Screenshot API called by user {current_user['id']} ({current_user['email']}) ==="
         )
 
         # Check user limits before processing

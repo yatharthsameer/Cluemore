@@ -29,13 +29,14 @@ chataura/
     ├── conversation.py  # Chat conversation handling
     ├── gemsdk.py        # Gemini AI integration
     ├── openai_client.py # OpenAI integration
+    ├── env.example      # Environment variables template
     └── requirements.txt # Backend dependencies
 ```
 
 ## Prerequisites
 
-- **Node.js** (v16 or higher)
-- **Python** (3.8 or higher)
+- **Node.js** (v20 or higher)
+- **Python** (3.11 or higher)
 - **npm** (comes with Node.js)
 - **Git** (for cloning the repository)
 
@@ -58,10 +59,7 @@ cd Backend
 python -m venv venv
 
 # Activate virtual environment
-# On macOS/Linux:
 source venv/bin/activate
-# On Windows:
-venv\Scripts\activate
 
 # Install Python dependencies
 pip install -r requirements.txt
@@ -79,7 +77,14 @@ npm install
 
 ### 4. Environment Configuration
 
-Create a `.env` file in the `Backend` directory:
+Copy the example environment file and configure your API keys:
+
+```bash
+# Copy the example environment file
+cp Backend/env.example Backend/.env
+```
+
+Then edit `Backend/.env` with your API keys:
 
 ```bash
 # Backend/.env
@@ -93,7 +98,6 @@ JWT_SECRET=your_jwt_secret_here
 1. **Gemini API Key** (Required): 
    - Visit [Google AI Studio](https://makersuite.google.com/app/apikey)
    - Create an API key for Gemini
-   - **Note**: If not provided, you'll see clear error messages in the app
 
 2. **OpenAI API Key** (Optional):
    - Visit [OpenAI Platform](https://platform.openai.com/api-keys)
@@ -107,20 +111,6 @@ JWT_SECRET=your_jwt_secret_here
    ```
    - **Important**: Without this, users will be logged out every time you restart the backend
    - This ensures login sessions persist across app restarts
-
-#### API Key Error Handling:
-
-ChatAura provides clear error messages when API keys are missing:
-- **Missing Gemini API Key**: "⚠️ Gemini API key not found. Please add your GEMINI_API_KEY to the .env file in the Backend folder."
-- **Missing OpenAI API Key**: "⚠️ OpenAI API key not found. Please add your OPENAI_API_KEY to the .env file in the Backend folder."
-
-These errors are shown directly in the app interface, so you'll know exactly what to fix.
-
-### 5. Database Setup
-
-The application uses SQLite for data storage. The database file (`users.db`) will be created automatically when you first run the backend.
-
-No additional database setup is required!
 
 ## Running the Application
 
@@ -157,16 +147,16 @@ The Electron app will launch and connect to the backend.
 All shortcuts work globally (even when the app is not in focus):
 
 ### Window Management
-- **`Cmd+6`** (macOS) / **`Ctrl+6`** (Windows/Linux): Hide/show the application window
-- **`Cmd+Left`** (macOS) / **`Ctrl+Left`** (Windows/Linux): Move window 50 pixels to the left
-- **`Cmd+Right`** (macOS) / **`Ctrl+Right`** (Windows/Linux): Move window 50 pixels to the right
-- **`Cmd+Up`** (macOS) / **`Ctrl+Up`** (Windows/Linux): Move window 50 pixels up
-- **`Cmd+Down`** (macOS) / **`Ctrl+Down`** (Windows/Linux): Move window 50 pixels down
+- **`Cmd+6`**: Hide/show the application window
+- **`Cmd+Left`**: Move window 50 pixels to the left
+- **`Cmd+Right`**: Move window 50 pixels to the right
+- **`Cmd+Up`**: Move window 50 pixels up
+- **`Cmd+Down`**: Move window 50 pixels down
 
 ### Core Features
-- **`Cmd+Shift+1`** (macOS) / **`Ctrl+Shift+1`** (Windows/Linux): Take screenshot and analyze with AI
-- **`Cmd+Enter`** (macOS) / **`Ctrl+Enter`** (Windows/Linux): Send message in chat mode or process screenshots in screenshot mode
-- **`Cmd+Shift+I`** (macOS) / **`Ctrl+Shift+I`** (Windows/Linux): Switch to chat mode and focus input field
+- **`Cmd+Shift+1`**: Take screenshot and analyze with AI
+- **`Cmd+Enter`**: Send message in chat mode or process screenshots in screenshot mode
+- **`Cmd+Shift+I`**: Switch to chat mode and focus input field
 
 ### System Tray Actions
 Right-click the system tray icon to access:
@@ -200,38 +190,6 @@ npm run dev
 ```
 
 This starts Electron with auto-reload on file changes.
-
-## API Endpoints
-
-- `POST /api/auth/login` - User login
-- `POST /api/auth/register` - User registration
-- `POST /api/auth/verify` - Verify JWT token
-- `POST /api/gemini/chat` - Chat with Gemini
-- `POST /api/openai/chat` - Chat with OpenAI
-- `GET /api/admin/stats` - Get usage statistics
-
-## Database Schema
-
-### Users Table
-- `id` - Primary key
-- `username` - Unique username
-- `email` - User email
-- `password_hash` - Hashed password
-- `created_at` - Account creation date
-- `last_login` - Last login timestamp
-- `is_active` - Account status
-- `is_blocked` - Block status
-
-### Token Usage Table
-- `id` - Primary key
-- `user_id` - Foreign key to users
-- `model_name` - AI model used
-- `endpoint` - API endpoint called
-- `input_tokens` - Input token count
-- `output_tokens` - Output token count
-- `total_tokens` - Total token usage
-- `cost_estimate` - Estimated cost
-- `timestamp` - Usage timestamp
 
 ## Contributing
 

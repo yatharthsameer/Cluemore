@@ -89,8 +89,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
     setWindowOpacity: (opacity) => ipcRenderer.invoke('window:set-opacity', opacity),
 
     // Authentication functionality
-    login: (username, password) => ipcRenderer.invoke('auth:login', username, password),
-    register: (username, email, password) => ipcRenderer.invoke('auth:register', username, email, password),
+    login: (email, password) => ipcRenderer.invoke('auth:login', email, password),
+    register: (email, password) => ipcRenderer.invoke('auth:register', email, password),
     logout: () => ipcRenderer.invoke('auth:logout'),
     verifyToken: (token) => ipcRenderer.invoke('auth:verify-token', token),
     getCurrentUser: () => ipcRenderer.invoke('auth:get-current-user'),

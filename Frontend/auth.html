@@ -255,8 +255,8 @@
             <!-- Login Form -->
             <div id="loginForm" class="auth-form active">
                 <div class="form-group">
-                    <label class="form-label" for="loginUsername">Username or Email</label>
-                    <input type="text" id="loginUsername" class="form-input" placeholder="Enter your username or email"
+                    <label class="form-label" for="loginEmail">Email</label>
+                    <input type="email" id="loginEmail" class="form-input" placeholder="Enter your email address"
                         required>
                 </div>
                 <div class="form-group">
@@ -270,11 +270,6 @@
 
             <!-- Signup Form -->
             <div id="signupForm" class="auth-form">
-                <div class="form-group">
-                    <label class="form-label" for="signupUsername">Username</label>
-                    <input type="text" id="signupUsername" class="form-input"
-                        placeholder="Choose a username (min 3 chars)" required>
-                </div>
                 <div class="form-group">
                     <label class="form-label" for="signupEmail">Email</label>
                     <input type="email" id="signupEmail" class="form-input" placeholder="Enter your email address"
@@ -354,10 +349,10 @@
 
         // Login handling
         document.getElementById('loginButton').addEventListener('click', async () => {
-            const username = document.getElementById('loginUsername').value.trim();
+            const email = document.getElementById('loginEmail').value.trim();
             const password = document.getElementById('loginPassword').value;
 
-            if (!username || !password) {
+            if (!email || !password) {
                 showError('Please fill in all fields');
                 return;
             }
@@ -367,7 +362,7 @@
 
             try {
                 if (window.electronAPI && window.electronAPI.login) {
-                    const result = await window.electronAPI.login(username, password);
+                    const result = await window.electronAPI.login(email, password);
 
                     if (result.success) {
                         showSuccess('Login successful! Opening app...');
@@ -388,24 +383,18 @@
         });
 
         // Signup handling
-        document.getElementById('signupButton').addEventListener('click', async () => {
-            const username = document.getElementById('signupUsername').value.trim();
+            document.getElementById('signupButton').addEventListener('click', async () => {
             const email = document.getElementById('signupEmail').value.trim();
             const password = document.getElementById('signupPassword').value;
             const confirmPassword = document.getElementById('signupConfirmPassword').value;
 
-            if (!username || !email || !password || !confirmPassword) {
+            if (!email || !password || !confirmPassword) {
                 showError('Please fill in all fields');
                 return;
             }
 
             if (password !== confirmPassword) {
                 showError('Passwords do not match');
-                return;
-            }
-
-            if (username.length < 3) {
-                showError('Username must be at least 3 characters');
                 return;
             }
 
@@ -419,7 +408,7 @@
 
             try {
                 if (window.electronAPI && window.electronAPI.register) {
-                    const result = await window.electronAPI.register(username, email, password);
+                    const result = await window.electronAPI.register(email, password);
 
                     if (result.success) {
                         showSuccess('Account created successfully! Opening app...');
