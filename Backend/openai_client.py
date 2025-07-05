@@ -6,6 +6,7 @@ import base64
 from io import BytesIO
 from PIL import Image
 from openai import OpenAI
+from openai import APIError, RateLimitError, APIConnectionError, AuthenticationError
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -23,8 +24,13 @@ class OpenAIClient:
                 "OPENAI_API_KEY (or CHATGPT_API_KEY) must be set in environment variables"
             )
 
-        self.client = OpenAI(api_key=self.api_key)
-        log.info("OpenAI client initialized")
+        # Initialize with latest client patterns
+        self.client = OpenAI(
+            api_key=self.api_key,
+            timeout=30.0,  # 30 second timeout
+            max_retries=3,  # Retry up to 3 times on failure
+        )
+        log.info("OpenAI client initialized with v1.30.1")
 
     def _prepare_image_for_openai(self, image_base64):
         """Convert base64 image to OpenAI format."""
@@ -57,7 +63,7 @@ class OpenAIClient:
 
         except Exception as e:
             log.error(f"Error preparing image for OpenAI: {e}")
-            raise
+            raise RuntimeError(f"Failed to process image: {str(e)}")
 
     def chat_completion(self, model, messages):
         """Send chat completion request to OpenAI."""
@@ -65,14 +71,32 @@ class OpenAIClient:
             log.info(f"Sending chat completion to OpenAI model: {model}")
 
             response = self.client.chat.completions.create(
-                model=model, messages=messages, max_tokens=4000, temperature=0.7
+                model=model,
+                messages=messages,
+                max_tokens=4000,
+                temperature=0.7,
+                timeout=30,
             )
 
             return response.choices[0].message.content
 
+        except AuthenticationError as e:
+            log.error(f"OpenAI authentication failed: {e}")
+            raise RuntimeError("OpenAI API key is invalid or expired")
+        except RateLimitError as e:
+            log.error(f"OpenAI rate limit exceeded: {e}")
+            raise RuntimeError("OpenAI rate limit exceeded. Please try again later.")
+        except APIConnectionError as e:
+            log.error(f"OpenAI connection failed: {e}")
+            raise RuntimeError(
+                "Failed to connect to OpenAI. Please check your internet connection."
+            )
+        except APIError as e:
+            log.error(f"OpenAI API error: {e}")
+            raise RuntimeError(f"OpenAI API error: {e.message}")
         except Exception as e:
             log.error(f"OpenAI chat completion failed: {e}")
-            raise
+            raise RuntimeError(f"OpenAI request failed: {str(e)}")
 
     def chat_with_history(self, messages, model="gpt-4o"):
         """Chat with conversation history for proper context."""
@@ -118,9 +142,23 @@ class OpenAIClient:
 
             return self.chat_completion(model, processed_messages)
 
+        except AuthenticationError as e:
+            log.error(f"OpenAI authentication failed: {e}")
+            raise RuntimeError("OpenAI API key is invalid or expired")
+        except RateLimitError as e:
+            log.error(f"OpenAI rate limit exceeded: {e}")
+            raise RuntimeError("OpenAI rate limit exceeded. Please try again later.")
+        except APIConnectionError as e:
+            log.error(f"OpenAI connection failed: {e}")
+            raise RuntimeError(
+                "Failed to connect to OpenAI. Please check your internet connection."
+            )
+        except APIError as e:
+            log.error(f"OpenAI API error: {e}")
+            raise RuntimeError(f"OpenAI API error: {e.message}")
         except Exception as e:
             log.error(f"OpenAI chat with history failed: {e}")
-            raise
+            raise RuntimeError(f"OpenAI request failed: {str(e)}")
 
     def analyze_text(self, text, model="gpt-4o"):
         """Analyze text with OpenAI."""
@@ -128,9 +166,23 @@ class OpenAIClient:
             messages = [{"role": "user", "content": text}]
             return self.chat_completion(model, messages)
 
+        except AuthenticationError as e:
+            log.error(f"OpenAI authentication failed: {e}")
+            raise RuntimeError("OpenAI API key is invalid or expired")
+        except RateLimitError as e:
+            log.error(f"OpenAI rate limit exceeded: {e}")
+            raise RuntimeError("OpenAI rate limit exceeded. Please try again later.")
+        except APIConnectionError as e:
+            log.error(f"OpenAI connection failed: {e}")
+            raise RuntimeError(
+                "Failed to connect to OpenAI. Please check your internet connection."
+            )
+        except APIError as e:
+            log.error(f"OpenAI API error: {e}")
+            raise RuntimeError(f"OpenAI API error: {e.message}")
         except Exception as e:
             log.error(f"OpenAI text analysis failed: {e}")
-            raise
+            raise RuntimeError(f"OpenAI request failed: {str(e)}")
 
     def analyze_image_with_text(self, text, image_base64, model="gpt-4o"):
         """Analyze image with text prompt using OpenAI Vision."""
@@ -150,9 +202,23 @@ class OpenAIClient:
 
             return self.chat_completion(model, messages)
 
+        except AuthenticationError as e:
+            log.error(f"OpenAI authentication failed: {e}")
+            raise RuntimeError("OpenAI API key is invalid or expired")
+        except RateLimitError as e:
+            log.error(f"OpenAI rate limit exceeded: {e}")
+            raise RuntimeError("OpenAI rate limit exceeded. Please try again later.")
+        except APIConnectionError as e:
+            log.error(f"OpenAI connection failed: {e}")
+            raise RuntimeError(
+                "Failed to connect to OpenAI. Please check your internet connection."
+            )
+        except APIError as e:
+            log.error(f"OpenAI API error: {e}")
+            raise RuntimeError(f"OpenAI API error: {e.message}")
         except Exception as e:
             log.error(f"OpenAI image analysis failed: {e}")
-            raise
+            raise RuntimeError(f"OpenAI request failed: {str(e)}")
 
     def analyze_multiple_images(self, images_base64, prompt, model="gpt-4o"):
         """Analyze multiple images with a prompt."""
@@ -171,9 +237,23 @@ class OpenAIClient:
 
             return self.chat_completion(model, messages)
 
+        except AuthenticationError as e:
+            log.error(f"OpenAI authentication failed: {e}")
+            raise RuntimeError("OpenAI API key is invalid or expired")
+        except RateLimitError as e:
+            log.error(f"OpenAI rate limit exceeded: {e}")
+            raise RuntimeError("OpenAI rate limit exceeded. Please try again later.")
+        except APIConnectionError as e:
+            log.error(f"OpenAI connection failed: {e}")
+            raise RuntimeError(
+                "Failed to connect to OpenAI. Please check your internet connection."
+            )
+        except APIError as e:
+            log.error(f"OpenAI API error: {e}")
+            raise RuntimeError(f"OpenAI API error: {e.message}")
         except Exception as e:
             log.error(f"OpenAI multiple image analysis failed: {e}")
-            raise
+            raise RuntimeError(f"OpenAI request failed: {str(e)}")
 
     def analyze_image_only(self, image_base64, model="gpt-4o"):
         """Analyze image without additional text prompt."""
@@ -184,6 +264,20 @@ class OpenAIClient:
                 model,
             )
 
+        except AuthenticationError as e:
+            log.error(f"OpenAI authentication failed: {e}")
+            raise RuntimeError("OpenAI API key is invalid or expired")
+        except RateLimitError as e:
+            log.error(f"OpenAI rate limit exceeded: {e}")
+            raise RuntimeError("OpenAI rate limit exceeded. Please try again later.")
+        except APIConnectionError as e:
+            log.error(f"OpenAI connection failed: {e}")
+            raise RuntimeError(
+                "Failed to connect to OpenAI. Please check your internet connection."
+            )
+        except APIError as e:
+            log.error(f"OpenAI API error: {e}")
+            raise RuntimeError(f"OpenAI API error: {e.message}")
         except Exception as e:
             log.error(f"OpenAI image-only analysis failed: {e}")
-            raise
+            raise RuntimeError(f"OpenAI request failed: {str(e)}")
