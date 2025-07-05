@@ -1,6 +1,5 @@
 # Core web framework
 flask==3.0.2
-flask-socketio==5.3.6
 flask-cors==4.0.0
 
 # Authentication & Security
@@ -12,12 +11,6 @@ google-generativeai==0.5.4
 openai==1.6.1
 Pillow==10.2.0
 
-# Audio Processing
-numpy==1.24.3
-
 # Environment & Config
 python-dotenv==1.0.1
-requests==2.31.0
-
-# Utils
-websocket-client==1.7.0 
+requests==2.31.0 

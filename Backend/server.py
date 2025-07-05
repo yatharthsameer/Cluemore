@@ -28,9 +28,6 @@ HOST = "localhost"
 PORT = 3000
 
 # ────────── sanity check ──────────
-if not os.getenv("GEMINI_API_KEY"):
-    raise RuntimeError("GEMINI_API_KEY must be set in env")
-
 log.info("🔧 Running in DEVELOPMENT mode")
 
 # ────────── app / state ──────────
@@ -40,33 +37,60 @@ APP = Flask(__name__)
 CORS(APP)  # Allow all origins for development
 
 CHAT = Conversation()  # one shared convo (good enough for an MVP)
-GEMINI_CLIENT = GeminiClient()  # For screenshot analysis
 
-# Initialize OpenAI client (optional - only if API key is provided)
+# Initialize clients lazily to avoid crashes on missing API keys
+GEMINI_CLIENT = None
 OPENAI_CLIENT = None
-try:
-    if os.getenv("CHATGPT_API_KEY"):
-        OPENAI_CLIENT = OpenAIClient()
-        log.info("OpenAI client initialized successfully")
-    else:
-        log.warning("CHATGPT_API_KEY not found - OpenAI features will be disabled")
-except Exception as e:
-    log.error(f"Failed to initialize OpenAI client: {e}")
-    log.warning("OpenAI features will be disabled")
+
+
+# Client initialization helpers
+def get_gemini_client():
+    """Get or initialize Gemini client with proper error handling."""
+    global GEMINI_CLIENT
+    if GEMINI_CLIENT is None:
+        try:
+            GEMINI_CLIENT = GeminiClient()
+            log.info("Gemini client initialized successfully")
+        except Exception as e:
+            if "GEMINI_API_KEY not set" in str(e):
+                raise ValueError(
+                    "⚠️ Gemini API key not found. Please add your GEMINI_API_KEY to the .env file in the Backend folder."
+                )
+            else:
+                raise ValueError(f"Failed to initialize Gemini client: {str(e)}")
+    return GEMINI_CLIENT
+
+
+def get_openai_client():
+    """Get or initialize OpenAI client with proper error handling."""
+    global OPENAI_CLIENT
+    if OPENAI_CLIENT is None:
+        try:
+            OPENAI_CLIENT = OpenAIClient()
+            log.info("OpenAI client initialized successfully")
+        except Exception as e:
+            if "OPENAI_API_KEY" in str(e) or "CHATGPT_API_KEY" in str(e):
+                raise ValueError(
+                    "⚠️ OpenAI API key not found. Please add your OPENAI_API_KEY to the .env file in the Backend folder."
+                )
+            else:
+                raise ValueError(f"Failed to initialize OpenAI client: {str(e)}")
+    return OPENAI_CLIENT
 
 
 # Model routing helper
 def get_ai_client_and_model(model_name):
     """Return appropriate client and model name for the given model."""
     if model_name.startswith("gpt-"):
-        if not OPENAI_CLIENT:
-            raise ValueError("OpenAI client not available. Please set CHATGPT_API_KEY.")
-        return OPENAI_CLIENT, model_name
+        client = get_openai_client()
+        return client, model_name
     elif model_name.startswith("gemini-"):
-        return GEMINI_CLIENT, model_name
+        client = get_gemini_client()
+        return client, model_name
     else:
         # Default to Gemini
-        return GEMINI_CLIENT, "gemini-1.5-flash"
+        client = get_gemini_client()
+        return client, "gemini-1.5-flash"
 
 
 # ────────── endpoints ────────────
@@ -123,7 +147,11 @@ def api_test_gemini():
     try:
         log.info("Testing Gemini API with text-only request...")
 
-        # Simple text test
+        # Try to get Gemini client (this will handle API key errors)
+        gemini_client = get_gemini_client()
+
+        # Simple text test using the initialized client
+        genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
         test_model = genai.GenerativeModel("gemini-1.5-flash")
         response = test_model.generate_content("Say hello and confirm you're working!")
 
@@ -134,9 +162,13 @@ def api_test_gemini():
             log.error("Gemini API test failed: empty response")
             return jsonify(success=False, error="Empty response from Gemini")
 
+    except ValueError as e:
+        # This catches our custom API key error messages
+        log.error(f"Gemini API test failed (API key): {e}")
+        return jsonify(success=False, error=str(e))
     except Exception as e:
         log.error(f"Gemini API test failed: {e}")
-        return jsonify(success=False, error=str(e))
+        return jsonify(success=False, error=f"Gemini API error: {str(e)}")
 
 
 @APP.post("/api/chat")
@@ -167,11 +199,26 @@ def api_chat():
             log.info(f"Chat history: {len(chat_history)} previous messages")
 
         try:
-            # Get appropriate client and model
+            # Get appropriate client and model (this will handle API key errors)
             ai_client, actual_model = get_ai_client_and_model(model_name)
             log.info(
                 f"Using AI client: {type(ai_client).__name__} with model: {actual_model}"
             )
+        except ValueError as e:
+            # This catches our custom API key error messages
+            log.error(f"API client initialization failed: {e}")
+            return jsonify(error=str(e), code="API_KEY_MISSING"), 400
+        except Exception as e:
+            log.error(f"Unexpected error initializing AI client: {e}")
+            return (
+                jsonify(
+                    error=f"Failed to initialize AI service: {str(e)}",
+                    code="CLIENT_ERROR",
+                ),
+                500,
+            )
+
+        try:
 
             if model_name.startswith("gpt-"):
                 # OpenAI/ChatGPT handling with conversation history
@@ -400,12 +447,26 @@ def api_screenshot():
         log.info(f"Using prompt: {prompt}")
 
         try:
-            # Get appropriate client and model
+            # Get appropriate client and model (handles API key errors)
             ai_client, actual_model = get_ai_client_and_model(model_name)
             log.info(
                 f"Using AI client: {type(ai_client).__name__} with model: {actual_model}"
             )
+        except ValueError as e:
+            # This catches our custom API key error messages
+            log.error(f"API client initialization failed: {e}")
+            return jsonify(error=str(e), code="API_KEY_MISSING"), 400
+        except Exception as e:
+            log.error(f"Unexpected error initializing AI client: {e}")
+            return (
+                jsonify(
+                    error=f"Failed to initialize AI service: {str(e)}",
+                    code="CLIENT_ERROR",
+                ),
+                500,
+            )
 
+        try:
             if model_name.startswith("gpt-"):
                 # OpenAI/ChatGPT handling
                 log.info("Calling OpenAI for screenshot analysis...")
@@ -413,9 +474,9 @@ def api_screenshot():
                     images_base64=images_data, prompt=prompt, model=actual_model
                 )
             else:
-                # Gemini handling (existing logic)
+                # Gemini handling - use the client we got
                 log.info("Calling GeminiClient.analyze_multiple_images...")
-                response = GEMINI_CLIENT.analyze_multiple_images(
+                response = ai_client.analyze_multiple_images(
                     images_base64=images_data, prompt=prompt
                 )
 
@@ -585,7 +646,25 @@ def api_chat_protected(current_user):
             return jsonify(error="No text or image provided"), 400
 
         # Process the request with token tracking
-        ai_client, actual_model = get_ai_client_and_model(model_name)
+        try:
+            ai_client, actual_model = get_ai_client_and_model(model_name)
+        except ValueError as e:
+            # This catches our custom API key error messages
+            log.error(
+                f"API client initialization failed for user {current_user['id']}: {e}"
+            )
+            return jsonify(error=str(e), code="API_KEY_MISSING"), 400
+        except Exception as e:
+            log.error(
+                f"Unexpected error initializing AI client for user {current_user['id']}: {e}"
+            )
+            return (
+                jsonify(
+                    error=f"Failed to initialize AI service: {str(e)}",
+                    code="CLIENT_ERROR",
+                ),
+                500,
+            )
 
         if model_name.startswith("gpt-"):
             # OpenAI handling with token tracking

@@ -90,17 +90,27 @@ JWT_SECRET=your_jwt_secret_here
 
 #### Getting API Keys:
 
-1. **Gemini API Key**: 
+1. **Gemini API Key** (Required): 
    - Visit [Google AI Studio](https://makersuite.google.com/app/apikey)
    - Create an API key for Gemini
+   - **Note**: If not provided, you'll see clear error messages in the app
 
-2. **OpenAI API Key** (optional):
+2. **OpenAI API Key** (Optional):
    - Visit [OpenAI Platform](https://platform.openai.com/api-keys)
    - Create an API key
+   - **Note**: Only needed if you want to use GPT models (gpt-4, gpt-3.5-turbo, etc.)
 
-3. **JWT Secret** (optional):
+3. **JWT Secret** (Optional):
    - Generate a random string for JWT token signing
    - If not provided, one will be generated automatically
+
+#### API Key Error Handling:
+
+ChatAura provides clear error messages when API keys are missing:
+- **Missing Gemini API Key**: "⚠️ Gemini API key not found. Please add your GEMINI_API_KEY to the .env file in the Backend folder."
+- **Missing OpenAI API Key**: "⚠️ OpenAI API key not found. Please add your OPENAI_API_KEY to the .env file in the Backend folder."
+
+These errors are shown directly in the app interface, so you'll know exactly what to fix.
 
 ### 5. Database Setup
 

@@ -17,9 +17,11 @@ log = logging.getLogger("openai_client")
 class OpenAIClient:
     def __init__(self):
         """Initialize OpenAI client."""
-        self.api_key = os.getenv("CHATGPT_API_KEY")
+        self.api_key = os.getenv("OPENAI_API_KEY") or os.getenv("CHATGPT_API_KEY")
         if not self.api_key:
-            raise RuntimeError("CHATGPT_API_KEY must be set in environment variables")
+            raise RuntimeError(
+                "OPENAI_API_KEY (or CHATGPT_API_KEY) must be set in environment variables"
+            )
 
         self.client = OpenAI(api_key=self.api_key)
         log.info("OpenAI client initialized")
