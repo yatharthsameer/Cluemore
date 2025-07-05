@@ -232,6 +232,6 @@ temp/
 # Ignore backend environment file
 Backend/.env 
 Backend/users.db
-Backend/__pycache__
+Backend/__pycache__/
 Backend/.DS_Store
 .DS_Store

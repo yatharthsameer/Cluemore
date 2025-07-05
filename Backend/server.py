@@ -636,10 +636,12 @@ def api_chat_protected(current_user):
         image_data = request_data.get("image")
         model_name = request_data.get("model", "gemini-1.5-flash")
         chat_history = request_data.get("chatHistory", [])
+        custom_prompt = request_data.get("customPrompt")  # Get custom system prompt
 
         log.info(
             f"Protected chat - Text: {'Yes' if user_text else 'No'}, Image: {'Yes' if image_data else 'No'}, Model: {model_name}, History: {len(chat_history)} messages"
         )
+        log.info(f"Custom prompt: {'Yes' if custom_prompt else 'No (using default)'}")
 
         if not user_text and not image_data:
             return jsonify(error="No text or image provided"), 400
@@ -668,6 +670,10 @@ def api_chat_protected(current_user):
         if model_name.startswith("gpt-"):
             # OpenAI handling with token tracking
             messages = []
+
+            # Add system prompt if custom prompt is provided
+            if custom_prompt:
+                messages.append({"role": "system", "content": custom_prompt})
 
             # Add chat history
             for msg in chat_history:
@@ -749,6 +755,11 @@ def api_chat_protected(current_user):
 
             # Prepare conversation context and content (similar to api_chat)
             conversation_parts = []
+
+            # Add custom system prompt if provided
+            if custom_prompt:
+                conversation_parts.append(f"System: {custom_prompt}")
+
             for msg in chat_history:
                 role = "User" if msg.get("role") == "user" else "Assistant"
                 content = msg.get("content", "")
@@ -761,7 +772,13 @@ def api_chat_protected(current_user):
                     f"Previous conversation:\n{context}\n\nUser's current message: "
                 )
             else:
-                current_content.append("")
+                # If no conversation history but we have a custom prompt, include it
+                if custom_prompt:
+                    current_content.append(
+                        f"System: {custom_prompt}\n\nUser's current message: "
+                    )
+                else:
+                    current_content.append("")
 
             if user_text and image_data:
                 current_content[0] += user_text

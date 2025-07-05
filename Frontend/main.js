@@ -243,15 +243,17 @@ function createMainWindow() {
 }
 
 // Chat function
-async function sendChatMessage(text, imageData = null, model = 'gemini-1.5-flash', chatHistory = []) {
+async function sendChatMessage(text, imageData = null, model = 'gemini-1.5-flash', chatHistory = [], customPrompt = null) {
   try {
     console.log('Sending chat message - Text:', !!text, 'Image:', !!imageData, 'Model:', model, 'History length:', chatHistory.length);
+    console.log('Custom prompt:', customPrompt ? customPrompt.substring(0, 100) + '...' : 'None (using default)');
 
     const payload = {};
     if (text) payload.text = text;
     if (imageData) payload.image = imageData;
     payload.model = model;
     payload.chatHistory = chatHistory; // Include conversation history
+    payload.customPrompt = customPrompt; // Include custom system prompt
 
     // Use protected endpoint with JWT token
     const response = await makeRequest(`${BACKEND_URL}/api/chat_protected`, {
@@ -547,9 +549,9 @@ app.whenReady().then(async () => {
   });
 
   // Existing IPC Handlers for chat functionality
-  ipcMain.handle('chat:send-message', async (event, text, imageData, model, chatHistory) => {
+  ipcMain.handle('chat:send-message', async (event, text, imageData, model, chatHistory, customPrompt) => {
     // Add JWT token to authenticated requests
-    await sendChatMessage(text, imageData, model, chatHistory);
+    await sendChatMessage(text, imageData, model, chatHistory, customPrompt);
     return true;
   });
 

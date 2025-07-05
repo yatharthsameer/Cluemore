@@ -19,8 +19,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
         });
     },
 
-    // Chat functionality with model parameter
-    sendChatMessage: (text, imageData, model, chatHistory) => ipcRenderer.invoke('chat:send-message', text, imageData, model, chatHistory),
+    // Chat functionality with model parameter and custom prompt
+    sendChatMessage: (text, imageData, model, chatHistory, customPrompt) => ipcRenderer.invoke('chat:send-message', text, imageData, model, chatHistory, customPrompt),
 
     onChatResponse: (callback) => {
         ipcRenderer.on('chat-response', (event, response) => {

@@ -281,6 +281,38 @@
       display: flex;
     }
 
+    /* Chat prompt edit icon */
+    #chatPromptEditIcon {
+      position: absolute;
+      top: 40px;
+      right: 12px;
+      width: 32px;
+      height: 32px;
+      background: rgba(70, 130, 180, 0.8);
+      border: 1px solid #555;
+      border-radius: 6px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      font: 14px monospace;
+      font-weight: bold;
+      cursor: pointer;
+      z-index: 100;
+      transition: all 0.2s;
+      color: #fff;
+    }
+
+    #chatPromptEditIcon:hover {
+      background: rgba(70, 130, 180, 1);
+      border-color: #888;
+      transform: scale(1.05);
+    }
+
+    /* Show chat prompt edit icon only when in chat page */
+    #chatPage.active #chatPromptEditIcon {
+      display: flex;
+    }
+
     /* Error notification area */
     #errorNotification {
       position: fixed;
@@ -330,6 +362,24 @@
     }
 
     #promptEditModal.show {
+      display: flex;
+    }
+
+    /* Chat prompt edit modal */
+    #chatPromptEditModal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.8);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 2000;
+    }
+
+    #chatPromptEditModal.show {
       display: flex;
     }
 
@@ -431,13 +481,12 @@
     }
 
     .modal-btn.secondary:hover {
-      background: rgba(80, 80, 80, 0.9);
-      color: #fff;
+      background: rgba(80, 80, 80, 1);
     }
 
     .prompt-info {
       font-size: 11px;
-      color: #888;
+      color: #ccc;
       margin-bottom: 10px;
       line-height: 1.4;
     }
@@ -1453,6 +1502,8 @@
 
     <!-- Chat Page -->
     <div id="chatPage" class="page">
+      <!-- Chat Pencil icon for prompt editing -->
+      <div id="chatPromptEditIcon" title="Edit chat system prompt">✏️</div>
       <div id="chatContainer">
         <div id="chatMessages"></div>
         <div id="chatInputContainer">
@@ -1502,6 +1553,29 @@
         <button class="modal-btn secondary" id="resetPromptBtn">Reset to Default</button>
         <button class="modal-btn secondary" id="cancelPromptBtn">Cancel</button>
         <button class="modal-btn primary" id="savePromptBtn">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Chat Prompt Edit Modal -->
+  <div id="chatPromptEditModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div class="modal-title">Edit Chat System Prompt</div>
+        <button class="modal-close" id="chatModalCloseBtn">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="prompt-info">
+          This system prompt will be used for all chat conversations. It defines the AI's personality and behavior.
+          You can customize it to better suit your needs.
+        </div>
+        <textarea id="chatPromptTextarea" class="prompt-textarea"
+          placeholder="Enter your custom system prompt here..."></textarea>
+      </div>
+      <div class="modal-footer">
+        <button class="modal-btn secondary" id="resetChatPromptBtn">Reset to Default</button>
+        <button class="modal-btn secondary" id="cancelChatPromptBtn">Cancel</button>
+        <button class="modal-btn primary" id="saveChatPromptBtn">Save</button>
       </div>
     </div>
   </div>
@@ -1808,6 +1882,86 @@
                               savePromptBtn.click();
                             }
                           });
+
+                              // Chat prompt management
+                              const DEFAULT_CHAT_PROMPT = "You are ChatAura, a helpful AI assistant designed to provide intelligent support for various tasks. You excel at helping users with coding questions, problem-solving, explanations, and general assistance. Your responses should be clear, concise, and helpful. When helping with coding or technical topics, provide accurate information and explain concepts clearly. You can analyze screenshots, images, and text to provide contextual assistance. Keep your responses natural and conversational while being informative and useful. If you're unsure about something, it's okay to say so and suggest alternative approaches.";
+
+                              function getCustomChatPrompt() {
+                                const saved = localStorage.getItem('customChatPrompt');
+                                if (saved && saved.trim()) {
+                                  return saved;
+                                }
+                                return DEFAULT_CHAT_PROMPT;
+                              }
+
+                              function setCustomChatPrompt(prompt) {
+                                localStorage.setItem('customChatPrompt', prompt);
+                                console.log('Custom chat prompt saved:', prompt.substring(0, 50) + '...');
+                              }
+
+                              function resetCustomChatPrompt() {
+                                localStorage.removeItem('customChatPrompt');
+                                console.log('Custom chat prompt reset to default');
+                              }
+
+                              // Chat prompt editing modal functionality
+                              const chatPromptEditIcon = document.getElementById('chatPromptEditIcon');
+                              const chatPromptEditModal = document.getElementById('chatPromptEditModal');
+                              const chatPromptTextarea = document.getElementById('chatPromptTextarea');
+                              const chatModalCloseBtn = document.getElementById('chatModalCloseBtn');
+                              const resetChatPromptBtn = document.getElementById('resetChatPromptBtn');
+                              const cancelChatPromptBtn = document.getElementById('cancelChatPromptBtn');
+                              const saveChatPromptBtn = document.getElementById('saveChatPromptBtn');
+
+                              // Open chat prompt modal
+                              chatPromptEditIcon.addEventListener('click', () => {
+                                const currentPrompt = getCustomChatPrompt();
+                                chatPromptTextarea.value = currentPrompt;
+                                chatPromptEditModal.classList.add('show');
+                                chatPromptTextarea.focus();
+                              });
+
+                              // Close chat prompt modal
+                              function closeChatModal() {
+                                chatPromptEditModal.classList.remove('show');
+                              }
+
+                              chatModalCloseBtn.addEventListener('click', closeChatModal);
+                              cancelChatPromptBtn.addEventListener('click', closeChatModal);
+
+                              // Close chat modal when clicking outside
+                              chatPromptEditModal.addEventListener('click', (e) => {
+                                if (e.target === chatPromptEditModal) {
+                                  closeChatModal();
+                                }
+                              });
+
+                              // Reset chat prompt to default
+                              resetChatPromptBtn.addEventListener('click', () => {
+                                chatPromptTextarea.value = DEFAULT_CHAT_PROMPT;
+                              });
+
+                              // Save chat prompt
+                              saveChatPromptBtn.addEventListener('click', () => {
+                                const newPrompt = chatPromptTextarea.value.trim();
+                                if (newPrompt) {
+                                  setCustomChatPrompt(newPrompt);
+                                  closeChatModal();
+                                  // Show confirmation
+                                  console.log('Chat prompt saved successfully');
+                                } else {
+                                  alert('Please enter a valid prompt');
+                                }
+                              });
+
+                              // Keyboard shortcuts for chat modal
+                              chatPromptTextarea.addEventListener('keydown', (e) => {
+                                if (e.key === 'Escape') {
+                                  closeChatModal();
+                                } else if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+                                  saveChatPromptBtn.click();
+                                }
+                              });
 
                         // Top bar tooltip functionality
                         const infoIcon = document.getElementById('infoIcon');
@@ -2142,10 +2296,12 @@
       sendBtn.disabled = true;
       sendBtn.textContent = 'Sending...';
 
-      // Send to backend with model selection and chat history for context
+      // Send to backend with model selection, chat history, and custom prompt
       if (window.electronAPI) {
+        const customChatPrompt = getCustomChatPrompt();
         console.log('Sending message with chat history:', chatHistory.length, 'previous messages');
-        window.electronAPI.sendChatMessage(messageText, imageData, model, chatHistory);
+        console.log('Using custom chat prompt:', customChatPrompt.substring(0, 50) + '...');
+        window.electronAPI.sendChatMessage(messageText, imageData, model, chatHistory, customChatPrompt);
       }
     }
 
