@@ -166,6 +166,7 @@ All shortcuts work globally (even when the app is not in focus):
 ### Core Features
 - **`Cmd+Shift+1`** (macOS) / **`Ctrl+Shift+1`** (Windows/Linux): Take screenshot and analyze with AI
 - **`Cmd+Enter`** (macOS) / **`Ctrl+Enter`** (Windows/Linux): Send message in chat mode or process screenshots in screenshot mode
+- **`Cmd+Shift+I`** (macOS) / **`Ctrl+Shift+I`** (Windows/Linux): Switch to chat mode and focus input field
 
 ### System Tray Actions
 Right-click the system tray icon to access:

@@ -73,6 +73,13 @@ contextBridge.exposeInMainWorld('electronAPI', {
         });
     },
 
+    // Handle global Cmd+Shift+I shortcut to switch to chat mode
+    onSwitchToChatMode: (callback) => {
+        ipcRenderer.on('switch-to-chat-mode', () => {
+            callback();
+        });
+    },
+
     // Remove listeners when needed
     removeAllListeners: (channel) => {
         ipcRenderer.removeAllListeners(channel);

@@ -1381,6 +1381,10 @@
             <span class="shortcut-key">Enter / Cmd+Enter</span>
             <span class="shortcut-desc">Send chat message</span>
           </div>
+          <div class="shortcut-item">
+            <span class="shortcut-key">Cmd+Shift+I</span>
+            <span class="shortcut-desc">Switch to chat mode</span>
+          </div>
         </div>
       </div>
     </div>
@@ -2166,6 +2170,30 @@
 
       // Register mode check handler
       window.electronAPI.onCheckCurrentMode(onCheckCurrentMode);
+
+      // Handle global Cmd+Shift+I shortcut to switch to chat mode
+      window.electronAPI.onSwitchToChatMode(() => {
+        console.log('Global Cmd+Shift+I received, switching to chat mode');
+
+        // Switch to chat page
+        showPage('chat');
+
+        // Focus the chat input field with longer delay and force focus
+        setTimeout(() => {
+          const chatInput = document.getElementById('chatInput');
+          if (chatInput) {
+            // Force focus and click to ensure it's properly focused
+            chatInput.focus();
+            chatInput.click();
+            console.log('Chat input focused and clicked');
+
+            // Also scroll input into view if needed
+            chatInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          } else {
+            console.log('Chat input not found');
+          }
+        }, 200); // Increased delay to ensure page switch completes
+      });
     }
 
     // Error notification functions

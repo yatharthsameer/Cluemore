@@ -218,7 +218,7 @@ class TokenTracker:
             return False
 
     def check_user_limits(
-        self, user_id: int, daily_limit: int = 100000, monthly_limit: int = 1000000
+        self, user_id: int, daily_limit: int = 500000, monthly_limit: int = 1000000
     ) -> Dict:
         """Check if user is within usage limits"""
         try:

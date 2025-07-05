@@ -435,6 +435,20 @@ app.whenReady().then(async () => {
     }
   });
 
+  // Global shortcut for chat mode: cmd + shift + i
+  globalShortcut.register('CommandOrControl+Shift+I', async () => {
+    console.log('Cmd+Shift+I shortcut pressed (global)');
+
+    // Ensure window is visible and focused, then switch to chat mode
+    if (win) {
+      if (!win.isVisible()) {
+        win.show();
+      }
+      win.focus();
+      win.webContents.send('switch-to-chat-mode');
+    }
+  });
+
   // Create tray with error handling for icon
   let tray;
   try {
