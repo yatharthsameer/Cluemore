@@ -449,13 +449,22 @@ app.whenReady().then(async () => {
     }
   });
 
-  // Create tray with error handling for icon
+  // Create tray with simple text-based icon
   let tray;
   try {
-    tray = new Tray(path.join(__dirname, 'iconTemplate.png'));
+    // Create a simple text-based icon using nativeImage
+    const iconSize = 16;
+    const icon = nativeImage.createFromDataURL(`data:image/svg+xml;base64,${Buffer.from(`
+      <svg width="${iconSize}" height="${iconSize}" xmlns="http://www.w3.org/2000/svg">
+        <rect width="100%" height="100%" fill="#4682B4"/>
+        <text x="50%" y="50%" text-anchor="middle" dy=".3em" fill="white" font-family="Arial" font-size="12" font-weight="bold">C</text>
+      </svg>
+    `).toString('base64')}`);
+
+    tray = new Tray(icon);
+    console.log('✅ Tray icon created successfully');
   } catch (error) {
-    // Fallback: create tray without icon or use system icon
-    console.log('Could not load tray icon, using default');
+    console.log('Could not create tray icon, using empty icon');
     tray = new Tray(nativeImage.createEmpty());
   }
 
