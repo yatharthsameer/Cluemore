@@ -12,13 +12,12 @@ from datetime import datetime, timedelta
 from functools import wraps
 from flask import request, jsonify, current_app
 
-# JWT Secret key - Generate a random secret for development
+# JWT Secret key - Must be set in environment
 JWT_SECRET = os.getenv("JWT_SECRET")
 if not JWT_SECRET:
-    # Generate a random secret for development
-    import secrets
-    JWT_SECRET = secrets.token_hex(32)
-    print("⚠️  Using randomly generated JWT secret for development. Set JWT_SECRET environment variable for production!")
+    raise ValueError(
+        "JWT_SECRET environment variable is required. Please add it to your .env file."
+    )
 JWT_ALGORITHM = "HS256"
 JWT_EXPIRATION_HOURS = 24
 

@@ -100,9 +100,13 @@ JWT_SECRET=your_jwt_secret_here
    - Create an API key
    - **Note**: Only needed if you want to use GPT models (gpt-4, gpt-3.5-turbo, etc.)
 
-3. **JWT Secret** (Optional):
-   - Generate a random string for JWT token signing
-   - If not provided, one will be generated automatically
+3. **JWT Secret** (Required for persistent login):
+   - Use this fixed JWT secret for persistent login sessions:
+   ```
+   JWT_SECRET=a1b2c3d4e5f6789012345678901234567890abcdef1234567890abcdef123456789012345678901234567890abcdef
+   ```
+   - **Important**: Without this, users will be logged out every time you restart the backend
+   - This ensures login sessions persist across app restarts
 
 #### API Key Error Handling:
 

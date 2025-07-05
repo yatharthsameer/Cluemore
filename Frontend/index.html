@@ -281,6 +281,40 @@
       display: flex;
     }
 
+    /* Error notification area */
+    #errorNotification {
+      position: fixed;
+      top: 50px;
+      right: 20px;
+      background: rgba(180, 70, 70, 0.95);
+      color: #fff;
+      padding: 12px 16px;
+      border-radius: 6px;
+      border: 1px solid #a66;
+      font: 12px monospace;
+      max-width: 300px;
+      z-index: 1000;
+      display: none;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+      word-wrap: break-word;
+    }
+
+    #errorNotification.show {
+      display: block;
+    }
+
+    #errorNotification .error-close {
+      float: right;
+      margin-left: 8px;
+      cursor: pointer;
+      font-weight: bold;
+      color: #fff;
+    }
+
+    #errorNotification .error-close:hover {
+      color: #ccc;
+    }
+
     /* Prompt edit modal */
     #promptEditModal {
       position: fixed;
@@ -1280,6 +1314,11 @@
 </head>
 
 <body>
+  <!-- Error notification -->
+  <div id="errorNotification">
+    <span class="error-close" onclick="hideErrorNotification()">×</span>
+    <span id="errorMessage"></span>
+  </div>
   <div id="container">
     <!-- Top bar -->
     <div id="topBar">
@@ -2049,9 +2088,17 @@
         // Hide loader on error
         hideLoader();
 
+        // Show error notification to user
+        showErrorNotification(error);
 
+        // Also show error message in the solution area
+        const errorMessage = `⚠️ Error: ${error}`;
+        setSolutionContent(errorMessage);
+
+        // Auto-clear error after 10 seconds
         setTimeout(() => {
-        }, 5000);
+          setSolutionContent('');
+        }, 10000);
       });
 
       // LeetCode Helper screenshot accumulation
@@ -2119,6 +2166,24 @@
 
       // Register mode check handler
       window.electronAPI.onCheckCurrentMode(onCheckCurrentMode);
+    }
+
+    // Error notification functions
+    function showErrorNotification(message) {
+      const errorEl = document.getElementById('errorNotification');
+      const messageEl = document.getElementById('errorMessage');
+      messageEl.textContent = message;
+      errorEl.classList.add('show');
+
+      // Auto-hide after 15 seconds
+      setTimeout(() => {
+        hideErrorNotification();
+      }, 15000);
+    }
+
+    function hideErrorNotification() {
+      const errorEl = document.getElementById('errorNotification');
+      errorEl.classList.remove('show');
     }
 
   // Initialize page state - set Interview Helper as active by default
