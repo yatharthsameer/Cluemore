@@ -24,17 +24,30 @@ logging.basicConfig(
 log = logging.getLogger("server")
 
 # ────────── Configuration ──────────
-HOST = "localhost"
-PORT = 3000
+HOST = "0.0.0.0"
+PORT = int(os.getenv("PORT", 3000))
+
+# Environment detection
+ENVIRONMENT = os.getenv("FLASK_ENV", "development")
+IS_PRODUCTION = ENVIRONMENT == "production"
 
 # ────────── sanity check ──────────
-log.info("🔧 Running in DEVELOPMENT mode")
+if IS_PRODUCTION:
+    log.info("🚀 Running in PRODUCTION mode")
+else:
+    log.info("🔧 Running in DEVELOPMENT mode")
 
 # ────────── app / state ──────────
 APP = Flask(__name__)
 
 # Configure CORS
-CORS(APP)  # Allow all origins for development
+if IS_PRODUCTION:
+    # In production, restrict CORS to specific origins
+    FRONTEND_URL = os.getenv("FRONTEND_URL", "https://yourapp.herokuapp.com")
+    CORS(APP, origins=[FRONTEND_URL])
+else:
+    # In development, allow all origins
+    CORS(APP)
 
 CHAT = Conversation()  # one shared convo (good enough for an MVP)
 
@@ -1053,64 +1066,111 @@ def api_admin_get_stats():
     """Get overall system statistics"""
     try:
         log.info("Admin stats requested")
+        from database import USE_POSTGRESQL
 
-        # Get basic stats from database
-        import sqlite3
-
-        conn = sqlite3.connect("users.db")
-        cursor = conn.cursor()
-
+        # Get basic stats from database using database manager
         # Total users
-        cursor.execute("SELECT COUNT(*) FROM users WHERE is_active = 1")
-        total_users = cursor.fetchone()[0]
+        total_users = (
+            db_manager.execute_query(
+                "SELECT COUNT(*) FROM users WHERE is_active = TRUE", fetch="one"
+            )[0]
+            if not USE_POSTGRESQL
+            else db_manager.execute_query(
+                "SELECT COUNT(*) FROM users WHERE is_active = TRUE", fetch="one"
+            )["count"]
+        )
 
         # Blocked users
-        cursor.execute(
-            "SELECT COUNT(*) FROM users WHERE is_active = 1 AND is_blocked = 1"
+        blocked_users = (
+            db_manager.execute_query(
+                "SELECT COUNT(*) FROM users WHERE is_active = TRUE AND is_blocked = TRUE",
+                fetch="one",
+            )[0]
+            if not USE_POSTGRESQL
+            else db_manager.execute_query(
+                "SELECT COUNT(*) FROM users WHERE is_active = TRUE AND is_blocked = TRUE",
+                fetch="one",
+            )["count"]
         )
-        blocked_users = cursor.fetchone()[0]
 
         # Total token usage (last 30 days)
-        cursor.execute(
-            """
-            SELECT 
-                COUNT(*) as total_requests,
-                SUM(total_tokens) as total_tokens,
-                SUM(cost_estimate) as total_cost
-            FROM token_usage 
-            WHERE timestamp >= datetime('now', '-30 days')
-        """
-        )
-        usage_stats = cursor.fetchone()
+        if USE_POSTGRESQL:
+            usage_stats = db_manager.execute_query(
+                """
+                SELECT 
+                    COUNT(*) as total_requests,
+                    SUM(total_tokens) as total_tokens,
+                    SUM(cost_estimate) as total_cost
+                FROM token_usage 
+                WHERE timestamp >= NOW() - INTERVAL '30 days'
+                """,
+                fetch="one",
+            )
+        else:
+            usage_stats = db_manager.execute_query(
+                """
+                SELECT 
+                    COUNT(*) as total_requests,
+                    SUM(total_tokens) as total_tokens,
+                    SUM(cost_estimate) as total_cost
+                FROM token_usage 
+                WHERE timestamp >= datetime('now', '-30 days')
+                """,
+                fetch="one",
+            )
 
         # Usage by model (last 30 days)
-        cursor.execute(
-            """
-            SELECT 
-                model_name,
-                COUNT(*) as requests,
-                SUM(total_tokens) as tokens,
-                SUM(cost_estimate) as cost
-            FROM token_usage 
-            WHERE timestamp >= datetime('now', '-30 days')
-            GROUP BY model_name
-            ORDER BY tokens DESC
-        """
-        )
-        model_stats = cursor.fetchall()
-
-        conn.close()
+        if USE_POSTGRESQL:
+            model_stats = db_manager.execute_query(
+                """
+                SELECT 
+                    model_name,
+                    COUNT(*) as requests,
+                    SUM(total_tokens) as tokens,
+                    SUM(cost_estimate) as cost
+                FROM token_usage 
+                WHERE timestamp >= NOW() - INTERVAL '30 days'
+                GROUP BY model_name
+                ORDER BY tokens DESC
+                """,
+                fetch="all",
+            )
+        else:
+            model_stats = db_manager.execute_query(
+                """
+                SELECT 
+                    model_name,
+                    COUNT(*) as requests,
+                    SUM(total_tokens) as tokens,
+                    SUM(cost_estimate) as cost
+                FROM token_usage 
+                WHERE timestamp >= datetime('now', '-30 days')
+                GROUP BY model_name
+                ORDER BY tokens DESC
+                """,
+                fetch="all",
+            )
 
         model_breakdown = []
         for row in model_stats:
-            model_breakdown.append(
-                {
-                    "model_name": row[0],
-                    "requests": row[1],
-                    "tokens": row[2],
-                    "cost": row[3],
-                }
-            )
+            if USE_POSTGRESQL:
+                model_breakdown.append(
+                    {
+                        "model_name": row["model_name"],
+                        "requests": row["requests"],
+                        "tokens": row["tokens"],
+                        "cost": row["cost"],
+                    }
+                )
+            else:
+                model_breakdown.append(
+                    {
+                        "model_name": row[0],
+                        "requests": row[1],
+                        "tokens": row[2],
+                        "cost": row[3],
+                    }
+                )
 
         return (
             jsonify(
@@ -1120,9 +1180,21 @@ def api_admin_get_stats():
                         "total_users": total_users,
                         "blocked_users": blocked_users,
                         "active_users": total_users - blocked_users,
-                        "total_requests_30d": usage_stats[0] or 0,
-                        "total_tokens_30d": usage_stats[1] or 0,
-                        "total_cost_30d": usage_stats[2] or 0.0,
+                        "total_requests_30d": (
+                            usage_stats["total_requests"]
+                            if USE_POSTGRESQL
+                            else usage_stats[0] or 0
+                        ),
+                        "total_tokens_30d": (
+                            usage_stats["total_tokens"]
+                            if USE_POSTGRESQL
+                            else usage_stats[1] or 0
+                        ),
+                        "total_cost_30d": (
+                            usage_stats["total_cost"]
+                            if USE_POSTGRESQL
+                            else usage_stats[2] or 0.0
+                        ),
                         "model_breakdown": model_breakdown,
                     },
                 }
@@ -1154,4 +1226,11 @@ if __name__ == "__main__":
         log.warning(f"Token tracker initialization warning: {e}")
 
     log.info(f"★ Backend ready on http://{HOST}:{PORT}")
-    APP.run(host=HOST, port=PORT, debug=True, threaded=True)
+
+    # Use production-ready server for Heroku
+    if IS_PRODUCTION:
+        # In production, gunicorn will handle the server
+        pass
+    else:
+        # Development mode
+        APP.run(host=HOST, port=PORT, debug=True, threaded=True)
