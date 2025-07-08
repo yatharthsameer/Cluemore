@@ -1,7 +1,4 @@
-"""
-Authentication module for the Electron app backend
-Handles user registration, login, JWT tokens, and user management
-"""
+
 
 import sqlite3
 import bcrypt
