@@ -20,7 +20,7 @@ if [ ! -d "backend" ]; then
 fi
 
 # Set Heroku app name (you can override this)
-HEROKU_APP=${HEROKU_APP:-"your-cluemore-app"}
+HEROKU_APP=${HEROKU_APP:-"cluemore"}
 
 echo "📁 Deploying backend directory to Heroku app: $HEROKU_APP"
 
