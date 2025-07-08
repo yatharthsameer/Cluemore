@@ -10,7 +10,7 @@ let currentUser = null;
 let jwtToken = null;
 // Backend URL configuration
 // For production builds, always use the Heroku backend
-const BACKEND_URL = 'https://cluemore-backend-3435bd657615.herokuapp.com';
+const BACKEND_URL = 'https://cluemore-166792667b90.herokuapp.com';
 const SERVICE_NAME = 'Cluemore';
 const ACCOUNT_NAME = 'user_jwt_token';
 
