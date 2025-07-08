@@ -1,0 +1,14 @@
+{
+  "name": "cluemore-backend",
+  "buildpacks": [
+    {
+      "url": "https://github.com/lstoll/heroku-buildpack-monorepo"
+    },
+    {
+      "url": "heroku/python"
+    }
+  ],
+  "env": {
+    "APP_BASE": "backend"
+  }
+} 
