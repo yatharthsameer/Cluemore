@@ -16,7 +16,7 @@ Pillow==10.2.0
 
 # Environment & Config
 python-dotenv==1.0.1
-requests==2.31.0
+requests==2.31.0 
 
 # Production server
 gunicorn==21.2.0 

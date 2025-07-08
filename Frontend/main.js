@@ -1,5 +1,6 @@
 const { app, BrowserWindow, Tray, Menu, globalShortcut, nativeImage, desktopCapturer, ipcMain } = require('electron');
 const path = require('path');
+const https = require('https');
 const http = require('http');
 const keytar = require('keytar');
 
@@ -8,45 +9,67 @@ let authWin;
 let currentUser = null;
 let jwtToken = null;
 // Backend URL configuration
-const BACKEND_URL = 'http://localhost:3000';
-const SERVICE_NAME = 'ChatAura';
+// For production builds, always use the Heroku backend
+const BACKEND_URL = 'https://cluemore-backend-3435bd657615.herokuapp.com';
+const SERVICE_NAME = 'Cluemore';
 const ACCOUNT_NAME = 'user_jwt_token';
 
-// Helper function to make HTTP requests
+// Helper function to make HTTP/HTTPS requests
 function makeRequest(url, options = {}) {
   return new Promise((resolve, reject) => {
+    console.log(`Making request to: ${url}`);
     const urlObj = new URL(url);
+    const isHttps = urlObj.protocol === 'https:';
 
     const requestOptions = {
       hostname: urlObj.hostname,
-      port: urlObj.port,
-      path: urlObj.pathname,
+      port: urlObj.port || (isHttps ? 443 : 80),
+      path: urlObj.pathname + urlObj.search,
       method: options.method || 'GET',
       headers: {
         'Content-Type': 'application/json',
+        'User-Agent': 'Cluemore/1.0.0',
         ...options.headers
-      }
+      },
+      // For HTTPS requests, ensure we handle certificates properly
+      rejectUnauthorized: true,
+      timeout: 30000 // 30 second timeout
     };
 
-    const req = http.request(requestOptions, (res) => {
+    console.log(`Request options:`, requestOptions);
+
+    const client = isHttps ? https : http;
+    const req = client.request(requestOptions, (res) => {
+      console.log(`Response status: ${res.statusCode}`);
       let data = '';
       res.on('data', (chunk) => data += chunk);
       res.on('end', () => {
+        console.log(`Response data: ${data}`);
         try {
           const jsonData = JSON.parse(data);
           resolve(jsonData);
         } catch (error) {
-          resolve({ error: 'Invalid JSON response', data });
+          console.error('JSON parse error:', error);
+          resolve({ error: 'Invalid JSON response', data, statusCode: res.statusCode });
         }
       });
     });
 
     req.on('error', (error) => {
+      console.error('Request error:', error);
       reject(error);
     });
 
+    req.on('timeout', () => {
+      console.error('Request timeout');
+      req.destroy();
+      reject(new Error('Request timeout'));
+    });
+
     if (options.body) {
-      req.write(JSON.stringify(options.body));
+      const bodyString = JSON.stringify(options.body);
+      console.log(`Request body: ${bodyString}`);
+      req.write(bodyString);
     }
 
     req.end();
@@ -176,7 +199,7 @@ function createAuthWindow() {
     height: 700,
     resizable: false,
     alwaysOnTop: true,
-    title: 'ChatAura - Login',
+    title: 'Cluemore - Login',
     transparent: true,
     frame: false,
     show: false,
@@ -214,7 +237,7 @@ function createMainWindow() {
     height: 600,
     resizable: false,
     alwaysOnTop: true,
-    title: 'ChatAura',
+    title: 'Cluemore',
     skipTaskbar: true,
     transparent: true,
     frame: false,

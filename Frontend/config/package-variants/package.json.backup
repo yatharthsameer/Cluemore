@@ -20,11 +20,8 @@
     "pack": "electron-builder --dir",
     "postinstall": "electron-builder install-app-deps",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "downgrade-electron": "rm -rf node_modules package-lock.json && cp config/package-variants/package-electron27.json package.json && npm install",
-    "restore-electron": "cp config/package-variants/package.json.backup package.json && rm -rf node_modules package-lock.json && npm install",
-    "build-dist": "./scripts/build-production.sh",
-    "backup-config": "cp package.json config/package-variants/package.json.backup",
-    "verify-signing": "codesign -dv dist/mac-arm64/Cluemore.app && xcrun notarytool history --keychain-profile sameerbros-creds | head -5"
+    "downgrade-electron": "rm -rf node_modules package-lock.json && cp package-electron27.json package.json && npm install",
+    "restore-electron": "cp package.json.backup package.json && rm -rf node_modules package-lock.json && npm install"
   },
   "build": {
     "productName": "Cluemore",

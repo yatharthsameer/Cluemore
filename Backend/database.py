@@ -104,51 +104,51 @@ class DatabaseManager:
             else:
                 # SQLite table creation (existing code)
                 cursor.execute("""
-                    CREATE TABLE IF NOT EXISTS users (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        username TEXT UNIQUE NOT NULL,
-                        email TEXT UNIQUE NOT NULL,
-                        password_hash TEXT NOT NULL,
-                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                        last_login TIMESTAMP,
-                        is_active BOOLEAN DEFAULT 1,
-                        is_blocked BOOLEAN DEFAULT 0
-                    )
-                """)
+                CREATE TABLE IF NOT EXISTS users (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    username TEXT UNIQUE NOT NULL,
+                    email TEXT UNIQUE NOT NULL,
+                    password_hash TEXT NOT NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    last_login TIMESTAMP,
+                    is_active BOOLEAN DEFAULT 1,
+                    is_blocked BOOLEAN DEFAULT 0
+                )
+            """)
 
-                cursor.execute("""
-                    CREATE TABLE IF NOT EXISTS token_usage (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        user_id INTEGER NOT NULL,
-                        model_name TEXT NOT NULL,
-                        endpoint TEXT NOT NULL,
-                        input_tokens INTEGER DEFAULT 0,
-                        output_tokens INTEGER DEFAULT 0,
-                        total_tokens INTEGER NOT NULL,
-                        cost_estimate REAL DEFAULT 0.0,
-                        timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                        request_type TEXT,
-                        FOREIGN KEY (user_id) REFERENCES users (id)
-                    )
-                """)
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS token_usage (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user_id INTEGER NOT NULL,
+                    model_name TEXT NOT NULL,
+                    endpoint TEXT NOT NULL,
+                    input_tokens INTEGER DEFAULT 0,
+                    output_tokens INTEGER DEFAULT 0,
+                    total_tokens INTEGER NOT NULL,
+                    cost_estimate REAL DEFAULT 0.0,
+                    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    request_type TEXT,
+                    FOREIGN KEY (user_id) REFERENCES users (id)
+                )
+            """)
 
-                # Create indexes
-                cursor.execute("""
-                    CREATE INDEX IF NOT EXISTS idx_token_usage_user_time 
-                    ON token_usage (user_id, timestamp)
-                """)
+            # Create indexes
+            cursor.execute("""
+                CREATE INDEX IF NOT EXISTS idx_token_usage_user_time 
+                ON token_usage (user_id, timestamp)
+            """)
 
-                cursor.execute("""
-                    CREATE INDEX IF NOT EXISTS idx_token_usage_model_time 
-                    ON token_usage (model_name, timestamp)
-                """)
+            cursor.execute("""
+                CREATE INDEX IF NOT EXISTS idx_token_usage_model_time 
+                ON token_usage (model_name, timestamp)
+            """)
 
-                # Add is_blocked column if it doesn't exist (migration)
-                try:
-                    cursor.execute("ALTER TABLE users ADD COLUMN is_blocked BOOLEAN DEFAULT 0")
-                except sqlite3.OperationalError:
-                    # Column already exists
-                    pass
+            # Add is_blocked column if it doesn't exist (migration)
+            try:
+                cursor.execute("ALTER TABLE users ADD COLUMN is_blocked BOOLEAN DEFAULT 0")
+            except sqlite3.OperationalError:
+                # Column already exists
+                pass
 
             conn.commit()
             conn.close()

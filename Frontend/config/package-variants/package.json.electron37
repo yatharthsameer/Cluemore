@@ -19,49 +19,40 @@
     "build-production": "NODE_ENV=production npm ci --only=production",
     "pack": "electron-builder --dir",
     "postinstall": "electron-builder install-app-deps",
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "downgrade-electron": "rm -rf node_modules package-lock.json && cp config/package-variants/package-electron27.json package.json && npm install",
-    "restore-electron": "cp config/package-variants/package.json.backup package.json && rm -rf node_modules package-lock.json && npm install",
-    "build-dist": "./scripts/build-production.sh",
-    "backup-config": "cp package.json config/package-variants/package.json.backup",
-    "verify-signing": "codesign -dv dist/mac-arm64/Cluemore.app && xcrun notarytool history --keychain-profile sameerbros-creds | head -5"
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
   "build": {
-    "productName": "Cluemore",
     "appId": "com.sameerbros.cluemore",
-    "directories": {
-      "output": "dist"
-    },
+    "productName": "Cluemore",
+    "copyright": "Copyright © 2025 Sameer Bros",
     "asar": true,
     "asarUnpack": [
       "**/node_modules/keytar/**",
       "**/node_modules/node-screenshots/**",
       "**/node_modules/electron-screenshot/**"
     ],
-    "files": [
-      "**/*",
-      "!**/README.md",
-      "!**/CHANGELOG.md",
-      "!**/test/**",
-      "!**/tests/**",
-      "!**/spec/**",
-      "!**/docs/**",
-      "!**/*.map",
-      "!**/.nyc_output/**",
-      "!**/coverage/**",
-      "!**/node_modules/**/*.d.ts",
-      "!**/node_modules/**/*.md",
-      "!**/node_modules/**/test/**",
-      "!**/node_modules/**/tests/**",
-      "!**/node_modules/**/docs/**",
-      "!**/node_modules/**/example/**",
-      "!**/node_modules/**/examples/**",
-      "!**/node_modules/**/.bin/**",
-      "!**/node_modules/**/scripts/**",
-      "!**/scripts/**"
-    ],
+    "afterSign": "./scripts/notarize.js",
     "mac": {
       "category": "public.app-category.productivity",
+      "icon": "assets/icon.icns",
+      "entitlements": "assets/entitlements.mac.plist",
+      "entitlementsInherit": "assets/entitlements.mac.plist",
+      "hardenedRuntime": true,
+      "gatekeeperAssess": false,
+      "identity": "Developer ID Application: Yatharth Sameer (TC4HN9NNR3)",
+      "signingHashAlgorithms": [
+        "sha256"
+      ],
+      "sign": [
+        "--options",
+        "runtime",
+        "--timestamp"
+      ],
+      "entitlementsForFile": {
+        "**/*.pak": null,
+        "**/*.dat": null,
+        "**/*.bin": null
+      },
       "target": [
         {
           "target": "dmg",
@@ -78,12 +69,9 @@
           ]
         }
       ],
-      "icon": "icon.png",
-      "hardenedRuntime": true,
-      "gatekeeperAssess": false,
-      "entitlements": "assets/entitlements.mac.plist",
-      "entitlementsInherit": "assets/entitlements.mac.plist",
-      "notarize": false
+      "notarize": {
+        "teamId": "TC4HN9NNR3"
+      }
     },
     "mas": {
       "category": "public.app-category.productivity",
@@ -101,8 +89,29 @@
         }
       ]
     },
-    "afterSign": "./scripts/fix-electron-signing.js",
-    "afterAllArtifactBuild": "./scripts/notarize.js"
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "**/*",
+      "!**/node_modules/*/{CHANGELOG.md,README.md,README,readme.md,readme}",
+      "!**/node_modules/*/{test,__tests__,tests,powered-test,example,examples}",
+      "!**/node_modules/*/{docs,doc,website,images,img}",
+      "!**/node_modules/*/{*.md,*.txt,*.json}",
+      "!**/node_modules/*.d.ts",
+      "!**/node_modules/.bin",
+      "!**/node_modules/*/{man,scripts,coverage}",
+      "!**/*.{iml,o,hprof,orig,pyc,pyo,rbc,swp,csproj,sln,xproj}",
+      "!.editorconfig",
+      "!**/._*",
+      "!**/{.DS_Store,.git,.hg,.svn,CVS,RCS,SCCS,.gitignore,.gitattributes}",
+      "!**/{__pycache__,thumbs.db,.flowconfig,.idea,.vs,.nyc_output}",
+      "!**/{appveyor.yml,.travis.yml,circle.yml}",
+      "!**/{npm-debug.log,yarn.lock,.yarn-integrity,.yarn-metadata.json}",
+      "!**/scripts/{*.sh,*.md}",
+      "!**/dist/**",
+      "!**/build/**"
+    ]
   },
   "keywords": [
     "ai",
@@ -113,11 +122,9 @@
     "desktop"
   ],
   "devDependencies": {
-    "@electron/notarize": "^2.5.0",
-    "@electron/osx-sign": "^2.0.0",
-    "dotenv": "^17.1.0",
-    "electron": "^37.2.0",
-    "electron-builder": "^26.0.12"
+    "@electron/notarize": "^2.4.0",
+    "electron": "^37.1.0",
+    "electron-builder": "^25.1.8"
   },
   "dependencies": {
     "bcryptjs": "^3.0.2",

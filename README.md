@@ -1,4 +1,4 @@
-# ChatAura - AI Interview Helper
+# Cluemore - AI Interview Helper
 
 A desktop application that helps you during coding interviews by providing AI-powered assistance. Built with Electron and Python Flask backend, featuring real-time screenshot analysis and chat capabilities.
 
@@ -11,86 +11,125 @@ A desktop application that helps you during coding interviews by providing AI-po
 - 📊 **Token Tracking**: Monitor API usage and costs
 - 🎯 **Interview Focus**: Specialized for coding interview scenarios
 - 🔍 **Always-on-Top**: Stays accessible during interviews
+- 🚀 **CI/CD**: Automated deployment with GitHub Actions and Heroku
 
 ## Project Structure
 
 ```
-chataura/
-├── Frontend/            # Electron frontend application
+cluemore/
+├── backend/             # Python Flask API
+│   ├── server.py        # Main Flask server
+│   ├── auth.py          # Authentication logic
+│   ├── database.py      # Database operations
+│   ├── conversation.py  # Chat conversation handling
+│   ├── gemsdk.py        # Gemini AI integration
+│   ├── openai_client.py # OpenAI integration
+│   ├── env.example      # Environment variables template
+│   ├── requirements.txt # Backend dependencies
+│   ├── Procfile         # Heroku deployment config
+│   └── runtime.txt      # Python version for Heroku
+├── frontend/            # Electron Mac application
 │   ├── main.js          # Main Electron process
 │   ├── preload.js       # Preload script for IPC
 │   ├── index.html       # Main app interface
 │   ├── auth.html        # Authentication interface
 │   └── package.json     # Frontend dependencies
-└── Backend/             # Python Flask backend
-    ├── server.py        # Main Flask server
-    ├── auth.py          # Authentication logic
-    ├── database.py      # Database operations
-    ├── conversation.py  # Chat conversation handling
-    ├── gemsdk.py        # Gemini AI integration
-    ├── openai_client.py # OpenAI integration
-    ├── env.example      # Environment variables template
-    └── requirements.txt # Backend dependencies
+├── .github/workflows/   # CI/CD pipelines
+├── deploy-heroku.sh     # Manual deployment script
+├── heroku-setup.sh      # One-time Heroku setup
+└── package.json        # Root monorepo configuration
 ```
 
 ## Prerequisites
 
-- **Node.js** (v20 or higher)
-- **Python** (3.11 or higher)
+- **Node.js** (v18 or higher)
+- **Python** (3.11 or higher)  
 - **npm** (comes with Node.js)
 - **Git** (for cloning the repository)
+- **Heroku CLI** (for deployment - optional)
 
-## Setup Instructions
+## Quick Start
 
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/yourusername/chataura.git
-cd chataura
+git clone https://github.com/yourusername/cluemore.git
+cd cluemore
 ```
 
-### 2. Backend Setup
+### 2. Install All Dependencies
 
 ```bash
-# Navigate to backend directory
-cd Backend
-
-# Create virtual environment (recommended)
-python -m venv venv
-
-# Activate virtual environment
-source venv/bin/activate
-
-# Install Python dependencies
-pip install -r requirements.txt
+# Install all dependencies (backend + frontend)
+npm run install:all
 ```
 
-### 3. Frontend Setup
-
-```bash
-# Navigate to frontend directory
-cd Frontend
-
-# Install Node.js dependencies
-npm install
-```
-
-### 4. Environment Configuration
+### 3. Environment Configuration
 
 Copy the example environment file and configure your API keys:
 
 ```bash
 # Copy the example environment file
-cp Backend/env.example Backend/.env
+cp backend/env.example backend/.env
 ```
 
-Then edit `Backend/.env` with your API keys:
+Then edit `backend/.env` with your API keys:
 
 ```bash
-# Backend/.env
+# backend/.env
 GEMINI_API_KEY=your_gemini_api_key_here
 OPENAI_API_KEY=your_openai_api_key_here
 JWT_SECRET=your_jwt_secret_here
+```
+
+### 4. Run the Application
+
+```bash
+# Start both backend and frontend
+npm run dev
+
+# Or run individually
+npm run backend:dev    # Backend only
+npm run frontend:dev   # Frontend only
+```
+
+## 🚀 Deployment
+
+For production deployment setup, see **[DEPLOYMENT-SETUP.md](./DEPLOYMENT-SETUP.md)** for:
+
+- **Heroku backend deployment** with automated CI/CD
+- **Mac app distribution** via GitHub Actions  
+- **Environment configuration** for production
+- **Troubleshooting guides** and best practices
+
+### Manual Setup (Alternative)
+
+If you prefer manual setup:
+
+#### Backend Setup
+```bash
+# Navigate to backend directory
+cd backend
+
+# Create virtual environment (recommended)
+python -m venv venv
+
+# Activate virtual environment
+source venv/bin/activate  # macOS/Linux
+# or
+venv\Scripts\activate     # Windows
+
+# Install Python dependencies
+pip install -r requirements.txt
+```
+
+#### Frontend Setup
+```bash
+# Navigate to frontend directory
+cd frontend
+
+# Install Node.js dependencies
+npm install
 ```
 
 #### Getting API Keys:
@@ -114,22 +153,30 @@ JWT_SECRET=your_jwt_secret_here
 
 ## Running the Application
 
-### Start the Backend Server
+### Start Everything at Once (Recommended)
 
 ```bash
-cd Backend
-python server.py
+npm run dev
+```
+
+This starts both backend and frontend simultaneously.
+
+### Start Individually
+
+#### Backend Server
+```bash
+npm run backend:dev
+# or manually:
+# cd backend && python server.py
 ```
 
 The backend will start on `http://localhost:3000`
 
-### Start the Frontend Application
-
-In a new terminal:
-
+#### Frontend Application
 ```bash
-cd Frontend
-npm start
+npm run frontend:dev
+# or manually:
+# cd frontend && npm start
 ```
 
 The Electron app will launch and connect to the backend.
@@ -173,23 +220,38 @@ Right-click the system tray icon to access:
 
 ## Development
 
-### Backend Development
+### Full Development Environment
 
 ```bash
-cd Backend
-python server.py
-```
-
-The Flask server runs with debug mode enabled for development.
-
-### Frontend Development
-
-```bash
-cd Frontend
+# Install dependencies and start development servers
+npm run install:all
 npm run dev
 ```
 
+### Individual Development
+
+#### Backend Development
+```bash
+npm run backend:dev
+```
+The Flask server runs with debug mode enabled for development.
+
+#### Frontend Development  
+```bash
+npm run frontend:dev
+```
 This starts Electron with auto-reload on file changes.
+
+### Project Scripts
+
+Available npm scripts in the root `package.json`:
+
+- `npm run install:all` - Install all dependencies (backend + frontend)
+- `npm run dev` - Start both backend and frontend in development mode
+- `npm run backend:dev` - Start only the backend server
+- `npm run frontend:dev` - Start only the frontend app
+- `npm run backend:install` - Install only backend dependencies
+- `npm run frontend:install` - Install only frontend dependencies
 
 ## Contributing
 

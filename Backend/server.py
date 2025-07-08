@@ -1096,12 +1096,12 @@ def api_admin_get_stats():
         # Total token usage (last 30 days)
         if USE_POSTGRESQL:
             usage_stats = db_manager.execute_query(
-                """
-                SELECT 
-                    COUNT(*) as total_requests,
-                    SUM(total_tokens) as total_tokens,
-                    SUM(cost_estimate) as total_cost
-                FROM token_usage 
+            """
+            SELECT 
+                COUNT(*) as total_requests,
+                SUM(total_tokens) as total_tokens,
+                SUM(cost_estimate) as total_cost
+            FROM token_usage 
                 WHERE timestamp >= NOW() - INTERVAL '30 days'
                 """,
                 fetch="one",
@@ -1114,7 +1114,7 @@ def api_admin_get_stats():
                     SUM(total_tokens) as total_tokens,
                     SUM(cost_estimate) as total_cost
                 FROM token_usage 
-                WHERE timestamp >= datetime('now', '-30 days')
+            WHERE timestamp >= datetime('now', '-30 days')
                 """,
                 fetch="one",
             )
@@ -1122,19 +1122,19 @@ def api_admin_get_stats():
         # Usage by model (last 30 days)
         if USE_POSTGRESQL:
             model_stats = db_manager.execute_query(
-                """
-                SELECT 
-                    model_name,
-                    COUNT(*) as requests,
-                    SUM(total_tokens) as tokens,
-                    SUM(cost_estimate) as cost
-                FROM token_usage 
+            """
+            SELECT 
+                model_name,
+                COUNT(*) as requests,
+                SUM(total_tokens) as tokens,
+                SUM(cost_estimate) as cost
+            FROM token_usage 
                 WHERE timestamp >= NOW() - INTERVAL '30 days'
-                GROUP BY model_name
-                ORDER BY tokens DESC
+            GROUP BY model_name
+            ORDER BY tokens DESC
                 """,
                 fetch="all",
-            )
+        )
         else:
             model_stats = db_manager.execute_query(
                 """

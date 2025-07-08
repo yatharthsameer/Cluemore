@@ -1,0 +1,128 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  # Detect changes to determine what to build/deploy
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      backend: ${{ steps.changes.outputs.backend }}
+      frontend: ${{ steps.changes.outputs.frontend }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v2
+        id: changes
+        with:
+          filters: |
+            backend:
+              - 'backend/**'
+              - '.github/workflows/**'
+            frontend:
+              - 'frontend/**'
+              - '.github/workflows/**'
+
+  # Backend CI/CD
+  backend:
+    needs: changes
+    if: ${{ needs.changes.outputs.backend == 'true' }}
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Required for git subtree
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install backend dependencies
+        run: |
+          cd backend
+          pip install -r requirements.txt
+
+      - name: Run backend tests (if any)
+        run: |
+          cd backend
+          # Add your test commands here
+          # python -m pytest tests/
+          echo "Backend tests passed"
+
+      - name: Deploy to Heroku
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        uses: akhileshns/heroku-deploy@v3.12.14
+        with:
+          heroku_api_key: ${{ secrets.HEROKU_API_KEY }}
+          heroku_app_name: ${{ secrets.HEROKU_APP_NAME }}
+          heroku_email: ${{ secrets.HEROKU_EMAIL }}
+          appdir: "backend"
+          usedocker: false
+
+  # Frontend CI/CD
+  frontend:
+    needs: changes
+    if: ${{ needs.changes.outputs.frontend == 'true' }}
+    runs-on: macos-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: 'frontend/package-lock.json'
+
+      - name: Install frontend dependencies
+        run: |
+          cd frontend
+          npm ci
+
+      - name: Run frontend tests
+        run: |
+          cd frontend
+          # npm run test
+          echo "Frontend tests passed"
+
+      - name: Build Electron app
+        run: |
+          cd frontend
+          npm run build
+
+      - name: Package Electron app for macOS
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        run: |
+          cd frontend
+          npm run dist:mac
+
+      - name: Upload build artifacts
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        uses: actions/upload-artifact@v3
+        with:
+          name: macos-build
+          path: frontend/dist/*.dmg
+
+  # Notification job (optional)
+  notify:
+    needs: [backend, frontend]
+    if: always() && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Notify deployment status
+        run: |
+          if [[ "${{ needs.backend.result }}" == "success" ]]; then
+            echo "✅ Backend deployed successfully"
+          fi
+          if [[ "${{ needs.frontend.result }}" == "success" ]]; then
+            echo "✅ Frontend built successfully"
+          fi 

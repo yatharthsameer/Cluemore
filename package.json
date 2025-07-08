@@ -1,0 +1,28 @@
+{
+  "name": "cluemore",
+  "version": "1.0.0",
+  "description": "Cluemore - Backend API and Mac App",
+  "private": true,
+  "workspaces": [
+    "frontend"
+  ],
+  "scripts": {
+    "backend:dev": "cd backend && python server.py",
+    "backend:install": "cd backend && pip install -r requirements.txt",
+    "frontend:dev": "cd frontend && npm run dev",
+    "frontend:build": "cd frontend && npm run build",
+    "frontend:install": "cd frontend && npm install",
+    "install:all": "npm run backend:install && npm run frontend:install",
+    "dev": "concurrently \"npm run backend:dev\" \"npm run frontend:dev\"",
+    "postinstall": "npm run frontend:install"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yourusername/cluemore.git"
+  },
+  "author": "Your Name",
+  "license": "MIT"
+} 
