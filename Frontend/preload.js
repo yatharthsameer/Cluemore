@@ -110,7 +110,13 @@ contextBridge.exposeInMainWorld('electronAPI', {
         ipcRenderer.on('auth:token-removed', () => {
             callback();
         });
-    }
+    },
+
+    // Get current auth token
+    getAuthToken: () => ipcRenderer.invoke('auth:get-token'),
+
+    // Get backend URL
+    getBackendUrl: () => ipcRenderer.invoke('app:get-backend-url')
 });
 
 // nothing fancy yet – isolated world so the renderer is sandboxed 

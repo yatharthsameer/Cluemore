@@ -10,8 +10,9 @@
   },
   "license": "MIT",
   "scripts": {
-    "start": "electron .",
-    "dev": "electron . --inspect=5858",
+    "start": "NODE_ENV=development electron .",
+    "dev": "NODE_ENV=development electron . --inspect=5858",
+    "start:prod": "NODE_ENV=production electron .",
     "build": "electron-builder",
     "build-mac": "electron-builder --mac --publish=never",
     "build-mas": "electron-builder --mac mas",

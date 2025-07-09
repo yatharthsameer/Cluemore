@@ -37,6 +37,87 @@
       border-radius: 6px 6px 0 0;
       flex-shrink: 0;
       margin-bottom: 8px;
+      position: relative;
+    }
+
+    /* Draggable region for window movement */
+    #topBar::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: calc(100% - 200px); /* Leave space for buttons on the right */
+      height: 100%;
+      -webkit-app-region: drag;
+      z-index: 1;
+    }
+
+    #clearIcon {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: rgba(60, 60, 60, 0.8);
+      color: #ccc;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font: 12px monospace;
+      font-weight: bold;
+      cursor: pointer;
+      position: relative;
+      transition: all 0.2s;
+      z-index: 10;
+      -webkit-app-region: no-drag;
+      margin-right: 10px;
+    }
+
+    #clearIcon:hover {
+      background: rgba(220, 53, 69, 0.8);
+      color: #fff;
+    }
+
+    /* Clear tooltip styling */
+    #clearTooltip {
+      position: absolute;
+      top: 24px;
+      right: 0;
+      background: rgba(20, 20, 20, 0.95);
+      border: 1px solid #555;
+      border-radius: 6px;
+      padding: 12px;
+      min-width: 200px;
+      font: 11px monospace;
+      color: #eee;
+      z-index: 1000;
+      display: none;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+      -webkit-app-region: no-drag;
+    }
+
+    #clearTooltip.show {
+      display: block;
+    }
+
+    /* Settings tooltip styling */
+    #settingsTooltip {
+      position: absolute;
+      top: 24px;
+      right: 0;
+      background: rgba(20, 20, 20, 0.95);
+      border: 1px solid #555;
+      border-radius: 6px;
+      padding: 12px;
+      min-width: 200px;
+      font: 11px monospace;
+      color: #eee;
+      z-index: 1000;
+      display: none;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+      -webkit-app-region: no-drag;
+    }
+
+    #settingsTooltip.show {
+      display: block;
     }
 
     #infoIcon {
@@ -53,6 +134,8 @@
       cursor: pointer;
       position: relative;
       transition: all 0.2s;
+      z-index: 10;
+      -webkit-app-region: no-drag;
     }
 
     #infoIcon:hover {
@@ -75,6 +158,7 @@
       z-index: 1000;
       display: none;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+      -webkit-app-region: no-drag;
     }
 
     #shortcutsTooltip.show {
@@ -276,8 +360,8 @@
       transform: scale(1.05);
     }
 
-    /* Show pencil icon only when in notes page */
-    .page.active #promptEditIcon {
+    /* Show pencil icon only when in interview page */
+    #interviewPage.active #promptEditIcon {
       display: flex;
     }
 
@@ -422,6 +506,7 @@
       align-items: center;
       justify-content: center;
       border-radius: 3px;
+      -webkit-app-region: no-drag;
     }
 
     .modal-close:hover {
@@ -464,6 +549,7 @@
       cursor: pointer;
       font: 12px monospace;
       transition: all 0.2s;
+      -webkit-app-region: no-drag;
     }
 
     .modal-btn.primary {
@@ -604,6 +690,7 @@
       display: flex;
       align-items: center;
       justify-content: center;
+      -webkit-app-region: no-drag;
     }
 
     #inputRow {
@@ -620,6 +707,7 @@
       border-radius: 4px;
       font: 13px monospace;
       outline: none;
+      -webkit-app-region: no-drag;
     }
 
     #sendBtn {
@@ -631,6 +719,7 @@
       cursor: pointer;
       font: 12px monospace;
       min-width: 60px;
+      -webkit-app-region: no-drag;
     }
 
     #sendBtn:hover {
@@ -729,6 +818,108 @@
       margin: 8px 0 !important;
     }
 
+    /* Notes page styling */
+    #notesContainer {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      padding: 20px;
+      min-height: 0;
+      overflow: hidden;
+      height: 0;
+      background: rgba(40, 40, 40, .9);
+      border-radius: 6px 6px 0 0;
+    }
+
+    #notesHeader {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid #555;
+    }
+
+    #notesTitle {
+      color: #ccc;
+      font: 14px monospace;
+      font-weight: bold;
+    }
+
+    #searchContainer {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    #searchInput {
+      background: rgba(60, 60, 60, 0.8);
+      color: #eee;
+      border: 1px solid #555;
+      border-radius: 4px;
+      padding: 6px 10px;
+      font: 12px monospace;
+      outline: none;
+      width: 200px;
+      -webkit-app-region: no-drag;
+    }
+
+    #searchInput:focus {
+      border-color: #70a1d4;
+      box-shadow: 0 0 4px rgba(112, 161, 212, 0.3);
+    }
+
+    #searchInput::placeholder {
+      color: #888;
+    }
+
+    #searchResults {
+      color: #888;
+      font: 11px monospace;
+      min-width: 80px;
+      text-align: right;
+    }
+
+    /* Search highlighting */
+    .highlight {
+      background: rgba(255, 255, 0, 0.3);
+      color: #fff;
+      padding: 1px 2px;
+      border-radius: 2px;
+    }
+
+    .highlight.current {
+      background: rgba(255, 165, 0, 0.5);
+      color: #fff;
+      font-weight: bold;
+    }
+
+    #notesContent {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+    }
+
+    #notesTextarea {
+      flex: 1;
+      background: rgba(30, 30, 30, 0.9);
+      color: #eee;
+      border: 1px solid #555;
+      border-radius: 6px;
+      padding: 16px;
+      font: 13px monospace;
+      line-height: 1.4;
+      resize: none;
+      outline: none;
+      -webkit-app-region: no-drag;
+    }
+
+    #notesTextarea:focus {
+      border-color: #70a1d4;
+      box-shadow: 0 0 0 2px rgba(70, 130, 180, 0.2);
+    }
+
     /* Common elements */
     #buttonContainer {
       display: flex;
@@ -737,6 +928,7 @@
       border-top: 1px solid #555;
       background: rgba(20, 20, 20, .9);
       border-radius: 0 0 6px 6px;
+      -webkit-app-region: no-drag;
     }
 
     .btn {
@@ -750,6 +942,7 @@
       font: 12px monospace;
       text-align: center;
       transition: all 0.2s;
+      -webkit-app-region: no-drag;
     }
 
     .btn:hover {
@@ -825,6 +1018,7 @@
       display:flex; 
       align-items:center; 
       justify-content:center; 
+      -webkit-app-region: no-drag;
     }
     #screenshotCount { 
       color:#888; 
@@ -922,6 +1116,7 @@
       z-index: 1000;
       display: none;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+      -webkit-app-region: no-drag;
     }
 
     #shortcutsTooltip.show {
@@ -971,6 +1166,8 @@
       flex: 1;
       display: flex;
       align-items: center;
+      position: relative;
+      z-index: 10;
     }
 
     #modelDropdown {
@@ -984,6 +1181,7 @@
       cursor: pointer;
       min-width: 140px;
       transition: all 0.2s;
+      -webkit-app-region: no-drag;
     }
 
     #modelDropdown:hover {
@@ -1018,6 +1216,8 @@
       position: relative;
       transition: all 0.2s;
       margin-right: 10px;
+      z-index: 10;
+      -webkit-app-region: no-drag;
     }
 
     #settingsIcon:hover {
@@ -1041,6 +1241,8 @@
       position: relative;
       transition: all 0.2s;
       margin-right: 10px;
+      z-index: 10;
+      -webkit-app-region: no-drag;
     }
 
     #logoutIcon:hover {
@@ -1063,6 +1265,7 @@
       z-index: 1000;
       display: none;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+      -webkit-app-region: no-drag;
     }
 
     #logoutTooltip.show {
@@ -1091,6 +1294,7 @@
       z-index: 1000;
       display: none;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+      -webkit-app-region: no-drag;
     }
 
     #settingsDropdown.show {
@@ -1133,6 +1337,7 @@
       font: 10px monospace;
       outline: none;
       cursor: pointer;
+      -webkit-app-region: no-drag;
     }
 
     #themeSelector:hover {
@@ -1152,6 +1357,7 @@
       background: rgba(60, 60, 60, 0.8);
       outline: none;
       -webkit-appearance: none;
+      -webkit-app-region: no-drag;
     }
 
     #opacitySlider::-webkit-slider-thumb {
@@ -1193,10 +1399,16 @@
       border-bottom: 1px solid #ccc;
     }
 
+    body.light-theme #clearIcon,
     body.light-theme #infoIcon,
     body.light-theme #settingsIcon {
       background: rgba(180, 180, 180, 0.8);
       color: #333;
+    }
+
+    body.light-theme #clearIcon:hover {
+      background: rgba(220, 53, 69, 0.8);
+      color: #fff;
     }
 
     body.light-theme #infoIcon:hover,
@@ -1215,6 +1427,8 @@
       color: #fff;
     }
 
+    body.light-theme #clearTooltip,
+    body.light-theme #settingsTooltip,
     body.light-theme #shortcutsTooltip,
     body.light-theme #settingsDropdown {
       background: rgba(240, 240, 240, 0.95);
@@ -1301,6 +1515,58 @@
 
     body.light-theme #chatContainer {
       background: rgba(250, 250, 250, .9);
+    }
+
+    body.light-theme #notesContainer {
+      background: rgba(250, 250, 250, .9);
+    }
+
+    body.light-theme #notesHeader {
+      border-bottom-color: #ccc;
+    }
+
+    body.light-theme #notesTitle {
+      color: #333;
+    }
+
+    body.light-theme #searchInput {
+      background: rgba(220, 220, 220, 0.9);
+      color: #333;
+      border: 1px solid #ccc;
+    }
+
+    body.light-theme #searchInput:focus {
+      border-color: #70a1d4;
+      box-shadow: 0 0 4px rgba(112, 161, 212, 0.3);
+    }
+
+    body.light-theme #searchInput::placeholder {
+      color: #666;
+    }
+
+    body.light-theme #searchResults {
+      color: #666;
+    }
+
+    body.light-theme .highlight {
+      background: rgba(255, 255, 0, 0.4);
+      color: #333;
+    }
+
+    body.light-theme .highlight.current {
+      background: rgba(255, 165, 0, 0.6);
+      color: #333;
+    }
+
+    body.light-theme #notesTextarea {
+      background: rgba(240, 240, 240, 0.9);
+      color: #333;
+      border: 1px solid #ccc;
+    }
+
+    body.light-theme #notesTextarea:focus {
+      border-color: #70a1d4;
+      box-shadow: 0 0 0 2px rgba(70, 130, 180, 0.2);
     }
 
     body.light-theme #chatInput {
@@ -1431,6 +1697,10 @@
       </div>
       <div id="settingsIcon">
         ⚙
+        <div id="settingsTooltip">
+          <div class="tooltip-title">Settings</div>
+          <div class="tooltip-content">Customize theme and opacity</div>
+        </div>
         <div id="settingsDropdown">
           <div class="settings-title">Settings</div>
           <div class="settings-item">
@@ -1445,6 +1715,13 @@
             <input type="range" id="opacitySlider" min="20" max="100" value="100" />
             <span id="opacityValue">100%</span>
           </div>
+        </div>
+      </div>
+      <div id="clearIcon">
+        📄
+        <div id="clearTooltip">
+          <div class="tooltip-title">Clear Page</div>
+          <div class="tooltip-content">Clear current page content</div>
         </div>
       </div>
       <div id="infoIcon">
@@ -1479,8 +1756,8 @@
       </div>
     </div>
 
-    <!-- Notes Page -->
-    <div id="notesPage" class="page active">
+    <!-- Interview Helper Page -->
+    <div id="interviewPage" class="page active">
       <!-- Pencil icon for prompt editing -->
       <div id="promptEditIcon" title="Edit custom prompt">✏️</div>
       <!-- Solution display area - Changed from textarea to div for markdown -->
@@ -1527,11 +1804,27 @@
             </div>
     </div>
 
+    <!-- Notes Page -->
+    <div id="notesPage" class="page">
+      <div id="notesContainer">
+        <div id="notesHeader">
+          <div id="notesTitle">Notes</div>
+          <div id="searchContainer">
+            <input type="text" id="searchInput" placeholder="Search notes..." />
+            <div id="searchResults"></div>
+          </div>
+        </div>
+        <div id="notesContent">
+          <textarea id="notesTextarea" placeholder="Write your notes here..."></textarea>
+        </div>
+      </div>
+    </div>
+
     <!-- Button container -->
     <div id="buttonContainer">
       <button class="btn" id="interviewBtn">Interview Helper</button>
       <button class="btn" id="chatBtn">Chat</button>
-      <button class="btn clear" id="clearbtn">Clear Page</button>
+      <button class="btn" id="notesBtn">Notes</button>
     </div>
   </div>
 
@@ -2022,8 +2315,11 @@
                                                 settingsIcon.addEventListener('click', (e) => {
                                                   e.stopPropagation();
                                                   settingsDropdown.classList.toggle('show');
-                                                  // Hide info tooltip if open
+                                                  // Hide tooltips if open
                                                   shortcutsTooltip.classList.remove('show');
+                                                  settingsTooltip.classList.remove('show');
+                                                  logoutTooltip.classList.remove('show');
+                                                  clearTooltip.classList.remove('show');
                                                 });
 
                                                 // Close settings dropdown when clicking outside
@@ -2075,6 +2371,37 @@
 
                                                                                                                   logoutIcon.addEventListener('mouseleave', () => {
                                                                                                                     logoutTooltip.classList.remove('show');
+                                                                                                                  });
+
+                                                                                                                  // Clear icon tooltip functionality
+                                                                                                                  const clearIcon = document.getElementById('clearIcon');
+                                                                                                                  const clearTooltip = document.getElementById('clearTooltip');
+
+                                                                                                                  clearIcon.addEventListener('mouseenter', () => {
+                                                                                                                    clearTooltip.classList.add('show');
+                                                                                                                    // Hide other tooltips/dropdowns
+                                                                                                                    shortcutsTooltip.classList.remove('show');
+                                                                                                                    settingsDropdown.classList.remove('show');
+                                                                                                                    logoutTooltip.classList.remove('show');
+                                                                                                                  });
+
+                                                                                                                  clearIcon.addEventListener('mouseleave', () => {
+                                                                                                                    clearTooltip.classList.remove('show');
+                                                                                                                  });
+
+                                                                                                                  // Settings icon tooltip functionality
+                                                                                                                  const settingsTooltip = document.getElementById('settingsTooltip');
+
+                                                                                                                  settingsIcon.addEventListener('mouseenter', () => {
+                                                                                                                    settingsTooltip.classList.add('show');
+                                                                                                                    // Hide other tooltips/dropdowns
+                                                                                                                    shortcutsTooltip.classList.remove('show');
+                                                                                                                    logoutTooltip.classList.remove('show');
+                                                                                                                    clearTooltip.classList.remove('show');
+                                                                                                                  });
+
+                                                                                                                  settingsIcon.addEventListener('mouseleave', () => {
+                                                                                                                    settingsTooltip.classList.remove('show');
                                                                                                                   });
 
                                                                                                                   // Logout click handler
@@ -2146,11 +2473,13 @@
                                                                                                                     }
                                                                                                                   }
 
-    // Page management
-    const notesPage = document.getElementById('notesPage');
+        // Page management
+    const interviewPage = document.getElementById('interviewPage');
     const chatPage = document.getElementById('chatPage');
+    const notesPage = document.getElementById('notesPage');
     const chatBtn = document.getElementById('chatBtn');
-                              const interviewBtn = document.getElementById('interviewBtn');
+    const interviewBtn = document.getElementById('interviewBtn');
+    const notesBtn = document.getElementById('notesBtn');
 
     let currentPage = 'notes';
 
@@ -2160,11 +2489,19 @@
                           }
 
     function showPage(pageName) {
+      // Hide all pages first
+      interviewPage.classList.remove('active');
+      chatPage.classList.remove('active');
+      notesPage.classList.remove('active');
+      
+      // Remove active class from all buttons
+      chatBtn.classList.remove('active');
+      interviewBtn.classList.remove('active');
+      notesBtn.classList.remove('active');
+
       if (pageName === 'chat') {
-        notesPage.classList.remove('active');
         chatPage.classList.add('active');
         chatBtn.classList.add('active');
-        interviewBtn.classList.remove('active');
         currentPage = 'chat';
 
         // Show chat screenshot preview area if we have accumulated screenshots
@@ -2172,10 +2509,8 @@
           showChatScreenshotPreviewArea();
           hideScreenshotPreviewArea();
         }
-      } else {
-        chatPage.classList.remove('active');
-        notesPage.classList.add('active');
-        chatBtn.classList.remove('active');
+      } else if (pageName === 'notes') {
+        interviewPage.classList.add('active');
         interviewBtn.classList.add('active');
         currentPage = 'notes';
 
@@ -2184,6 +2519,12 @@
           showScreenshotPreviewArea();
           hideChatScreenshotPreviewArea();
         }
+      } else if (pageName === 'notesPage') {
+        notesPage.classList.add('active');
+        notesBtn.classList.add('active');
+        currentPage = 'notesPage';
+        // Load saved notes when switching to notes page
+        loadSavedNotes();
       }
     }
 
@@ -2312,21 +2653,303 @@
       showPage('notes');
     });
 
-      // Dynamic clear button (Button 3) - clears based on current page
-                                document.getElementById('clearbtn').addEventListener('click', () => {
-        if (currentPage === 'chat') {
-          // Clear chat messages, history, and accumulated screenshots
-          chatMessages.innerHTML = '';
-          chatHistory = []; // Clear conversation history
-          clearAccumulatedScreenshots(); // Clear accumulated screenshots
-          hideImagePreview(); // Hide single image preview
-          hideChatScreenshotPreviewArea(); // Hide chat screenshot preview area
-          console.log('Chat history, messages, and screenshots cleared');
+          // Clear icon functionality - clears based on current page
+    document.getElementById('clearIcon').addEventListener('click', () => {
+      if (currentPage === 'chat') {
+        // Clear chat messages, history, and accumulated screenshots
+        chatMessages.innerHTML = '';
+        chatHistory = []; // Clear conversation history
+        clearAccumulatedScreenshots(); // Clear accumulated screenshots
+        hideImagePreview(); // Hide single image preview
+        hideChatScreenshotPreviewArea(); // Hide chat screenshot preview area
+        console.log('Chat history, messages, and screenshots cleared');
+      } else if (currentPage === 'notes') {
+        // Clear solution and accumulated screenshots
+        setSolutionContent('');
+        clearAccumulatedScreenshots();
+        console.log('Interview Helper page cleared');
+      } else if (currentPage === 'notesPage') {
+        // Clear notes textarea and save to API
+        const notesTextarea = document.getElementById('notesTextarea');
+        notesTextarea.value = '';
+        saveNotes(); // This will save empty content to API
+        console.log('Notes page cleared and saved to API');
+      }
+    });
+
+    // Notes button functionality
+    document.getElementById('notesBtn').addEventListener('click', () => {
+      showPage('notesPage');
+    });
+
+    // Notes textarea auto-save functionality
+    const notesTextarea = document.getElementById('notesTextarea');
+    
+    // Function to load saved notes from API
+    async function loadSavedNotes() {
+      try {
+        // Get auth token and backend URL from Electron API
+        const tokenResult = await window.electronAPI.getAuthToken();
+        const backendUrlResult = await window.electronAPI.getBackendUrl();
+        
+        if (!tokenResult.success) {
+          console.log('No auth token, skipping notes load');
+          return;
+        }
+
+        const response = await fetch(`${backendUrlResult.url}/api/notes`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${tokenResult.token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success && data.notes && data.notes.content) {
+            notesTextarea.value = data.notes.content;
+            console.log('Notes loaded from API');
+          } else {
+            console.log('No saved notes found');
+          }
         } else {
-          // Clear solution and accumulated screenshots
-          setSolutionContent('');
-          clearAccumulatedScreenshots();
-          console.log('Interview Helper page cleared');
+          console.error('Failed to load notes:', response.status);
+        }
+      } catch (error) {
+        console.error('Error loading notes:', error);
+      }
+    }
+    
+    // Function to save notes to API
+    async function saveNotes() {
+      try {
+        // Get auth token and backend URL from Electron API
+        const tokenResult = await window.electronAPI.getAuthToken();
+        const backendUrlResult = await window.electronAPI.getBackendUrl();
+        
+        if (!tokenResult.success) {
+          console.log('No auth token, skipping notes save');
+          return;
+        }
+
+        const response = await fetch(`${backendUrlResult.url}/api/notes`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${tokenResult.token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            content: notesTextarea.value
+          })
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success) {
+            console.log('Notes saved to API');
+          } else {
+            console.error('Failed to save notes:', data.error);
+          }
+        } else {
+          console.error('Failed to save notes:', response.status);
+        }
+      } catch (error) {
+        console.error('Error saving notes:', error);
+      }
+    }
+    
+    // Load saved notes when user navigates to notes page
+    // (We'll load them when the page is shown instead of on page load)
+
+    // Auto-save notes as user types (with debouncing for better performance)
+    let saveTimeout;
+    notesTextarea.addEventListener('input', () => {
+      clearTimeout(saveTimeout);
+      saveTimeout = setTimeout(() => {
+        saveNotes();
+      }, 300); // Save 300ms after user stops typing
+    });
+
+    // Save notes when user leaves the textarea
+    notesTextarea.addEventListener('blur', () => {
+      saveNotes();
+    });
+
+    // Search functionality
+    const searchInput = document.getElementById('searchInput');
+    const searchResults = document.getElementById('searchResults');
+    
+    let currentMatchIndex = 0;
+    let totalMatches = 0;
+    let searchMatches = [];
+
+    // Function to perform search
+    function performSearch() {
+      const searchTerm = searchInput.value.trim();
+      
+      if (!searchTerm) {
+        clearHighlights();
+        searchResults.textContent = '';
+        return;
+      }
+
+      const text = notesTextarea.value;
+      const regex = new RegExp(searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
+      const matches = [...text.matchAll(regex)];
+      
+      if (matches.length === 0) {
+        searchResults.textContent = 'No matches';
+        clearHighlights();
+        return;
+      }
+
+      totalMatches = matches.length;
+      currentMatchIndex = 0;
+      searchMatches = matches;
+      
+      highlightMatches();
+      updateSearchResults();
+      scrollToCurrentMatch();
+    }
+
+    // Function to highlight matches
+    function highlightMatches() {
+      const searchTerm = searchInput.value.trim();
+      if (!searchTerm) return;
+
+      const text = notesTextarea.value;
+      const regex = new RegExp(searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
+      
+      // Create highlighted text
+      let highlightedText = text.replace(regex, (match, offset) => {
+        const matchIndex = searchMatches.findIndex(m => m.index === offset);
+        const className = matchIndex === currentMatchIndex ? 'highlight current' : 'highlight';
+        return `<span class="${className}">${match}</span>`;
+      });
+
+      // Update textarea with HTML (we'll need to use a different approach for textarea)
+      // Since textarea doesn't support HTML, we'll use a different method
+      notesTextarea.style.display = 'none';
+      
+      // Create a temporary div to show highlighted text
+      let highlightDiv = document.getElementById('highlightDiv');
+      if (!highlightDiv) {
+        highlightDiv = document.createElement('div');
+        highlightDiv.id = 'highlightDiv';
+        highlightDiv.style.cssText = notesTextarea.style.cssText;
+        highlightDiv.style.display = 'block';
+        highlightDiv.style.whiteSpace = 'pre-wrap';
+        highlightDiv.style.wordWrap = 'break-word';
+        highlightDiv.style.overflowY = 'auto';
+        highlightDiv.style.padding = '16px';
+        highlightDiv.style.font = '13px monospace';
+        highlightDiv.style.lineHeight = '1.4';
+        highlightDiv.style.color = '#eee';
+        highlightDiv.style.background = 'rgba(30, 30, 30, 0.9)';
+        highlightDiv.style.border = '1px solid #555';
+        highlightDiv.style.borderRadius = '6px';
+        highlightDiv.style.outline = 'none';
+        highlightDiv.style.resize = 'none';
+        highlightDiv.style.flex = '1';
+        highlightDiv.contentEditable = true;
+        notesTextarea.parentNode.insertBefore(highlightDiv, notesTextarea.nextSibling);
+      }
+      
+      highlightDiv.innerHTML = highlightedText;
+      // Don't focus the highlight div - keep focus on search input
+    }
+
+    // Function to clear highlights
+    function clearHighlights() {
+      const highlightDiv = document.getElementById('highlightDiv');
+      if (highlightDiv) {
+        highlightDiv.remove();
+      }
+      notesTextarea.style.display = 'block';
+      // Don't focus the textarea - let the user decide where to focus
+    }
+
+    // Function to update search results display
+    function updateSearchResults() {
+      if (totalMatches === 0) {
+        searchResults.textContent = '';
+      } else {
+        searchResults.textContent = `${currentMatchIndex + 1} of ${totalMatches}`;
+      }
+    }
+
+    // Function to scroll to current match
+    function scrollToCurrentMatch() {
+      if (totalMatches === 0) return;
+      
+      const highlightDiv = document.getElementById('highlightDiv');
+      if (highlightDiv) {
+        const currentHighlight = highlightDiv.querySelector('.highlight.current');
+        if (currentHighlight) {
+          currentHighlight.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          // Don't focus the highlight div - keep focus on search input
+        }
+      }
+    }
+
+    // Function to navigate to next match
+    function nextMatch() {
+      if (totalMatches === 0) return;
+      currentMatchIndex = (currentMatchIndex + 1) % totalMatches;
+      highlightMatches();
+      updateSearchResults();
+      scrollToCurrentMatch();
+    }
+
+    // Function to navigate to previous match
+    function previousMatch() {
+      if (totalMatches === 0) return;
+      currentMatchIndex = currentMatchIndex === 0 ? totalMatches - 1 : currentMatchIndex - 1;
+      highlightMatches();
+      updateSearchResults();
+      scrollToCurrentMatch();
+    }
+
+    // Search input event listeners
+    searchInput.addEventListener('input', performSearch);
+    
+    // Keep focus on search input when it's active
+    searchInput.addEventListener('focus', () => {
+      // Store that search input is focused
+      searchInput.dataset.focused = 'true';
+    });
+    
+    searchInput.addEventListener('blur', () => {
+      // Remove focus indicator
+      delete searchInput.dataset.focused;
+    });
+    
+    // Keyboard navigation for search
+    searchInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        if (e.shiftKey) {
+          previousMatch();
+        } else {
+          nextMatch();
+        }
+        e.preventDefault();
+      } else if (e.key === 'Escape') {
+        searchInput.value = '';
+        clearHighlights();
+        searchResults.textContent = '';
+        // Don't force focus - let user decide
+      }
+    });
+
+    // Handle content changes in highlight div
+    document.addEventListener('input', (e) => {
+      if (e.target.id === 'highlightDiv') {
+        notesTextarea.value = e.target.innerText;
+        saveNotes();
+        if (searchInput.value.trim()) {
+          performSearch();
+        }
       }
     });
 

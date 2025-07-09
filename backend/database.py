@@ -100,6 +100,26 @@ class DatabaseManager:
                     ON token_usage (model_name, timestamp)
                 """)
 
+                cursor.execute(
+                    """
+                    CREATE TABLE IF NOT EXISTS user_notes (
+                        id SERIAL PRIMARY KEY,
+                        user_id INTEGER NOT NULL,
+                        content TEXT NOT NULL,
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        FOREIGN KEY (user_id) REFERENCES users (id)
+                    )
+                """
+                )
+
+                cursor.execute(
+                    """
+                    CREATE INDEX IF NOT EXISTS idx_user_notes_user_id 
+                    ON user_notes (user_id)
+                """
+                )
+
             else:
                 # SQLite table creation
                 cursor.execute("""
@@ -142,6 +162,26 @@ class DatabaseManager:
                     ON token_usage (model_name, timestamp)
                 """)
 
+                cursor.execute(
+                    """
+                    CREATE TABLE IF NOT EXISTS user_notes (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        user_id INTEGER NOT NULL,
+                        content TEXT NOT NULL,
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        FOREIGN KEY (user_id) REFERENCES users (id)
+                    )
+                """
+                )
+
+                cursor.execute(
+                    """
+                    CREATE INDEX IF NOT EXISTS idx_user_notes_user_id 
+                    ON user_notes (user_id)
+                """
+                )
+
             conn.commit()
             conn.close()
             log.info("✅ Database initialized successfully")
@@ -155,7 +195,7 @@ class DatabaseManager:
         conn = self.get_connection()
         try:
             cursor = conn.cursor()
-            
+
             if params:
                 cursor.execute(query, params)
             else:

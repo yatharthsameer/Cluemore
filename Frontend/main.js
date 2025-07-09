@@ -4,13 +4,22 @@ const https = require('https');
 const http = require('http');
 const keytar = require('keytar');
 
+// Load environment variables
+require('dotenv').config({
+  path: process.env.NODE_ENV === 'production' ? '.env.production' : '.env.development'
+});
+
 let win;
 let authWin;
 let currentUser = null;
 let jwtToken = null;
 // Backend URL configuration
-// For production builds, always use the Heroku backend
-const BACKEND_URL = 'https://cluemore-166792667b90.herokuapp.com';
+// Use environment variable or fallback to production URL
+const BACKEND_URL = process.env.BACKEND_URL || 'https://cluemore-166792667b90.herokuapp.com';
+
+// Log environment configuration
+console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
+console.log(`🔗 Backend URL: ${BACKEND_URL}`);
 const SERVICE_NAME = 'Cluemore';
 const ACCOUNT_NAME = 'user_jwt_token';
 
@@ -553,6 +562,20 @@ app.whenReady().then(async () => {
     }
   });
 
+  ipcMain.handle('auth:get-token', async (event) => {
+    if (jwtToken) {
+      return { success: true, token: jwtToken };
+    } else {
+      // Try to get from secure storage
+      const storedToken = await getStoredToken();
+      if (storedToken) {
+        return { success: true, token: storedToken };
+      } else {
+        return { success: false, error: 'No auth token available' };
+      }
+    }
+  });
+
   // App navigation IPC handlers
   ipcMain.handle('app:open-main', async (event) => {
     if (authWin) {
@@ -569,6 +592,10 @@ app.whenReady().then(async () => {
     await removeStoredToken();
     createAuthWindow();
     return { success: true };
+  });
+
+  ipcMain.handle('app:get-backend-url', async (event) => {
+    return { success: true, url: BACKEND_URL };
   });
 
   // Existing IPC Handlers for chat functionality
