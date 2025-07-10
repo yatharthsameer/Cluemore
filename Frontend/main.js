@@ -407,45 +407,64 @@ app.whenReady().then(async () => {
   // Global shortcuts for window movement and hiding
   const moveStep = 50; // pixels to move per keypress
 
+  // Helper function to get the currently active window
+  function getActiveWindow() {
+    if (win && win.isVisible()) {
+      return win;
+    } else if (authWin && authWin.isVisible()) {
+      return authWin;
+    }
+    return null;
+  }
+
   // Movement shortcuts: cmd + arrow keys
   globalShortcut.register('CommandOrControl+Left', () => {
-    if (win && win.isVisible()) {
-      const [x, y] = win.getPosition();
-      win.setPosition(Math.max(0, x - moveStep), y);
+    const activeWin = getActiveWindow();
+    if (activeWin) {
+      const [x, y] = activeWin.getPosition();
+      activeWin.setPosition(Math.max(0, x - moveStep), y);
     }
   });
 
   globalShortcut.register('CommandOrControl+Right', () => {
-    if (win && win.isVisible()) {
-      const [x, y] = win.getPosition();
+    const activeWin = getActiveWindow();
+    if (activeWin) {
+      const [x, y] = activeWin.getPosition();
+      const [width] = activeWin.getSize();
       const { width: screenWidth } = require('electron').screen.getPrimaryDisplay().workAreaSize;
-      win.setPosition(Math.min(screenWidth - 600, x + moveStep), y);
+      activeWin.setPosition(Math.min(screenWidth - width, x + moveStep), y);
     }
   });
 
   globalShortcut.register('CommandOrControl+Up', () => {
-    if (win && win.isVisible()) {
-      const [x, y] = win.getPosition();
-      win.setPosition(x, Math.max(0, y - moveStep));
+    const activeWin = getActiveWindow();
+    if (activeWin) {
+      const [x, y] = activeWin.getPosition();
+      activeWin.setPosition(x, Math.max(0, y - moveStep));
     }
   });
 
   globalShortcut.register('CommandOrControl+Down', () => {
-    if (win && win.isVisible()) {
-      const [x, y] = win.getPosition();
+    const activeWin = getActiveWindow();
+    if (activeWin) {
+      const [x, y] = activeWin.getPosition();
+      const [, height] = activeWin.getSize();
       const { height: screenHeight } = require('electron').screen.getPrimaryDisplay().workAreaSize;
-      win.setPosition(x, Math.min(screenHeight - 600, y + moveStep));
+      activeWin.setPosition(x, Math.min(screenHeight - height, y + moveStep));
     }
   });
 
   // Auto-hide shortcut: cmd + 6
   globalShortcut.register('CommandOrControl+6', () => {
-    if (win) {
-      if (win.isVisible()) {
-        win.hide();
-      } else {
-        win.show();
-      }
+    // Try to show whichever window exists and is hidden
+    if (win && !win.isVisible()) {
+      win.show();
+    } else if (authWin && !authWin.isVisible()) {
+      authWin.show();
+    } else if (win && win.isVisible()) {
+      win.hide();
+    } else if (authWin && authWin.isVisible()) {
+      authWin.hide();
     }
   });
 
