@@ -1756,7 +1756,7 @@
       </div>
     </div>
 
-    <!-- Interview Helper Page -->
+    <!-- Stealth Mode Page -->
     <div id="interviewPage" class="page active">
       <!-- Pencil icon for prompt editing -->
       <div id="promptEditIcon" title="Edit custom prompt">✏️</div>
@@ -1822,8 +1822,8 @@
 
     <!-- Button container -->
     <div id="buttonContainer">
-      <button class="btn" id="interviewBtn">Interview Helper</button>
-      <button class="btn" id="chatBtn">Chat</button>
+      <button class="btn" id="interviewBtn">Stealth Mode</button>
+      <button class="btn" id="chatBtn">Chat Mode</button>
       <button class="btn" id="notesBtn">Notes</button>
     </div>
   </div>
@@ -1837,7 +1837,7 @@
       </div>
       <div class="modal-body">
         <div class="prompt-info">
-          This prompt will be used when processing screenshots in Interview Helper mode. You can customize it to better
+          This prompt will be used when processing screenshots in Stealth Mode. You can customize it to better
           suit your needs.
         </div>
         <textarea id="promptTextarea" class="prompt-textarea" placeholder="Enter your custom prompt here..."></textarea>
@@ -2483,9 +2483,9 @@
 
     let currentPage = 'notes';
 
-                          // Initialize the page state - Interview Helper should be active by default
+                          // Initialize the page state - Stealth Mode should be active by default
                           function initializePageState() {
-                            showPage('notes'); // This will set the Interview Helper button as active
+                            showPage('notes'); // This will set the Stealth Mode button as active
                           }
 
     function showPage(pageName) {
@@ -2649,7 +2649,7 @@
     // Button event listeners
     chatBtn.addEventListener('click', () => showPage('chat'));
                               interviewBtn.addEventListener('click', () => {
-      // Always go to Interview Helper page
+      // Always go to Stealth Mode page
       showPage('notes');
     });
 
@@ -2667,7 +2667,7 @@
         // Clear solution and accumulated screenshots
         setSolutionContent('');
         clearAccumulatedScreenshots();
-        console.log('Interview Helper page cleared');
+        console.log('Stealth Mode page cleared');
       } else if (currentPage === 'notesPage') {
         // Clear notes textarea and save to API
         const notesTextarea = document.getElementById('notesTextarea');
@@ -3141,9 +3141,9 @@
       errorEl.classList.remove('show');
     }
 
-  // Initialize page state - set Interview Helper as active by default
+  // Initialize page state - set Stealth Mode as active by default
   document.addEventListener('DOMContentLoaded', () => {
-    // Set Interview Helper button as active since we start in notes mode
+    // Set Stealth Mode button as active since we start in notes mode
     interviewBtn.classList.add('active');
     chatBtn.classList.remove('active');
   });

@@ -595,7 +595,7 @@ def api_verify_token():
                 jsonify(
                     {
                         "success": False,
-                        "error": "Invalid or expired token",
+                        "error": "Invalid token",
                         "valid": False,
                     }
                 ),

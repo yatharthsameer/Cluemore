@@ -1,4 +1,4 @@
-# Cluemore - AI Interview Helper
+# Cluemore - AI Stealth Mode
 
 A desktop application that helps you during coding interviews by providing AI-powered assistance. Built with Electron and Python Flask backend, featuring real-time screenshot analysis and chat capabilities.
 
@@ -9,7 +9,7 @@ A desktop application that helps you during coding interviews by providing AI-po
 - 💬 **AI Chat**: Interactive chat with multiple AI models (Gemini, GPT-4, Claude)
 - 🔐 **User Authentication**: Secure user management with JWT tokens
 - 📊 **Token Tracking**: Monitor API usage and costs
-- 🎯 **Interview Focus**: Specialized for coding interview scenarios
+- 🎯 **Stealth Mode**: Specialized for coding interview scenarios
 - 🔍 **Always-on-Top**: Stays accessible during interviews
 - 🚀 **CI/CD**: Automated deployment with GitHub Actions and Heroku
 
@@ -149,7 +149,7 @@ npm install
    JWT_SECRET=a1b2c3d4e5f6789012345678901234567890abcdef1234567890abcdef123456789012345678901234567890abcdef
    ```
    - **Important**: Without this, users will be logged out every time you restart the backend
-   - This ensures login sessions persist across app restarts
+   - This ensures login sessions persist indefinitely (no expiration)
 
 ## Running the Application
 

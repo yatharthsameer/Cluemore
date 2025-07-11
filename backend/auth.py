@@ -1,5 +1,3 @@
-
-
 import sqlite3
 import bcrypt
 import jwt
@@ -15,7 +13,7 @@ if not JWT_SECRET:
         "JWT_SECRET environment variable is required. Please add it to your .env file."
     )
 JWT_ALGORITHM = "HS256"
-JWT_EXPIRATION_HOURS = 24
+# JWT_EXPIRATION_HOURS = 24  # Removed expiration for persistent login
 
 # Database file path
 DB_PATH = "users.db"
@@ -107,22 +105,19 @@ class AuthManager:
         return bcrypt.checkpw(password.encode("utf-8"), password_hash.encode("utf-8"))
 
     def generate_jwt_token(self, user_id, email):
-        """Generate a JWT token for a user"""
+        """Generate a JWT token for a user (no expiration)"""
         payload = {
             "user_id": user_id,
             "email": email,
-            "exp": datetime.utcnow() + timedelta(hours=JWT_EXPIRATION_HOURS),
             "iat": datetime.utcnow(),
         }
         return jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
 
     def verify_jwt_token(self, token):
-        """Verify and decode a JWT token"""
+        """Verify and decode a JWT token (no expiration check)"""
         try:
             payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
             return payload
-        except jwt.ExpiredSignatureError:
-            return None
         except jwt.InvalidTokenError:
             return None
 
@@ -460,7 +455,7 @@ def token_required(f):
         # Verify token and get user
         user = auth_manager.get_user_from_token(token)
         if not user:
-            return jsonify({"error": "Token is invalid or expired"}), 401
+            return jsonify({"error": "Token is invalid"}), 401
 
         # Add user to request context and pass as parameter
         request.current_user = user
