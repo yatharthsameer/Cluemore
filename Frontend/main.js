@@ -11,6 +11,7 @@ require('dotenv').config({
 
 let win;
 let authWin;
+let promptEditorWin; // Add prompt editor panel window
 let currentUser = null;
 let jwtToken = null;
 // Backend URL configuration
@@ -275,6 +276,46 @@ function createMainWindow() {
   win.on('closed', () => {
     win = null;
   });
+}
+
+// Create non-activating panel for prompt editing (macOS only)
+function createPromptEditorPanel() {
+  // Only use panel type on macOS to prevent focus stealing
+  const windowOptions = {
+    width: 500,
+    height: 400,
+    frame: false,
+    resizable: false,
+    transparent: true,
+    alwaysOnTop: true,
+    focusable: true,          // must be true to receive keys
+    skipTaskbar: true,
+    show: false,
+    webPreferences: {
+      contextIsolation: true,
+      nodeIntegration: false,
+      preload: path.join(__dirname, 'preload.js')
+    }
+  };
+
+  // Use non-activating panel on macOS to prevent focus stealing
+  if (process.platform === 'darwin') {
+    windowOptions.type = 'panel';  // Maps to NSNonActivatingPanelMask
+  }
+
+  promptEditorWin = new BrowserWindow(windowOptions);
+
+  promptEditorWin.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
+  promptEditorWin.setFullScreenable(false);
+  promptEditorWin.setAlwaysOnTop(true, 'screen-saver');
+
+  promptEditorWin.loadFile('prompt-editor.html');
+
+  promptEditorWin.on('closed', () => {
+    promptEditorWin = null;
+  });
+
+  return promptEditorWin;
 }
 
 // Chat function
@@ -650,6 +691,89 @@ app.whenReady().then(async () => {
       return true;
     }
     return false;
+  });
+
+  // Prompt Editor IPC Handlers
+  ipcMain.handle('prompt-editor:open', async (event, mode, currentPrompt) => {
+    try {
+      if (!promptEditorWin) {
+        promptEditorWin = createPromptEditorPanel();
+      }
+
+      // Show the panel without activating the app
+      promptEditorWin.showInactive();
+      
+      // On macOS with panel type, we can focus webContents without activating the app
+      if (process.platform === 'darwin') {
+        promptEditorWin.webContents.focus();
+      }
+
+      // Send initialization data to the panel
+      promptEditorWin.webContents.send('prompt-editor:init', {
+        mode: mode,
+        prompt: currentPrompt
+      });
+
+      return { success: true };
+    } catch (error) {
+      console.error('Error opening prompt editor:', error);
+      return { success: false, error: error.message };
+    }
+  });
+
+  ipcMain.handle('prompt-editor:close', async (event) => {
+    try {
+      if (promptEditorWin) {
+        promptEditorWin.hide();
+      }
+      return { success: true };
+    } catch (error) {
+      console.error('Error closing prompt editor:', error);
+      return { success: false, error: error.message };
+    }
+  });
+
+  ipcMain.handle('prompt-editor:save', async (event, mode, prompt) => {
+    try {
+      // Send the saved prompt back to the main window
+      if (win) {
+        win.webContents.send('prompt-editor:saved', { mode, prompt });
+      }
+      
+      // Hide the panel
+      if (promptEditorWin) {
+        promptEditorWin.hide();
+      }
+      
+      return { success: true };
+    } catch (error) {
+      console.error('Error saving prompt:', error);
+      return { success: false, error: error.message };
+    }
+  });
+
+  ipcMain.handle('prompt-editor:get-default', async (event, mode) => {
+    try {
+      // Define default prompts
+      const defaultPrompts = {
+        interview: `You are an AI assistant helping with coding interviews and technical challenges. 
+
+When analyzing screenshots of coding problems:
+1. Identify the problem type and requirements
+2. Suggest an efficient approach or algorithm
+3. Provide step-by-step solution guidance
+4. Include time/space complexity analysis
+5. Offer optimization tips if applicable
+
+Keep responses concise but comprehensive, focusing on practical problem-solving strategies.`,
+        chat: `You are ChatAura, a helpful AI assistant designed to provide intelligent support for various tasks. You excel at helping users with coding questions, problem-solving, explanations, and general assistance. Your responses should be clear, concise, and helpful. When helping with coding or technical topics, provide accurate information and explain concepts clearly. You can analyze screenshots, images, and text to provide contextual assistance. Keep your responses natural and conversational while being informative and useful. If you're unsure about something, it's okay to say so and suggest alternative approaches.`
+      };
+
+      return { success: true, prompt: defaultPrompts[mode] || defaultPrompts.interview };
+    } catch (error) {
+      console.error('Error getting default prompt:', error);
+      return { success: false, error: error.message };
+    }
   });
 });
 

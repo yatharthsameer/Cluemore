@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    body, textarea {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(20, 20, 20, 0.95);
+      backdrop-filter: blur(18px);
+      border: none;
+      color: #fff;
+      font: 14px/1.4 monospace;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    body {
+      display: flex;
+      flex-direction: column;
+      box-sizing: border-box;
+      border: 1px solid #555;
+    }
+
+    .header {
+      padding: 12px 16px;
+      background: rgba(30, 30, 30, 0.9);
+      border-bottom: 1px solid #444;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-shrink: 0;
+    }
+
+    .title {
+      font-size: 13px;
+      font-weight: bold;
+      color: #fff;
+    }
+
+    .close-btn {
+      background: rgba(220, 53, 69, 0.8);
+      border: none;
+      color: #fff;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .close-btn:hover {
+      background: rgba(220, 53, 69, 1);
+    }
+
+    textarea {
+      resize: none;
+      outline: none;
+      background: transparent;
+      flex: 1;
+      padding: 16px;
+      box-sizing: border-box;
+      border: none;
+    }
+
+    .footer {
+      padding: 12px 16px;
+      background: rgba(30, 30, 30, 0.9);
+      border-top: 1px solid #444;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-shrink: 0;
+      gap: 8px;
+    }
+
+    .btn {
+      padding: 6px 12px;
+      border: none;
+      border-radius: 4px;
+      font-size: 12px;
+      cursor: pointer;
+      font-family: monospace;
+    }
+
+    .btn-primary {
+      background: rgba(70, 130, 180, 0.8);
+      color: #fff;
+    }
+
+    .btn-primary:hover {
+      background: rgba(70, 130, 180, 1);
+    }
+
+    .btn-secondary {
+      background: rgba(108, 117, 125, 0.8);
+      color: #fff;
+    }
+
+    .btn-secondary:hover {
+      background: rgba(108, 117, 125, 1);
+    }
+
+    .btn-danger {
+      background: rgba(220, 53, 69, 0.8);
+      color: #fff;
+    }
+
+    .btn-danger:hover {
+      background: rgba(220, 53, 69, 1);
+    }
+
+    .help-text {
+      font-size: 10px;
+      color: #888;
+      margin-top: 4px;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <span class="title" id="panelTitle">Edit System Prompt</span>
+    <button class="close-btn" id="closeBtn">×</button>
+  </div>
+  
+  <textarea id="promptTextarea" autofocus placeholder="Enter your system prompt here..."></textarea>
+  
+  <div class="footer">
+    <div>
+      <button class="btn btn-danger" id="resetBtn">Reset to Default</button>
+      <div class="help-text">Cmd+Enter to save, Escape to cancel</div>
+    </div>
+    <div>
+      <button class="btn btn-secondary" id="cancelBtn">Cancel</button>
+      <button class="btn btn-primary" id="saveBtn">Save</button>
+    </div>
+  </div>
+
+  <script>
+    const promptTextarea = document.getElementById('promptTextarea');
+    const closeBtn = document.getElementById('closeBtn');
+    const resetBtn = document.getElementById('resetBtn');
+    const cancelBtn = document.getElementById('cancelBtn');
+    const saveBtn = document.getElementById('saveBtn');
+    const panelTitle = document.getElementById('panelTitle');
+
+    let currentMode = 'interview'; // 'interview' or 'chat'
+    let originalPrompt = '';
+
+    // Auto-focus whenever the panel re-opens
+    window.addEventListener('focus', () => {
+      promptTextarea.focus();
+    });
+
+    // Handle keyboard shortcuts
+    promptTextarea.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        closePanel();
+      } else if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+        savePrompt();
+      }
+    });
+
+    // Button handlers
+    closeBtn.addEventListener('click', closePanel);
+    cancelBtn.addEventListener('click', closePanel);
+    saveBtn.addEventListener('click', savePrompt);
+    resetBtn.addEventListener('click', resetToDefault);
+
+    // Functions
+    function closePanel() {
+      if (window.electronAPI && window.electronAPI.closePromptEditor) {
+        window.electronAPI.closePromptEditor();
+      }
+    }
+
+    function savePrompt() {
+      const newPrompt = promptTextarea.value.trim();
+      if (newPrompt) {
+        if (window.electronAPI && window.electronAPI.savePrompt) {
+          window.electronAPI.savePrompt(currentMode, newPrompt);
+        }
+        closePanel();
+      } else {
+        alert('Please enter a valid prompt');
+      }
+    }
+
+    function resetToDefault() {
+      if (window.electronAPI && window.electronAPI.getDefaultPrompt) {
+        window.electronAPI.getDefaultPrompt(currentMode).then(defaultPrompt => {
+          promptTextarea.value = defaultPrompt;
+        });
+      }
+    }
+
+    // Listen for initialization data from main process
+    if (window.electronAPI && window.electronAPI.onPromptEditorInit) {
+      window.electronAPI.onPromptEditorInit((data) => {
+        currentMode = data.mode;
+        originalPrompt = data.prompt;
+        promptTextarea.value = data.prompt;
+        panelTitle.textContent = data.mode === 'chat' ? 'Edit Chat System Prompt' : 'Edit Interview System Prompt';
+        
+        // Focus after a short delay to ensure window is ready
+        setTimeout(() => {
+          promptTextarea.focus();
+        }, 100);
+      });
+    }
+  </script>
+</body>
+</html> 

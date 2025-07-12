@@ -116,7 +116,26 @@ contextBridge.exposeInMainWorld('electronAPI', {
     getAuthToken: () => ipcRenderer.invoke('auth:get-token'),
 
     // Get backend URL
-    getBackendUrl: () => ipcRenderer.invoke('app:get-backend-url')
+    getBackendUrl: () => ipcRenderer.invoke('app:get-backend-url'),
+
+    // Prompt Editor functionality
+    openPromptEditor: (mode, currentPrompt) => ipcRenderer.invoke('prompt-editor:open', mode, currentPrompt),
+    closePromptEditor: () => ipcRenderer.invoke('prompt-editor:close'),
+    savePrompt: (mode, prompt) => ipcRenderer.invoke('prompt-editor:save', mode, prompt),
+    getDefaultPrompt: (mode) => ipcRenderer.invoke('prompt-editor:get-default', mode),
+
+    // Prompt Editor events
+    onPromptEditorInit: (callback) => {
+        ipcRenderer.on('prompt-editor:init', (event, data) => {
+            callback(data);
+        });
+    },
+
+    onPromptEditorSaved: (callback) => {
+        ipcRenderer.on('prompt-editor:saved', (event, data) => {
+            callback(data);
+        });
+    }
 });
 
 // nothing fancy yet – isolated world so the renderer is sandboxed 

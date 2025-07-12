@@ -2125,12 +2125,12 @@
                           const cancelPromptBtn = document.getElementById('cancelPromptBtn');
                           const savePromptBtn = document.getElementById('savePromptBtn');
 
-                          // Open modal
-                          promptEditIcon.addEventListener('click', () => {
+                          // Open prompt editor panel (STEALTH MODE - no focus stealing)
+                          promptEditIcon.addEventListener('click', async () => {
                             const currentPrompt = getCustomPrompt();
-                            promptTextarea.value = currentPrompt;
-                            promptEditModal.classList.add('show');
-                            // promptTextarea.focus(); // Commented out to prevent focus stealing in stealth mode
+                            if (window.electronAPI && window.electronAPI.openPromptEditor) {
+                              await window.electronAPI.openPromptEditor('interview', currentPrompt);
+                            }
                           });
 
                           // Close modal
@@ -2206,12 +2206,12 @@
                               const cancelChatPromptBtn = document.getElementById('cancelChatPromptBtn');
                               const saveChatPromptBtn = document.getElementById('saveChatPromptBtn');
 
-                              // Open chat prompt modal
-                              chatPromptEditIcon.addEventListener('click', () => {
+                              // Open chat prompt editor panel (STEALTH MODE - no focus stealing)
+                              chatPromptEditIcon.addEventListener('click', async () => {
                                 const currentPrompt = getCustomChatPrompt();
-                                chatPromptTextarea.value = currentPrompt;
-                                chatPromptEditModal.classList.add('show');
-                                // chatPromptTextarea.focus(); // Commented out to prevent focus stealing in stealth mode
+                                if (window.electronAPI && window.electronAPI.openPromptEditor) {
+                                  await window.electronAPI.openPromptEditor('chat', currentPrompt);
+                                }
                               });
 
                               // Close chat prompt modal
@@ -3120,6 +3120,19 @@
             console.log('Chat input not found');
           }
         }, 200); // Increased delay to ensure page switch completes
+      });
+
+      // Handle prompt editor saved events
+      window.electronAPI.onPromptEditorSaved((data) => {
+        console.log('Prompt saved from editor:', data.mode, data.prompt.substring(0, 50) + '...');
+        
+        if (data.mode === 'interview') {
+          setCustomPrompt(data.prompt);
+          console.log('Interview prompt updated');
+        } else if (data.mode === 'chat') {
+          setCustomChatPrompt(data.prompt);
+          console.log('Chat prompt updated');
+        }
       });
     }
 
