@@ -2130,7 +2130,7 @@
                             const currentPrompt = getCustomPrompt();
                             promptTextarea.value = currentPrompt;
                             promptEditModal.classList.add('show');
-                            promptTextarea.focus();
+                            // promptTextarea.focus(); // Commented out to prevent focus stealing in stealth mode
                           });
 
                           // Close modal
@@ -2211,7 +2211,7 @@
                                 const currentPrompt = getCustomChatPrompt();
                                 chatPromptTextarea.value = currentPrompt;
                                 chatPromptEditModal.classList.add('show');
-                                chatPromptTextarea.focus();
+                                // chatPromptTextarea.focus(); // Commented out to prevent focus stealing in stealth mode
                               });
 
                               // Close chat prompt modal
@@ -3109,10 +3109,10 @@
         setTimeout(() => {
           const chatInput = document.getElementById('chatInput');
           if (chatInput) {
-            // Force focus and click to ensure it's properly focused
-            chatInput.focus();
-            chatInput.click();
-            console.log('Chat input focused and clicked');
+            // STEALTH MODE: Don't focus or click to prevent focus stealing
+            // chatInput.focus();
+            // chatInput.click();
+            console.log('Chat input ready (focus disabled for stealth mode)');
 
             // Also scroll input into view if needed
             chatInput.scrollIntoView({ behavior: 'smooth', block: 'center' });

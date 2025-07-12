@@ -227,7 +227,8 @@ function createAuthWindow() {
   authWin.loadFile('auth.html');
   authWin.once('ready-to-show', () => {
     authWin.setOpacity(1.0);
-    authWin.show();
+    // Use showInactive() to prevent focus stealing
+    authWin.showInactive();
   });
 
   authWin.on('closed', () => {
@@ -237,7 +238,8 @@ function createAuthWindow() {
 
 function createMainWindow() {
   if (win) {
-    win.show();
+    // Use showInactive() to prevent focus stealing
+    win.showInactive();
     return;
   }
 
@@ -266,7 +268,8 @@ function createMainWindow() {
   win.loadFile('index.html');
   win.once('ready-to-show', () => {
     win.setOpacity(1.0);
-    win.show();
+    // Use showInactive() to prevent focus stealing
+    win.showInactive();
   });
 
   win.on('closed', () => {
@@ -454,13 +457,13 @@ app.whenReady().then(async () => {
     }
   });
 
-  // Auto-hide shortcut: cmd + 6
+  // Auto-hide shortcut: cmd + 6 (STEALTH MODE - no focus stealing)
   globalShortcut.register('CommandOrControl+6', () => {
-    // Try to show whichever window exists and is hidden
+    // Try to show whichever window exists and is hidden WITHOUT stealing focus
     if (win && !win.isVisible()) {
-      win.show();
+      win.showInactive(); // Use showInactive() to prevent focus stealing
     } else if (authWin && !authWin.isVisible()) {
-      authWin.show();
+      authWin.showInactive(); // Use showInactive() to prevent focus stealing
     } else if (win && win.isVisible()) {
       win.hide();
     } else if (authWin && authWin.isVisible()) {
@@ -488,16 +491,16 @@ app.whenReady().then(async () => {
     }
   });
 
-  // Global shortcut for chat mode: cmd + shift + i
+  // Global shortcut for chat mode: cmd + shift + i (STEALTH MODE - no focus stealing)
   globalShortcut.register('CommandOrControl+Shift+I', async () => {
     console.log('Cmd+Shift+I shortcut pressed (global)');
 
-    // Ensure window is visible and focused, then switch to chat mode
+    // Ensure window is visible WITHOUT stealing focus, then switch to chat mode
     if (win) {
       if (!win.isVisible()) {
-        win.show();
+        win.showInactive(); // Use showInactive() to prevent focus stealing
       }
-      win.focus();
+      // Remove win.focus() call to prevent focus stealing
       win.webContents.send('switch-to-chat-mode');
     }
   });
@@ -526,7 +529,7 @@ app.whenReady().then(async () => {
       {
         label: 'Show / Hide', click: () => {
           if (win) {
-            win.isVisible() ? win.hide() : win.show();
+            win.isVisible() ? win.hide() : win.showInactive(); // Use showInactive() to prevent focus stealing
           }
         }
       },
