@@ -30,7 +30,7 @@ class OpenAIClient:
             timeout=30.0,  # 30 second timeout
             max_retries=3,  # Retry up to 3 times on failure
         )
-        log.info("OpenAI client initialized with v1.30.1")
+        log.info("OpenAI client initialized with v1.55.3")
 
     def _prepare_image_for_openai(self, image_base64):
         """Convert base64 image to OpenAI format."""
