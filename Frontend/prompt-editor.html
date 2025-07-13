@@ -66,6 +66,29 @@
       padding: 16px;
       box-sizing: border-box;
       border: none;
+      overflow-y: auto;
+      font-size: 13px;
+      line-height: 1.4;
+      word-wrap: break-word;
+    }
+
+    /* Custom scrollbar styling for the textarea */
+    textarea::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    textarea::-webkit-scrollbar-track {
+      background: rgba(30, 30, 30, 0.5);
+      border-radius: 4px;
+    }
+
+    textarea::-webkit-scrollbar-thumb {
+      background: rgba(85, 85, 85, 0.8);
+      border-radius: 4px;
+    }
+
+    textarea::-webkit-scrollbar-thumb:hover {
+      background: rgba(108, 117, 125, 0.9);
     }
 
     .footer {
