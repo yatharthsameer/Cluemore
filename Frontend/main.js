@@ -204,7 +204,7 @@ async function registerUser(email, password) {
 }
 
 function createAuthWindow() {
-  authWin = new BrowserWindow({
+  const windowOptions = {
     width: 500,
     height: 700,
     resizable: false,
@@ -213,12 +213,20 @@ function createAuthWindow() {
     transparent: true,
     frame: false,
     show: false,
+    focusable: true,  // Allow keyboard input
     webPreferences: {
       contextIsolation: true,
       nodeIntegration: false,
       preload: path.join(__dirname, 'preload.js')
     }
-  });
+  };
+
+  // Use non-activating panel on macOS to prevent focus stealing for ALL interactions
+  if (process.platform === 'darwin') {
+    windowOptions.type = 'panel';  // Makes entire window non-activating
+  }
+
+  authWin = new BrowserWindow(windowOptions);
 
   authWin.setContentProtection(true);
   authWin.setAlwaysOnTop(true, 'screen-saver');
@@ -230,6 +238,11 @@ function createAuthWindow() {
     authWin.setOpacity(1.0);
     // Use showInactive() to prevent focus stealing
     authWin.showInactive();
+    
+    // On macOS with panel type, we can focus webContents without activating the app
+    if (process.platform === 'darwin' && windowOptions.type === 'panel') {
+      authWin.webContents.focus();
+    }
   });
 
   authWin.on('closed', () => {
@@ -244,7 +257,7 @@ function createMainWindow() {
     return;
   }
 
-  win = new BrowserWindow({
+  const windowOptions = {
     width: 600,
     height: 600,
     resizable: false,
@@ -254,12 +267,20 @@ function createMainWindow() {
     transparent: true,
     frame: false,
     show: false,
+    focusable: true,  // Allow keyboard input
     webPreferences: {
       contextIsolation: true,
       nodeIntegration: false,
       preload: path.join(__dirname, 'preload.js')
     }
-  });
+  };
+
+  // Use non-activating panel on macOS to prevent focus stealing for ALL interactions
+  if (process.platform === 'darwin') {
+    windowOptions.type = 'panel';  // Makes entire window non-activating
+  }
+
+  win = new BrowserWindow(windowOptions);
 
   win.setContentProtection(true);
   win.setAlwaysOnTop(true, 'screen-saver');
@@ -271,6 +292,11 @@ function createMainWindow() {
     win.setOpacity(1.0);
     // Use showInactive() to prevent focus stealing
     win.showInactive();
+    
+    // On macOS with panel type, we can focus webContents without activating the app
+    if (process.platform === 'darwin' && windowOptions.type === 'panel') {
+      win.webContents.focus();
+    }
   });
 
   win.on('closed', () => {
@@ -503,8 +529,16 @@ app.whenReady().then(async () => {
     // Try to show whichever window exists and is hidden WITHOUT stealing focus
     if (win && !win.isVisible()) {
       win.showInactive(); // Use showInactive() to prevent focus stealing
+      // On macOS with panel type, focus webContents for keyboard input
+      if (process.platform === 'darwin') {
+        win.webContents.focus();
+      }
     } else if (authWin && !authWin.isVisible()) {
       authWin.showInactive(); // Use showInactive() to prevent focus stealing
+      // On macOS with panel type, focus webContents for keyboard input
+      if (process.platform === 'darwin') {
+        authWin.webContents.focus();
+      }
     } else if (win && win.isVisible()) {
       win.hide();
     } else if (authWin && authWin.isVisible()) {
@@ -540,6 +574,10 @@ app.whenReady().then(async () => {
     if (win) {
       if (!win.isVisible()) {
         win.showInactive(); // Use showInactive() to prevent focus stealing
+        // On macOS with panel type, focus webContents for keyboard input
+        if (process.platform === 'darwin') {
+          win.webContents.focus();
+        }
       }
       // Remove win.focus() call to prevent focus stealing
       win.webContents.send('switch-to-chat-mode');
@@ -570,7 +608,15 @@ app.whenReady().then(async () => {
       {
         label: 'Show / Hide', click: () => {
           if (win) {
-            win.isVisible() ? win.hide() : win.showInactive(); // Use showInactive() to prevent focus stealing
+            if (win.isVisible()) {
+              win.hide();
+            } else {
+              win.showInactive(); // Use showInactive() to prevent focus stealing
+              // On macOS with panel type, focus webContents for keyboard input
+              if (process.platform === 'darwin') {
+                win.webContents.focus();
+              }
+            }
           }
         }
       },

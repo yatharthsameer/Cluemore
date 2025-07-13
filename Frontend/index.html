@@ -3109,10 +3109,9 @@
         setTimeout(() => {
           const chatInput = document.getElementById('chatInput');
           if (chatInput) {
-            // STEALTH MODE: Don't focus or click to prevent focus stealing
-            // chatInput.focus();
-            // chatInput.click();
-            console.log('Chat input ready (focus disabled for stealth mode)');
+            // STEALTH MODE: With non-activating panels, focus() is safe and necessary
+            chatInput.focus();
+            console.log('Chat input focused (safe with non-activating panels)');
 
             // Also scroll input into view if needed
             chatInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
