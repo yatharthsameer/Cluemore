@@ -4,10 +4,12 @@ const https = require('https');
 const http = require('http');
 const keytar = require('keytar');
 
-// Load environment variables
-require('dotenv').config({
-  path: process.env.NODE_ENV === 'production' ? '.env.production' : '.env.development'
-});
+// Load environment variables only in development
+if (process.env.NODE_ENV !== 'production') {
+  require('dotenv').config({
+    path: process.env.NODE_ENV === 'production' ? '.env.production' : '.env.development'
+  });
+}
 
 let win;
 let authWin;

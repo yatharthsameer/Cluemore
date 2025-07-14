@@ -116,16 +116,16 @@
   "devDependencies": {
     "@electron/notarize": "^2.5.0",
     "@electron/osx-sign": "^2.0.0",
-    "dotenv": "^17.1.0",
     "electron": "^37.2.0",
     "electron-builder": "^26.0.12"
   },
   "dependencies": {
     "bcryptjs": "^3.0.2",
+    "chalk": "^4.1.2",
+    "dotenv": "^17.2.0",
     "electron-screenshot": "^1.0.5",
     "jsonwebtoken": "^9.0.2",
     "keytar": "^7.9.0",
-    "marked": "^16.0.0",
-    "node-screenshots": "^0.2.1"
+    "marked": "^16.0.0"
   }
 }
