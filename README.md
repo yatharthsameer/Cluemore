@@ -11,6 +11,7 @@ A desktop application that helps you during coding interviews by providing AI-po
 - 📊 **Token Tracking**: Monitor API usage and costs
 - 🎯 **Stealth Mode**: Specialized for coding interview scenarios
 - 🔍 **Always-on-Top**: Stays accessible during interviews
+- 🔄 **Auto-Updates**: Seamless update system with GitHub Releases integration
 - 🚀 **CI/CD**: Automated deployment with GitHub Actions and Heroku
 
 ## Project Structure

@@ -1,6 +1,6 @@
 {
   "name": "cluemore",
-  "version": "1.0.0",
+  "version": "1.2.0",
   "description": "AI-powered chat application with Gemini and OpenAI integration",
   "main": "main.js",
   "homepage": "https://cluemore.herokuapp.com",
@@ -109,7 +109,15 @@
       ]
     },
     "afterSign": "./scripts/fix-electron-signing.js",
-    "afterAllArtifactBuild": "./scripts/notarize.js"
+    "afterAllArtifactBuild": "./scripts/notarize.js",
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "yatharthsameer",
+        "repo": "cluemore",
+        "private": false
+      }
+    ]
   },
   "keywords": [
     "ai",
@@ -130,6 +138,7 @@
     "chalk": "^4.1.2",
     "dotenv": "^17.2.0",
     "electron-screenshot": "^1.0.5",
+    "electron-updater": "^6.6.2",
     "jsonwebtoken": "^9.0.2",
     "keytar": "^7.9.0",
     "marked": "^16.0.0"

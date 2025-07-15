@@ -139,7 +139,18 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
     // Permission functionality
     checkPermissionStatus: () => ipcRenderer.invoke('permissions:check-status'),
-    requestAllPermissions: () => ipcRenderer.invoke('permissions:request-all')
+    requestAllPermissions: () => ipcRenderer.invoke('permissions:request-all'),
+
+    // Auto-updater functionality
+    checkForUpdates: () => ipcRenderer.invoke('updater:check-for-updates'),
+    downloadUpdate: () => ipcRenderer.invoke('updater:download-update'),
+    quitAndInstall: () => ipcRenderer.invoke('updater:quit-and-install'),
+    
+    onUpdateProgress: (callback) => {
+        ipcRenderer.on('update-progress', (event, progress) => {
+            callback(progress);
+        });
+    }
 });
 
 // nothing fancy yet – isolated world so the renderer is sandboxed 

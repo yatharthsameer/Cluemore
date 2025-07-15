@@ -1,4 +1,5 @@
-const { app, BrowserWindow, Tray, Menu, globalShortcut, nativeImage, desktopCapturer, ipcMain, systemPreferences } = require('electron');
+const { app, BrowserWindow, Tray, Menu, globalShortcut, nativeImage, desktopCapturer, ipcMain, systemPreferences, dialog } = require('electron');
+const { autoUpdater } = require('electron-updater');
 const path = require('path');
 const https = require('https');
 const http = require('http');
@@ -664,6 +665,77 @@ async function processAccumulatedScreenshots(screenshots, model = 'gemini-1.5-fl
   }
 }
 
+// Auto-updater setup
+function setupAutoUpdater() {
+  // Configure auto-updater
+  autoUpdater.logger = console;
+  autoUpdater.logger.transports.file.level = 'info';
+  
+  // Update available
+  autoUpdater.on('update-available', (info) => {
+    console.log('🔄 Update available:', info.version);
+    
+    const response = dialog.showMessageBoxSync({
+      type: 'info',
+      buttons: ['Later', 'Download'],
+      defaultId: 1,
+      title: 'Cluemore Update Available',
+      message: `A new version is available (v${info.version}).`,
+      detail: 'Download now and install when ready?'
+    });
+
+    if (response === 1) {
+      console.log('📥 Starting download...');
+      autoUpdater.downloadUpdate();
+    }
+  });
+
+  // Download progress
+  autoUpdater.on('download-progress', (progressObj) => {
+    console.log(`📥 Download progress: ${Math.round(progressObj.percent)}%`);
+    
+    // Send progress to renderer if main window exists
+    if (win && !win.isDestroyed()) {
+      win.webContents.send('update-progress', {
+        percent: Math.round(progressObj.percent),
+        transferred: progressObj.transferred,
+        total: progressObj.total
+      });
+    }
+  });
+
+  // Update downloaded
+  autoUpdater.on('update-downloaded', (info) => {
+    console.log('✅ Update downloaded:', info.version);
+    
+    const response = dialog.showMessageBoxSync({
+      type: 'question',
+      buttons: ['Later', 'Install & Restart'],
+      defaultId: 1,
+      title: 'Update Ready to Install',
+      message: 'Update downloaded successfully.',
+      detail: 'Restart the app to apply the update now?'
+    });
+
+    if (response === 1) {
+      console.log('🔄 Installing update and restarting...');
+      autoUpdater.quitAndInstall();
+    }
+  });
+
+  // Update not available
+  autoUpdater.on('update-not-available', (info) => {
+    console.log('✅ App is up to date:', info.version);
+  });
+
+  // Error handling
+  autoUpdater.on('error', (error) => {
+    console.error('❌ Auto-updater error:', error);
+  });
+
+  console.log('🔄 Auto-updater configured successfully');
+}
+
 app.whenReady().then(async () => {
   // Request all necessary permissions upfront (macOS only)
   if (process.platform === 'darwin') {
@@ -673,6 +745,15 @@ app.whenReady().then(async () => {
     
     // Small delay to let permission dialogs settle
     await new Promise(resolve => setTimeout(resolve, 1000));
+  }
+
+  // Setup auto-updater (only in production)
+  if (process.env.NODE_ENV === 'production') {
+    console.log('🔄 Setting up auto-updater...');
+    setupAutoUpdater();
+    
+    // Check for updates on startup
+    autoUpdater.checkForUpdatesAndNotify();
   }
 
   // Check if user is already authenticated
@@ -926,6 +1007,44 @@ app.whenReady().then(async () => {
 
   ipcMain.handle('permissions:request-all', async (event) => {
     return await requestAllPermissions();
+  });
+
+  // Auto-updater IPC handlers
+  ipcMain.handle('updater:check-for-updates', async (event) => {
+    if (process.env.NODE_ENV === 'production') {
+      try {
+        const result = await autoUpdater.checkForUpdates();
+        return { success: true, updateInfo: result?.updateInfo };
+      } catch (error) {
+        console.error('Manual update check failed:', error);
+        return { success: false, error: error.message };
+      }
+    } else {
+      return { success: false, error: 'Updates only available in production' };
+    }
+  });
+
+  ipcMain.handle('updater:download-update', async (event) => {
+    if (process.env.NODE_ENV === 'production') {
+      try {
+        await autoUpdater.downloadUpdate();
+        return { success: true };
+      } catch (error) {
+        console.error('Download update failed:', error);
+        return { success: false, error: error.message };
+      }
+    } else {
+      return { success: false, error: 'Updates only available in production' };
+    }
+  });
+
+  ipcMain.handle('updater:quit-and-install', async (event) => {
+    if (process.env.NODE_ENV === 'production') {
+      autoUpdater.quitAndInstall();
+      return { success: true };
+    } else {
+      return { success: false, error: 'Updates only available in production' };
+    }
   });
 
   // Existing IPC Handlers for chat functionality
