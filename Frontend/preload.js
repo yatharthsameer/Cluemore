@@ -135,7 +135,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
         ipcRenderer.on('prompt-editor:saved', (event, data) => {
             callback(data);
         });
-    }
+    },
+
+    // Permission functionality
+    checkPermissionStatus: () => ipcRenderer.invoke('permissions:check-status'),
+    requestAllPermissions: () => ipcRenderer.invoke('permissions:request-all')
 });
 
 // nothing fancy yet – isolated world so the renderer is sandboxed 

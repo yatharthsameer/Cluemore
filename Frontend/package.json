@@ -84,7 +84,13 @@
       "gatekeeperAssess": false,
       "entitlements": "assets/entitlements.mac.plist",
       "entitlementsInherit": "assets/entitlements.mac.plist",
-      "notarize": false
+      "notarize": false,
+      "extendInfo": {
+        "NSCameraUsageDescription": "Cluemore needs camera access to capture images for AI analysis and chat functionality.",
+        "NSMicrophoneUsageDescription": "Cluemore needs microphone access for voice input and audio-related AI features.",
+        "NSScreenCaptureDescription": "Cluemore needs screen recording permission to capture screenshots for AI analysis and problem solving assistance.",
+        "NSSystemAdministrationUsageDescription": "Cluemore needs administrative access for enhanced system integration and functionality."
+      }
     },
     "mas": {
       "category": "public.app-category.productivity",

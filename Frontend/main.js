@@ -1,4 +1,4 @@
-const { app, BrowserWindow, Tray, Menu, globalShortcut, nativeImage, desktopCapturer, ipcMain } = require('electron');
+const { app, BrowserWindow, Tray, Menu, globalShortcut, nativeImage, desktopCapturer, ipcMain, systemPreferences } = require('electron');
 const path = require('path');
 const https = require('https');
 const http = require('http');
@@ -203,6 +203,206 @@ async function registerUser(email, password) {
     console.error('Registration error:', error);
     return { success: false, error: 'Network error: ' + error.message };
   }
+}
+
+// Permission request functions for macOS
+async function requestAllPermissions() {
+  if (process.platform !== 'darwin') {
+    console.log('⏭️ Permission requests only needed on macOS');
+    return true;
+  }
+
+  console.log('🔐 Requesting all necessary permissions upfront...');
+  
+  try {
+    // Request Screen Recording permission
+    const screenAccess = systemPreferences.getMediaAccessStatus('screen');
+    console.log(`📺 Screen recording access status: ${screenAccess}`);
+    
+    if (screenAccess !== 'granted') {
+      console.log('📺 Requesting screen recording permission...');
+      // This will trigger the system permission dialog
+      await desktopCapturer.getSources({ types: ['screen'], thumbnailSize: { width: 150, height: 150 } });
+    }
+
+    // Request Camera permission
+    const cameraAccess = systemPreferences.getMediaAccessStatus('camera');
+    console.log(`📷 Camera access status: ${cameraAccess}`);
+    
+    if (cameraAccess !== 'granted') {
+      console.log('📷 Requesting camera permission...');
+      try {
+        await systemPreferences.askForMediaAccess('camera');
+      } catch (error) {
+        console.log('📷 Camera permission denied or unavailable:', error.message);
+      }
+    }
+
+    // Request Microphone permission
+    const micAccess = systemPreferences.getMediaAccessStatus('microphone');
+    console.log(`🎤 Microphone access status: ${micAccess}`);
+    
+    if (micAccess !== 'granted') {
+      console.log('🎤 Requesting microphone permission...');
+      try {
+        await systemPreferences.askForMediaAccess('microphone');
+      } catch (error) {
+        console.log('🎤 Microphone permission denied or unavailable:', error.message);
+      }
+    }
+
+    // Test keychain access (this doesn't require explicit permission but good to test)
+    try {
+      console.log('🔑 Testing keychain access...');
+      await keytar.getPassword('PermissionTest', 'test');
+      console.log('🔑 Keychain access: OK');
+    } catch (error) {
+      console.log('🔑 Keychain access may require user approval:', error.message);
+    }
+
+    console.log('✅ Permission requests completed');
+    return true;
+  } catch (error) {
+    console.error('❌ Error requesting permissions:', error);
+    return false;
+  }
+}
+
+async function showPermissionWindow() {
+  return new Promise((resolve) => {
+    const permissionWin = new BrowserWindow({
+      width: 500,
+      height: 400,
+      resizable: false,
+      alwaysOnTop: true,
+      title: 'Cluemore - Permissions Required',
+      frame: true,
+      show: false,
+      webPreferences: {
+        contextIsolation: true,
+        nodeIntegration: false
+      }
+    });
+
+    // Create a simple HTML content for permission explanation
+    const permissionHTML = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <title>Permissions Required</title>
+      <style>
+        body {
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+          margin: 0;
+          padding: 30px;
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          color: white;
+          text-align: center;
+        }
+        .container {
+          background: rgba(255, 255, 255, 0.1);
+          border-radius: 15px;
+          padding: 30px;
+          backdrop-filter: blur(10px);
+        }
+        h1 { margin-top: 0; font-size: 24px; }
+        .permission-item {
+          display: flex;
+          align-items: center;
+          margin: 15px 0;
+          padding: 10px;
+          background: rgba(255, 255, 255, 0.1);
+          border-radius: 8px;
+        }
+        .permission-icon { font-size: 24px; margin-right: 15px; }
+        .permission-text { text-align: left; flex: 1; }
+        .permission-title { font-weight: bold; }
+        .permission-desc { font-size: 14px; opacity: 0.8; }
+        button {
+          background: #4CAF50;
+          color: white;
+          border: none;
+          padding: 12px 30px;
+          font-size: 16px;
+          border-radius: 25px;
+          cursor: pointer;
+          margin-top: 20px;
+        }
+        button:hover { background: #45a049; }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <h1>🔐 Cluemore needs permissions to work properly</h1>
+        <p>Please grant the following permissions when prompted:</p>
+        
+        <div class="permission-item">
+          <div class="permission-icon">📺</div>
+          <div class="permission-text">
+            <div class="permission-title">Screen Recording</div>
+            <div class="permission-desc">To capture screenshots for AI analysis</div>
+          </div>
+        </div>
+        
+        <div class="permission-item">
+          <div class="permission-icon">📷</div>
+          <div class="permission-text">
+            <div class="permission-title">Camera Access</div>
+            <div class="permission-desc">For image capture and analysis features</div>
+          </div>
+        </div>
+        
+        <div class="permission-item">
+          <div class="permission-icon">🎤</div>
+          <div class="permission-text">
+            <div class="permission-title">Microphone Access</div>
+            <div class="permission-desc">For voice input and audio features</div>
+          </div>
+        </div>
+        
+        <div class="permission-item">
+          <div class="permission-icon">🔑</div>
+          <div class="permission-text">
+            <div class="permission-title">Keychain Access</div>
+            <div class="permission-desc">To securely store your login credentials</div>
+          </div>
+        </div>
+        
+        <button onclick="window.close()">Continue to App</button>
+      </div>
+    </body>
+    </html>
+    `;
+
+    permissionWin.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(permissionHTML)}`);
+    
+    permissionWin.once('ready-to-show', () => {
+      permissionWin.show();
+    });
+
+    permissionWin.on('closed', () => {
+      resolve();
+    });
+  });
+}
+
+// Function to check current permission status
+function checkPermissionStatus() {
+  if (process.platform !== 'darwin') {
+    return { allGranted: true, permissions: {} };
+  }
+
+  const permissions = {
+    screen: systemPreferences.getMediaAccessStatus('screen'),
+    camera: systemPreferences.getMediaAccessStatus('camera'),
+    microphone: systemPreferences.getMediaAccessStatus('microphone')
+  };
+
+  const allGranted = Object.values(permissions).every(status => status === 'granted');
+
+  console.log('🔍 Current permission status:', permissions);
+  
+  return { allGranted, permissions };
 }
 
 function createAuthWindow() {
@@ -465,6 +665,16 @@ async function processAccumulatedScreenshots(screenshots, model = 'gemini-1.5-fl
 }
 
 app.whenReady().then(async () => {
+  // Request all necessary permissions upfront (macOS only)
+  if (process.platform === 'darwin') {
+    console.log('🚀 Starting permission request flow...');
+    await showPermissionWindow();
+    await requestAllPermissions();
+    
+    // Small delay to let permission dialogs settle
+    await new Promise(resolve => setTimeout(resolve, 1000));
+  }
+
   // Check if user is already authenticated
   const isAuthenticated = await verifyStoredToken();
 
@@ -707,6 +917,15 @@ app.whenReady().then(async () => {
 
   ipcMain.handle('app:get-backend-url', async (event) => {
     return { success: true, url: BACKEND_URL };
+  });
+
+  // Permission status IPC handler
+  ipcMain.handle('permissions:check-status', async (event) => {
+    return checkPermissionStatus();
+  });
+
+  ipcMain.handle('permissions:request-all', async (event) => {
+    return await requestAllPermissions();
   });
 
   // Existing IPC Handlers for chat functionality

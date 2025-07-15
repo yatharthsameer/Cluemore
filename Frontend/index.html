@@ -3085,11 +3085,11 @@
         setSolutionContent(solution);
         console.log('Solution set with markdown rendering');
 
-        // Auto-clear after 60 seconds
+        // Auto-clear after 2 hours
         setTimeout(() => {
           setSolutionContent('');
-          console.log('Auto-cleared solution after 60 seconds');
-        }, 60000);
+          console.log('Auto-cleared solution after 2 hours');
+        }, 7200000);
       });
 
       window.electronAPI.onScreenshotError((error) => {
