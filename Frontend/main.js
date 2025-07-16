@@ -213,10 +213,10 @@ async function requestAllPermissions() {
     return true;
   }
 
-  console.log('🔐 Requesting all necessary permissions upfront...');
+  console.log('🔐 Requesting necessary permissions...');
   
   try {
-    // Request Screen Recording permission
+    // Request Screen Recording permission (required for screenshot functionality)
     const screenAccess = systemPreferences.getMediaAccessStatus('screen');
     console.log(`📺 Screen recording access status: ${screenAccess}`);
     
@@ -226,33 +226,7 @@ async function requestAllPermissions() {
       await desktopCapturer.getSources({ types: ['screen'], thumbnailSize: { width: 150, height: 150 } });
     }
 
-    // Request Camera permission
-    const cameraAccess = systemPreferences.getMediaAccessStatus('camera');
-    console.log(`📷 Camera access status: ${cameraAccess}`);
-    
-    if (cameraAccess !== 'granted') {
-      console.log('📷 Requesting camera permission...');
-      try {
-        await systemPreferences.askForMediaAccess('camera');
-      } catch (error) {
-        console.log('📷 Camera permission denied or unavailable:', error.message);
-      }
-    }
-
-    // Request Microphone permission
-    const micAccess = systemPreferences.getMediaAccessStatus('microphone');
-    console.log(`🎤 Microphone access status: ${micAccess}`);
-    
-    if (micAccess !== 'granted') {
-      console.log('🎤 Requesting microphone permission...');
-      try {
-        await systemPreferences.askForMediaAccess('microphone');
-      } catch (error) {
-        console.log('🎤 Microphone permission denied or unavailable:', error.message);
-      }
-    }
-
-    // Test keychain access (this doesn't require explicit permission but good to test)
+    // Test keychain access (required for secure token storage)
     try {
       console.log('🔑 Testing keychain access...');
       await keytar.getPassword('PermissionTest', 'test');
@@ -269,123 +243,7 @@ async function requestAllPermissions() {
   }
 }
 
-async function showPermissionWindow() {
-  return new Promise((resolve) => {
-    const permissionWin = new BrowserWindow({
-      width: 500,
-      height: 400,
-      resizable: false,
-      alwaysOnTop: true,
-      title: 'Cluemore - Permissions Required',
-      frame: true,
-      show: false,
-      webPreferences: {
-        contextIsolation: true,
-        nodeIntegration: false
-      }
-    });
 
-    // Create a simple HTML content for permission explanation
-    const permissionHTML = `
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <title>Permissions Required</title>
-      <style>
-        body {
-          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-          margin: 0;
-          padding: 30px;
-          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-          color: white;
-          text-align: center;
-        }
-        .container {
-          background: rgba(255, 255, 255, 0.1);
-          border-radius: 15px;
-          padding: 30px;
-          backdrop-filter: blur(10px);
-        }
-        h1 { margin-top: 0; font-size: 24px; }
-        .permission-item {
-          display: flex;
-          align-items: center;
-          margin: 15px 0;
-          padding: 10px;
-          background: rgba(255, 255, 255, 0.1);
-          border-radius: 8px;
-        }
-        .permission-icon { font-size: 24px; margin-right: 15px; }
-        .permission-text { text-align: left; flex: 1; }
-        .permission-title { font-weight: bold; }
-        .permission-desc { font-size: 14px; opacity: 0.8; }
-        button {
-          background: #4CAF50;
-          color: white;
-          border: none;
-          padding: 12px 30px;
-          font-size: 16px;
-          border-radius: 25px;
-          cursor: pointer;
-          margin-top: 20px;
-        }
-        button:hover { background: #45a049; }
-      </style>
-    </head>
-    <body>
-      <div class="container">
-        <h1>🔐 Cluemore needs permissions to work properly</h1>
-        <p>Please grant the following permissions when prompted:</p>
-        
-        <div class="permission-item">
-          <div class="permission-icon">📺</div>
-          <div class="permission-text">
-            <div class="permission-title">Screen Recording</div>
-            <div class="permission-desc">To capture screenshots for AI analysis</div>
-          </div>
-        </div>
-        
-        <div class="permission-item">
-          <div class="permission-icon">📷</div>
-          <div class="permission-text">
-            <div class="permission-title">Camera Access</div>
-            <div class="permission-desc">For image capture and analysis features</div>
-          </div>
-        </div>
-        
-        <div class="permission-item">
-          <div class="permission-icon">🎤</div>
-          <div class="permission-text">
-            <div class="permission-title">Microphone Access</div>
-            <div class="permission-desc">For voice input and audio features</div>
-          </div>
-        </div>
-        
-        <div class="permission-item">
-          <div class="permission-icon">🔑</div>
-          <div class="permission-text">
-            <div class="permission-title">Keychain Access</div>
-            <div class="permission-desc">To securely store your login credentials</div>
-          </div>
-        </div>
-        
-        <button onclick="window.close()">Continue to App</button>
-      </div>
-    </body>
-    </html>
-    `;
-
-    permissionWin.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(permissionHTML)}`);
-    
-    permissionWin.once('ready-to-show', () => {
-      permissionWin.show();
-    });
-
-    permissionWin.on('closed', () => {
-      resolve();
-    });
-  });
-}
 
 // Function to check current permission status
 function checkPermissionStatus() {
@@ -394,9 +252,7 @@ function checkPermissionStatus() {
   }
 
   const permissions = {
-    screen: systemPreferences.getMediaAccessStatus('screen'),
-    camera: systemPreferences.getMediaAccessStatus('camera'),
-    microphone: systemPreferences.getMediaAccessStatus('microphone')
+    screen: systemPreferences.getMediaAccessStatus('screen')
   };
 
   const allGranted = Object.values(permissions).every(status => status === 'granted');
@@ -591,6 +447,25 @@ async function takeScreenshot(forChat = false) {
   try {
     console.log('Taking screenshot...', forChat ? 'for chat' : 'for analysis');
 
+    // Check screen recording permission first (macOS only)
+    if (process.platform === 'darwin') {
+      const screenAccess = systemPreferences.getMediaAccessStatus('screen');
+      console.log(`📺 Screen recording permission status: ${screenAccess}`);
+      
+      if (screenAccess !== 'granted') {
+        const errorMessage = `🔐 Screen Recording Permission Required\n\nTo capture screenshots, Cluemore needs screen recording permission.\n\n📝 How to fix:\n1. Open System Preferences > Security & Privacy\n2. Click the "Privacy" tab\n3. Select "Screen Recording" from the left sidebar\n4. Check the box next to "Cluemore"\n5. Restart Cluemore if needed\n\nPermission status: ${screenAccess}`;
+        
+        console.error('Screen recording permission not granted:', screenAccess);
+        
+        if (forChat) {
+          win.webContents.send('chat-error', errorMessage);
+        } else {
+          win.webContents.send('screenshot-error', errorMessage);
+        }
+        return;
+      }
+    }
+
     // Get all available sources (screens) with smaller thumbnail for faster processing
     const sources = await desktopCapturer.getSources({
       types: ['screen'],
@@ -598,7 +473,14 @@ async function takeScreenshot(forChat = false) {
     });
 
     if (sources.length === 0) {
+      const errorMessage = '📺 No screens found for capture. Please ensure your display is active and try again.';
       console.error('No screens found');
+      
+      if (forChat) {
+        win.webContents.send('chat-error', errorMessage);
+      } else {
+        win.webContents.send('screenshot-error', errorMessage);
+      }
       return;
     }
 
@@ -608,7 +490,7 @@ async function takeScreenshot(forChat = false) {
 
     // Convert to base64
     const base64Data = screenshot.toPNG().toString('base64');
-    console.log(`Screenshot captured, size: ${base64Data.length} characters`);
+    console.log(`Screenshot captured successfully, size: ${base64Data.length} characters`);
 
     if (forChat) {
       // Send screenshot data to chat interface
@@ -624,10 +506,22 @@ async function takeScreenshot(forChat = false) {
   } catch (error) {
     console.error('Screenshot error:', error);
     console.error('Error details:', error.message);
-    if (forChat) {
-      win.webContents.send('chat-error', 'Failed to capture screenshot: ' + error.message);
+    
+    // Provide user-friendly error messages based on the error type
+    let userFriendlyMessage = '';
+    
+    if (error.message.includes('getDisplayMedia') || error.message.includes('Screen Capture')) {
+      userFriendlyMessage = `🔐 Screen Recording Permission Issue\n\nCluemore couldn't capture your screen. This usually means screen recording permission is missing or restricted.\n\n📝 Please:\n1. Grant screen recording permission in System Preferences\n2. Restart Cluemore\n3. Try taking a screenshot again\n\nTechnical error: ${error.message}`;
+    } else if (error.message.includes('timeout') || error.message.includes('network')) {
+      userFriendlyMessage = `⏱️ Screenshot Timeout\n\nThe screenshot operation timed out. This might happen if your system is under heavy load.\n\n📝 Please try again in a moment.\n\nTechnical error: ${error.message}`;
     } else {
-      win.webContents.send('screenshot-error', error.message);
+      userFriendlyMessage = `❌ Screenshot Failed\n\nSomething went wrong while capturing your screen.\n\n📝 Please:\n1. Check that Cluemore has screen recording permission\n2. Try again in a moment\n3. Restart Cluemore if the issue persists\n\nTechnical error: ${error.message}`;
+    }
+    
+    if (forChat) {
+      win.webContents.send('chat-error', userFriendlyMessage);
+    } else {
+      win.webContents.send('screenshot-error', userFriendlyMessage);
     }
   }
 }
@@ -740,7 +634,6 @@ app.whenReady().then(async () => {
   // Request all necessary permissions upfront (macOS only)
   if (process.platform === 'darwin') {
     console.log('🚀 Starting permission request flow...');
-    await showPermissionWindow();
     await requestAllPermissions();
     
     // Small delay to let permission dialogs settle
@@ -1007,6 +900,53 @@ app.whenReady().then(async () => {
 
   ipcMain.handle('permissions:request-all', async (event) => {
     return await requestAllPermissions();
+  });
+
+  // Helper to re-request screen recording permission specifically
+  ipcMain.handle('permissions:request-screen-recording', async (event) => {
+    try {
+      console.log('🔐 Re-requesting screen recording permission...');
+      
+      if (process.platform !== 'darwin') {
+        return { success: true, message: 'Permission requests only needed on macOS' };
+      }
+
+      // Check current status
+      const currentStatus = systemPreferences.getMediaAccessStatus('screen');
+      console.log(`Current screen recording status: ${currentStatus}`);
+
+      if (currentStatus === 'granted') {
+        return { success: true, message: 'Screen recording permission already granted' };
+      }
+
+      // Trigger permission request by attempting to get sources
+      await desktopCapturer.getSources({ 
+        types: ['screen'], 
+        thumbnailSize: { width: 150, height: 150 } 
+      });
+
+      // Check status again after request
+      const newStatus = systemPreferences.getMediaAccessStatus('screen');
+      console.log(`New screen recording status: ${newStatus}`);
+
+      if (newStatus === 'granted') {
+        return { 
+          success: true, 
+          message: 'Screen recording permission granted! You can now take screenshots.' 
+        };
+      } else {
+        return { 
+          success: false, 
+          message: 'Please grant screen recording permission in System Preferences > Security & Privacy > Privacy > Screen Recording, then restart Cluemore.' 
+        };
+      }
+    } catch (error) {
+      console.error('Error requesting screen recording permission:', error);
+      return { 
+        success: false, 
+        message: 'Could not request permission. Please manually grant screen recording access in System Preferences.' 
+      };
+    }
   });
 
   // Auto-updater IPC handlers

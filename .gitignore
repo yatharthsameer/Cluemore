@@ -250,3 +250,6 @@ package-lock.json
 # Heroku
 .heroku-app-name
 backend/users.db
+frontend/.DS_Store
+
+.DS_Store

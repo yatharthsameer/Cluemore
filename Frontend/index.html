@@ -467,6 +467,31 @@
       display: flex;
     }
 
+    /* Permission error modal */
+    #permissionErrorModal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.8);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 2000;
+    }
+
+    #permissionErrorModal.show {
+      display: flex;
+    }
+
+    .permission-error-message {
+      margin-bottom: 15px;
+      color: #eee;
+      line-height: 1.5;
+      font-size: 12px;
+    }
+
     .modal-content {
       background: rgba(30, 30, 30, 0.95);
       border: 1px solid #555;
@@ -1873,6 +1898,28 @@
     </div>
   </div>
 
+  <!-- Permission error modal -->
+  <div id="permissionErrorModal" style="display: none;">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div class="modal-title">🔐 Screen Recording Permission Required</div>
+        <button class="modal-close" id="permissionModalCloseBtn">×</button>
+      </div>
+      <div class="modal-body">
+        <div id="permissionErrorMessage" style="margin-bottom: 15px; color: #eee; line-height: 1.5;"></div>
+        <div style="background: rgba(70, 130, 180, 0.1); border-left: 3px solid #70a1d4; padding: 10px; border-radius: 4px; font-size: 11px; color: #ccc;">
+          <strong style="color: #70a1d4;">Alternative fix:</strong><br>
+          Open System Preferences → Security & Privacy → Privacy → Screen Recording<br>
+          Check the box next to "Cluemore" and restart the app.
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="modal-btn secondary" id="closePermissionModalBtn">Close</button>
+        <button class="modal-btn primary" id="fixPermissionsBtn">Fix Permissions</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Include marked library for markdown rendering -->
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script>
@@ -3068,7 +3115,14 @@
       });
 
       window.electronAPI.onChatError((error) => {
-        addMessage(`Error: ${error}`, 'error');
+        // Check if this is a permission error
+        if (error.includes('Screen Recording Permission') || error.includes('Permission Required')) {
+          // Show permission-specific error handling
+          showPermissionErrorDialog(error);
+          addMessage(`Permission Error: Click the "Fix Permissions" button to resolve this issue.`, 'error');
+        } else {
+          addMessage(`Error: ${error}`, 'error');
+        }
         sendBtn.disabled = false;
         sendBtn.textContent = 'Send';
       });
@@ -3098,8 +3152,14 @@
         // Hide loader on error
         hideLoader();
 
-        // Show error notification to user
-        showErrorNotification(error);
+        // Check if this is a permission error
+        if (error.includes('Screen Recording Permission') || error.includes('Permission Required')) {
+          // Show permission-specific error handling
+          showPermissionErrorDialog(error);
+        } else {
+          // Show regular error notification for other errors
+          showErrorNotification(error);
+        }
 
         // Also show error message in the solution area
         const errorMessage = `⚠️ Error: ${error}`;
@@ -3232,11 +3292,81 @@
       errorEl.classList.remove('show');
     }
 
+    // Permission error dialog functions
+    function showPermissionErrorDialog(errorMessage) {
+      const modal = document.getElementById('permissionErrorModal');
+      const messageEl = document.getElementById('permissionErrorMessage');
+      
+      // Format the error message for better display
+      const formattedMessage = errorMessage.replace(/\n/g, '<br>');
+      messageEl.innerHTML = formattedMessage;
+      
+      modal.style.display = 'flex';
+      modal.style.position = 'fixed';
+      modal.style.top = '0';
+      modal.style.left = '0';
+      modal.style.width = '100%';
+      modal.style.height = '100%';
+      modal.style.background = 'rgba(0, 0, 0, 0.8)';
+      modal.style.alignItems = 'center';
+      modal.style.justifyContent = 'center';
+      modal.style.zIndex = '2000';
+    }
+
+    function closePermissionErrorModal() {
+      const modal = document.getElementById('permissionErrorModal');
+      modal.style.display = 'none';
+    }
+
+    async function requestScreenRecordingPermission() {
+      const fixBtn = document.getElementById('fixPermissionsBtn');
+      const originalText = fixBtn.textContent;
+      
+      try {
+        fixBtn.textContent = 'Requesting...';
+        fixBtn.disabled = true;
+
+        if (window.electronAPI && window.electronAPI.requestScreenRecordingPermission) {
+          const result = await window.electronAPI.requestScreenRecordingPermission();
+          
+          if (result.success) {
+            showErrorNotification('✅ ' + result.message);
+            closePermissionErrorModal();
+          } else {
+            showErrorNotification('⚠️ ' + result.message);
+          }
+        } else {
+          showErrorNotification('⚠️ Permission request API not available. Please manually grant permission in System Preferences.');
+        }
+      } catch (error) {
+        console.error('Error requesting permission:', error);
+        showErrorNotification('❌ Error requesting permission: ' + error.message);
+      } finally {
+        fixBtn.textContent = originalText;
+        fixBtn.disabled = false;
+      }
+    }
+
   // Initialize page state - set Stealth Mode as active by default
   document.addEventListener('DOMContentLoaded', () => {
     // Set Stealth Mode button as active since we start in notes mode
     interviewBtn.classList.add('active');
     chatBtn.classList.remove('active');
+
+    // Add permission modal event listeners
+    const permissionModalCloseBtn = document.getElementById('permissionModalCloseBtn');
+    const closePermissionModalBtn = document.getElementById('closePermissionModalBtn');
+    const fixPermissionsBtn = document.getElementById('fixPermissionsBtn');
+
+    if (permissionModalCloseBtn) {
+      permissionModalCloseBtn.addEventListener('click', closePermissionErrorModal);
+    }
+    if (closePermissionModalBtn) {
+      closePermissionModalBtn.addEventListener('click', closePermissionErrorModal);
+    }
+    if (fixPermissionsBtn) {
+      fixPermissionsBtn.addEventListener('click', requestScreenRecordingPermission);
+    }
   });
   </script>
 </body>

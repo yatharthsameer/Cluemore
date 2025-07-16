@@ -25,7 +25,9 @@
     "restore-electron": "cp config/package-variants/package.json.backup package.json && rm -rf node_modules package-lock.json && npm install",
     "build-dist": "./scripts/build-production.sh",
     "backup-config": "cp package.json config/package-variants/package.json.backup",
-    "verify-signing": "codesign -dv dist/mac-arm64/Cluemore.app && xcrun notarytool history --keychain-profile sameerbros-creds | head -5"
+    "verify-signing": "codesign -dv dist/mac-arm64/Cluemore.app && xcrun notarytool history --keychain-profile sameerbros-creds | head -5",
+    "postbuild": "echo '🔧 Rebuilding native modules for development...' && npm install",
+    "build-and-dev": "npm run build-mac && npm run postbuild"
   },
   "build": {
     "productName": "Cluemore",
@@ -86,10 +88,7 @@
       "entitlementsInherit": "assets/entitlements.mac.plist",
       "notarize": false,
       "extendInfo": {
-        "NSCameraUsageDescription": "Cluemore needs camera access to capture images for AI analysis and chat functionality.",
-        "NSMicrophoneUsageDescription": "Cluemore needs microphone access for voice input and audio-related AI features.",
-        "NSScreenCaptureDescription": "Cluemore needs screen recording permission to capture screenshots for AI analysis and problem solving assistance.",
-        "NSSystemAdministrationUsageDescription": "Cluemore needs administrative access for enhanced system integration and functionality."
+        "NSScreenCaptureDescription": "Cluemore needs screen recording permission to capture screenshots for AI analysis and problem solving assistance."
       }
     },
     "mas": {

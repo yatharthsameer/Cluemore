@@ -112,6 +112,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
         });
     },
 
+    // Permission management
+    checkPermissionStatus: () => ipcRenderer.invoke('permissions:check-status'),
+    requestAllPermissions: () => ipcRenderer.invoke('permissions:request-all'),
+    requestScreenRecordingPermission: () => ipcRenderer.invoke('permissions:request-screen-recording'),
+
     // Get current auth token
     getAuthToken: () => ipcRenderer.invoke('auth:get-token'),
 
