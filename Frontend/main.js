@@ -403,41 +403,80 @@ function createPromptEditorPanel() {
   return promptEditorWin;
 }
 
-// Chat function
+// Chat function with streaming support
 async function sendChatMessage(text, imageData = null, model = 'gemini-1.5-flash', chatHistory = [], customPrompt = null) {
   try {
-    console.log('Sending chat message - Text:', !!text, 'Image:', !!imageData, 'Model:', model, 'History length:', chatHistory.length);
+    console.log('Sending streaming chat message - Text:', !!text, 'Image:', !!imageData, 'Model:', model, 'History length:', chatHistory.length);
     console.log('Custom prompt:', customPrompt ? customPrompt.substring(0, 100) + '...' : 'None (using default)');
 
     const payload = {};
     if (text) payload.text = text;
     if (imageData) payload.image = imageData;
     payload.model = model;
-    payload.chatHistory = chatHistory; // Include conversation history
-    payload.customPrompt = customPrompt; // Include custom system prompt
+    payload.chatHistory = chatHistory;
+    payload.customPrompt = customPrompt;
 
-    // Use protected endpoint with JWT token
-    const response = await makeRequest(`${BACKEND_URL}/api/chat_protected`, {
+    // Use streaming endpoint
+    const response = await fetch(`${BACKEND_URL}/api/chat_protected_stream`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${jwtToken}`
+        'Authorization': `Bearer ${jwtToken}`,
+        'Content-Type': 'application/json'
       },
-      body: payload
+      body: JSON.stringify(payload)
     });
 
-    console.log('Chat response received:', response);
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
 
-    if (response.success && response.response) {
-      console.log('Received chat response from backend');
-      // Send response to renderer process to display
-      win.webContents.send('chat-response', response.response);
-    } else {
-      console.error('Chat backend error:', response.error);
-      win.webContents.send('chat-error', response.error || 'Unknown chat error');
+    console.log('Starting to read streaming chat response...');
+    
+    // Signal start of streaming
+    win.webContents.send('chat-stream-start');
+    
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value);
+        const lines = chunk.split('\n');
+
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            try {
+              const data = JSON.parse(line.slice(6));
+              
+              if (data.chunk) {
+                // Send chunk to renderer
+                win.webContents.send('chat-stream-chunk', data.chunk);
+              } else if (data.complete) {
+                // Streaming completed
+                win.webContents.send('chat-stream-complete');
+                console.log('Chat streaming completed successfully');
+                return;
+              } else if (data.error) {
+                // Error occurred
+                win.webContents.send('chat-error', data.error);
+                console.error('Chat streaming error:', data.error);
+                return;
+              }
+            } catch (parseError) {
+              console.error('Error parsing streaming data:', parseError);
+            }
+          }
+        }
+      }
+    } finally {
+      reader.releaseLock();
     }
 
   } catch (error) {
-    console.error('Chat error:', error);
+    console.error('Chat streaming error:', error);
     win.webContents.send('chat-error', error.message);
   }
 }
@@ -526,34 +565,79 @@ async function takeScreenshot(forChat = false) {
   }
 }
 
-// Process accumulated screenshots
+// Process accumulated screenshots with streaming
 async function processAccumulatedScreenshots(screenshots, model = 'gemini-1.5-flash', customPrompt = null) {
   try {
-    console.log('Processing accumulated screenshots:', screenshots.length, 'Model:', model);
+    console.log('Processing accumulated screenshots with streaming:', screenshots.length, 'Model:', model);
     console.log('Custom prompt:', customPrompt ? customPrompt.substring(0, 100) + '...' : 'None (using default)');
 
-    // Use protected endpoint with JWT token
-    const response = await makeRequest(`${BACKEND_URL}/api/screenshot_protected`, {
+    const payload = {
+      images: screenshots,
+      model: model,
+      customPrompt: customPrompt
+    };
+
+    // Use streaming endpoint
+    const response = await fetch(`${BACKEND_URL}/api/screenshot_protected_stream`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${jwtToken}`
+        'Authorization': `Bearer ${jwtToken}`,
+        'Content-Type': 'application/json'
       },
-      body: { images: screenshots, model: model, customPrompt: customPrompt }
+      body: JSON.stringify(payload)
     });
 
-    console.log('Backend response received:', response);
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
 
-    if (response.success && response.solution) {
-      console.log('Received solution from backend, length:', response.solution.length);
-      // Send solution to renderer process to display
-      win.webContents.send('screenshot-solution', response.solution);
-    } else {
-      console.error('Backend error:', response.error);
-      win.webContents.send('screenshot-error', response.error || 'Unknown error');
+    console.log('Starting to read streaming screenshot response...');
+    
+    // Signal start of streaming
+    win.webContents.send('screenshot-stream-start');
+    
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value);
+        const lines = chunk.split('\n');
+
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            try {
+              const data = JSON.parse(line.slice(6));
+              
+              if (data.chunk) {
+                // Send chunk to renderer
+                win.webContents.send('screenshot-stream-chunk', data.chunk);
+              } else if (data.complete) {
+                // Streaming completed
+                win.webContents.send('screenshot-stream-complete');
+                console.log('Screenshot streaming completed successfully');
+                return;
+              } else if (data.error) {
+                // Error occurred
+                win.webContents.send('screenshot-error', data.error);
+                console.error('Screenshot streaming error:', data.error);
+                return;
+              }
+            } catch (parseError) {
+              console.error('Error parsing streaming data:', parseError);
+            }
+          }
+        }
+      }
+    } finally {
+      reader.releaseLock();
     }
 
   } catch (error) {
-    console.error('Screenshot processing error:', error);
+    console.error('Screenshot streaming error:', error);
     console.error('Error details:', error.message);
     win.webContents.send('screenshot-error', error.message);
   }

@@ -281,3 +281,142 @@ class OpenAIClient:
         except Exception as e:
             log.error(f"OpenAI image-only analysis failed: {e}")
             raise RuntimeError(f"OpenAI request failed: {str(e)}")
+
+    def chat_completion_stream(self, model, messages):
+        """Send streaming chat completion request to OpenAI."""
+        try:
+            log.info(f"Sending streaming chat completion to OpenAI model: {model}")
+
+            response = self.client.chat.completions.create(
+                model=model,
+                messages=messages,
+                max_tokens=4000,
+                temperature=0.7,
+                timeout=30,
+                stream=True,
+            )
+
+            for chunk in response:
+                if chunk.choices and len(chunk.choices) > 0:
+                    delta = chunk.choices[0].delta
+                    if delta and delta.content:
+                        yield delta.content
+
+        except AuthenticationError as e:
+            log.error(f"OpenAI authentication failed: {e}")
+            raise RuntimeError("OpenAI API key is invalid or expired")
+        except RateLimitError as e:
+            log.error(f"OpenAI rate limit exceeded: {e}")
+            raise RuntimeError("OpenAI rate limit exceeded. Please try again later.")
+        except APIConnectionError as e:
+            log.error(f"OpenAI connection failed: {e}")
+            raise RuntimeError(
+                "Failed to connect to OpenAI. Please check your internet connection."
+            )
+        except APIError as e:
+            log.error(f"OpenAI API error: {e}")
+            raise RuntimeError(f"OpenAI API error: {e.message}")
+        except Exception as e:
+            log.error(f"OpenAI streaming chat completion failed: {e}")
+            raise RuntimeError(f"OpenAI request failed: {str(e)}")
+
+    def chat_with_history_stream(self, messages, model="gpt-4o"):
+        """Chat with conversation history for proper context - streaming version."""
+        try:
+            log.info(
+                f"Sending streaming chat with history to OpenAI model: {model}, message count: {len(messages)}"
+            )
+
+            # Process messages to ensure images are properly formatted
+            processed_messages = []
+            for message in messages:
+                processed_message = {"role": message["role"]}
+
+                if isinstance(message["content"], list):
+                    # Multi-modal message with text and images
+                    processed_content = []
+                    for content_item in message["content"]:
+                        if content_item["type"] == "text":
+                            processed_content.append(content_item)
+                        elif content_item["type"] == "image_url":
+                            # Prepare image for OpenAI
+                            image_url = content_item["image_url"]["url"]
+                            if image_url.startswith("data:image/png;base64,"):
+                                # Process the image to ensure it meets OpenAI requirements
+                                image_base64 = image_url.split(",")[1]
+                                processed_image_url = self._prepare_image_for_openai(
+                                    image_base64
+                                )
+                                processed_content.append(
+                                    {
+                                        "type": "image_url",
+                                        "image_url": {"url": processed_image_url},
+                                    }
+                                )
+                            else:
+                                processed_content.append(content_item)
+                    processed_message["content"] = processed_content
+                else:
+                    # Text-only message
+                    processed_message["content"] = message["content"]
+
+                processed_messages.append(processed_message)
+
+            # Use streaming method
+            for chunk in self.chat_completion_stream(model, processed_messages):
+                yield chunk
+
+        except AuthenticationError as e:
+            log.error(f"OpenAI authentication failed: {e}")
+            raise RuntimeError("OpenAI API key is invalid or expired")
+        except RateLimitError as e:
+            log.error(f"OpenAI rate limit exceeded: {e}")
+            raise RuntimeError("OpenAI rate limit exceeded. Please try again later.")
+        except APIConnectionError as e:
+            log.error(f"OpenAI connection failed: {e}")
+            raise RuntimeError(
+                "Failed to connect to OpenAI. Please check your internet connection."
+            )
+        except APIError as e:
+            log.error(f"OpenAI API error: {e}")
+            raise RuntimeError(f"OpenAI API error: {e.message}")
+        except Exception as e:
+            log.error(f"OpenAI streaming chat with history failed: {e}")
+            raise RuntimeError(f"OpenAI request failed: {str(e)}")
+
+    def analyze_multiple_images_stream(self, images_base64, prompt, model="gpt-4o"):
+        """Analyze multiple images with a prompt - streaming version."""
+        try:
+            log.info(f"Streaming analysis of {len(images_base64)} images with OpenAI")
+
+            # Prepare content with text and all images
+            content = [{"type": "text", "text": prompt}]
+
+            for i, image_base64 in enumerate(images_base64):
+                image_url = self._prepare_image_for_openai(image_base64)
+                content.append({"type": "image_url", "image_url": {"url": image_url}})
+                log.info(f"Added image {i+1} to content")
+
+            messages = [{"role": "user", "content": content}]
+
+            # Use streaming method
+            for chunk in self.chat_completion_stream(model, messages):
+                yield chunk
+
+        except AuthenticationError as e:
+            log.error(f"OpenAI authentication failed: {e}")
+            raise RuntimeError("OpenAI API key is invalid or expired")
+        except RateLimitError as e:
+            log.error(f"OpenAI rate limit exceeded: {e}")
+            raise RuntimeError("OpenAI rate limit exceeded. Please try again later.")
+        except APIConnectionError as e:
+            log.error(f"OpenAI connection failed: {e}")
+            raise RuntimeError(
+                "Failed to connect to OpenAI. Please check your internet connection."
+            )
+        except APIError as e:
+            log.error(f"OpenAI API error: {e}")
+            raise RuntimeError(f"OpenAI API error: {e.message}")
+        except Exception as e:
+            log.error(f"OpenAI streaming multiple image analysis failed: {e}")
+            raise RuntimeError(f"OpenAI request failed: {str(e)}")

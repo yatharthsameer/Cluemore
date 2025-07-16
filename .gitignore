@@ -253,3 +253,10 @@ backend/users.db
 frontend/.DS_Store
 
 .DS_Store
+backend/__pycache__/
+backend/users.db
+backend/users.db-journal
+backend/users.db-lock
+backend/users.db-wal
+backend/users.db-shm
+backend/users.db-wal

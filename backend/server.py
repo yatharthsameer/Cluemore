@@ -1,7 +1,7 @@
 # server.py ── ultra-slim backend (Gemini + OpenAI)
 
 import os, logging
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, Response
 from flask_cors import CORS
 from conversation import Conversation
 from dotenv import load_dotenv
@@ -14,6 +14,7 @@ from io import BytesIO
 from auth import auth_manager, token_required  # Import authentication
 from token_tracker import token_tracker  # Import token tracking
 from database import db_manager, USE_POSTGRESQL  # Import database manager
+import json
 
 load_dotenv()
 
@@ -964,6 +965,264 @@ def api_screenshot_protected(current_user):
 
     except Exception as e:
         log.error(f"Protected Screenshot API error: {e}")
+        return jsonify(error=str(e)), 500
+
+
+# ────────── Streaming Endpoints ───────────────────
+@APP.post("/api/chat_protected_stream")
+@token_required
+def api_chat_protected_stream(current_user):
+    """Protected streaming chat endpoint with token tracking and usage limits."""
+    try:
+        log.info(
+            f"=== Protected Streaming Chat API called by user {current_user['id']} ({current_user['email']}) ==="
+        )
+
+        # Check user limits before processing
+        limits = token_tracker.check_user_limits(current_user["id"])
+        if not limits["within_limits"]:
+            log.warning(f"User {current_user['id']} exceeded limits: {limits}")
+            return (
+                jsonify(
+                    error="Usage limit exceeded. Please contact administrator.",
+                    limits=limits,
+                ),
+                429,
+            )
+
+        # Get the request data
+        request_data = request.get_json(force=True, silent=True) or {}
+        user_text = request_data.get("text", "").strip()
+        image_data = request_data.get("image")
+        model_name = request_data.get("model", "gemini-1.5-flash")
+        chat_history = request_data.get("chatHistory", [])
+        custom_prompt = request_data.get("customPrompt")
+
+        log.info(
+            f"Protected streaming chat - Text: {'Yes' if user_text else 'No'}, Image: {'Yes' if image_data else 'No'}, Model: {model_name}, History: {len(chat_history)} messages"
+        )
+
+        if not user_text and not image_data:
+            return jsonify(error="No text or image provided"), 400
+
+        def generate_streaming_response():
+            try:
+                ai_client, actual_model = get_ai_client_and_model(model_name)
+
+                if model_name.startswith("gpt-"):
+                    # OpenAI streaming handling
+                    messages = []
+
+                    # Add system prompt if custom prompt is provided
+                    if custom_prompt:
+                        messages.append({"role": "system", "content": custom_prompt})
+
+                    # Add chat history
+                    for msg in chat_history:
+                        role = msg.get("role", "user")
+                        content = msg.get("content", "")
+                        image = msg.get("image")
+
+                        if image:
+                            messages.append(
+                                {
+                                    "role": role,
+                                    "content": [
+                                        {"type": "text", "text": content},
+                                        {
+                                            "type": "image_url",
+                                            "image_url": {
+                                                "url": f"data:image/png;base64,{image}"
+                                            },
+                                        },
+                                    ],
+                                }
+                            )
+                        else:
+                            messages.append({"role": role, "content": content})
+
+                    # Add current message
+                    if user_text and image_data:
+                        messages.append(
+                            {
+                                "role": "user",
+                                "content": [
+                                    {"type": "text", "text": user_text},
+                                    {
+                                        "type": "image_url",
+                                        "image_url": {
+                                            "url": f"data:image/png;base64,{image_data}"
+                                        },
+                                    },
+                                ],
+                            }
+                        )
+                    elif image_data:
+                        messages.append(
+                            {
+                                "role": "user",
+                                "content": [
+                                    {
+                                        "type": "text",
+                                        "text": "Please analyze this image.",
+                                    },
+                                    {
+                                        "type": "image_url",
+                                        "image_url": {
+                                            "url": f"data:image/png;base64,{image_data}"
+                                        },
+                                    },
+                                ],
+                            }
+                        )
+                    else:
+                        messages.append({"role": "user", "content": user_text})
+
+                    # Stream from OpenAI
+                    for chunk in ai_client.chat_with_history_stream(
+                        messages, actual_model
+                    ):
+                        yield f"data: {json.dumps({'chunk': chunk})}\n\n"
+
+                else:
+                    # Gemini streaming handling
+                    conversation_parts = []
+
+                    # Add custom system prompt if provided
+                    if custom_prompt:
+                        conversation_parts.append(f"System: {custom_prompt}")
+
+                    for msg in chat_history:
+                        role = "User" if msg.get("role") == "user" else "Assistant"
+                        content = msg.get("content", "")
+                        conversation_parts.append(f"{role}: {content}")
+
+                    # Prepare current message
+                    if user_text and image_data:
+                        # For Gemini with image, we need to use the image analysis stream method
+                        combined_prompt = f"Context: {chr(10).join(conversation_parts[-5:]) if conversation_parts else ''}{chr(10)}{user_text}"
+                        for chunk in ai_client.analyze_image_with_text_stream(
+                            image_data, combined_prompt
+                        ):
+                            yield f"data: {json.dumps({'chunk': chunk})}\n\n"
+                    elif image_data:
+                        combined_prompt = f"Context: {chr(10).join(conversation_parts[-5:]) if conversation_parts else ''}{chr(10)}Please analyze this image."
+                        for chunk in ai_client.analyze_image_with_text_stream(
+                            image_data, combined_prompt
+                        ):
+                            yield f"data: {json.dumps({'chunk': chunk})}\n\n"
+                    else:
+                        # Text only with Gemini
+                        for chunk in ai_client.chat_with_history_stream(
+                            conversation_parts, user_text, custom_prompt
+                        ):
+                            yield f"data: {json.dumps({'chunk': chunk})}\n\n"
+
+                # Send completion signal
+                yield f"data: {json.dumps({'complete': True})}\n\n"
+
+            except Exception as e:
+                log.error(f"Streaming error: {e}")
+                yield f"data: {json.dumps({'error': str(e)})}\n\n"
+
+        return Response(
+            generate_streaming_response(),
+            mimetype="text/plain",
+            headers={
+                "Cache-Control": "no-cache",
+                "Connection": "keep-alive",
+            },
+        )
+
+    except Exception as e:
+        log.error(f"Protected Streaming Chat API error: {e}")
+        return jsonify(error=str(e), success=False)
+
+
+@APP.post("/api/screenshot_protected_stream")
+@token_required
+def api_screenshot_protected_stream(current_user):
+    """Protected streaming screenshot endpoint with token tracking"""
+    try:
+        log.info(
+            f"=== Protected Streaming Screenshot API called by user {current_user['id']} ({current_user['email']}) ==="
+        )
+
+        # Check user limits before processing
+        limits = token_tracker.check_user_limits(current_user["id"])
+        if not limits["within_limits"]:
+            log.warning(f"User {current_user['id']} exceeded limits: {limits}")
+            return (
+                jsonify(
+                    error="Usage limit exceeded. Please contact administrator.",
+                    limits=limits,
+                ),
+                429,
+            )
+
+        j = request.get_json(force=True, silent=True) or {}
+        image_data = j.get("image")
+        images_data = j.get("images", [])
+        model_name = j.get("model", "gemini-1.5-flash")
+        custom_prompt = j.get("customPrompt")
+
+        # Support both single image and multiple images
+        if image_data and not images_data:
+            images_data = [image_data]
+        elif not images_data:
+            return jsonify(error="No image data provided"), 400
+
+        log.info(
+            f"Received {len(images_data)} screenshot(s) for streaming analysis with model: {model_name}"
+        )
+
+        # Use custom prompt if provided, otherwise use default
+        if custom_prompt and custom_prompt.strip():
+            prompt = custom_prompt.strip()
+            log.info(f"Using custom prompt: {prompt[:100]}...")
+        else:
+            prompt = (
+                "Solve this question, and give me the code for the same."
+                if len(images_data) == 1
+                else f"Analyze these {len(images_data)} screenshots which show different parts of the same coding question. Solve the complete question and provide the code solution."
+            )
+            log.info(f"Using default prompt: {prompt}")
+
+        def generate_streaming_response():
+            try:
+                ai_client, actual_model = get_ai_client_and_model(model_name)
+
+                if model_name.startswith("gpt-"):
+                    # OpenAI streaming handling
+                    for chunk in ai_client.analyze_multiple_images_stream(
+                        images_data, prompt, actual_model
+                    ):
+                        yield f"data: {json.dumps({'chunk': chunk})}\n\n"
+                else:
+                    # Gemini streaming handling
+                    for chunk in ai_client.analyze_multiple_images_stream(
+                        images_data, prompt
+                    ):
+                        yield f"data: {json.dumps({'chunk': chunk})}\n\n"
+
+                # Send completion signal
+                yield f"data: {json.dumps({'complete': True})}\n\n"
+
+            except Exception as e:
+                log.error(f"Streaming screenshot error: {e}")
+                yield f"data: {json.dumps({'error': str(e)})}\n\n"
+
+        return Response(
+            generate_streaming_response(),
+            mimetype="text/plain",
+            headers={
+                "Cache-Control": "no-cache",
+                "Connection": "keep-alive",
+            },
+        )
+
+    except Exception as e:
+        log.error(f"Protected Streaming Screenshot API error: {e}")
         return jsonify(error=str(e)), 500
 
 

@@ -843,6 +843,85 @@
       margin: 8px 0 !important;
     }
 
+    /* Chat typing indicator */
+    .typing-indicator {
+      max-width: 80%;
+      padding: 8px 12px;
+      border-radius: 12px;
+      margin: 2px 0;
+      background: rgba(60, 60, 60, .8);
+      color: #eee;
+      align-self: flex-start;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font: 13px/1.4 monospace;
+    }
+
+    .typing-indicator .typing-dots {
+      display: flex;
+      gap: 2px;
+      margin-left: 4px;
+    }
+
+    .typing-indicator .typing-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #888;
+      animation: typing-pulse 1.4s ease-in-out infinite;
+    }
+
+    .typing-indicator .typing-dot:nth-child(1) {
+      animation-delay: 0s;
+    }
+
+    .typing-indicator .typing-dot:nth-child(2) {
+      animation-delay: 0.2s;
+    }
+
+    .typing-indicator .typing-dot:nth-child(3) {
+      animation-delay: 0.4s;
+    }
+
+    @keyframes typing-pulse {
+      0%, 60%, 100% {
+        opacity: 0.3;
+        transform: scale(0.8);
+      }
+      30% {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+
+    /* Streaming message indicator - subtle cursor effect */
+    #currentStreamingMessage::after {
+      content: '▊';
+      color: #888;
+      animation: streaming-cursor 1s ease-in-out infinite;
+      margin-left: 2px;
+    }
+
+    @keyframes streaming-cursor {
+      0%, 50% {
+        opacity: 1;
+      }
+      51%, 100% {
+        opacity: 0;
+      }
+    }
+
+    /* Light theme typing indicator */
+    body.light-theme .typing-indicator {
+      background: rgba(220, 220, 220, 0.8);
+      color: #333;
+    }
+
+    body.light-theme .typing-indicator .typing-dot {
+      background: #666;
+    }
+
     /* Notes page styling */
     #notesContainer {
       flex: 1;
@@ -1752,7 +1831,8 @@
       <div id="infoIcon">
         i
         <div id="shortcutsTooltip">
-          <div class="tooltip-title">Keyboard Shortcuts</div>
+          <div class="tooltip-title">Cluemore v1.3.0</div>
+          <div style="color: #888; font-size: 10px; text-align: center; margin-bottom: 8px; border-bottom: 1px solid rgba(85, 85, 85, 0.3); padding-bottom: 6px;">Keyboard Shortcuts</div>
           <div class="shortcut-item">
             <span class="shortcut-key">Cmd+Shift+1</span>
             <span class="shortcut-desc">Take screenshot</span>
@@ -2727,6 +2807,62 @@
                   chatInput.placeholder = 'Ask a question...';
                 }
 
+                // Chat streaming functions
+                let currentStreamingMessage = null;
+                let streamingContent = '';
+
+                function startStreamingMessage() {
+                  // Remove any existing streaming message first
+                  stopStreamingMessage();
+                  
+                  // Create message element but don't add to DOM yet
+                  const messageEl = document.createElement('div');
+                  messageEl.className = 'message ai markdown-body';
+                  messageEl.id = 'currentStreamingMessage';
+                  
+                  currentStreamingMessage = messageEl;
+                  streamingContent = '';
+                  console.log('Started streaming message (element created, waiting for content)');
+                }
+
+                function appendToStreamingMessage(chunk) {
+                  if (currentStreamingMessage) {
+                    // If this is the first chunk and element isn't in DOM yet, add it now
+                    if (!currentStreamingMessage.parentNode) {
+                      chatMessages.appendChild(currentStreamingMessage);
+                      console.log('Added streaming message to DOM on first chunk');
+                    }
+                    
+                    // Append the chunk to the accumulated content
+                    streamingContent += chunk;
+                    
+                    // Render as markdown
+                    const renderedContent = renderMarkdown(streamingContent);
+                    currentStreamingMessage.innerHTML = renderedContent;
+                    
+                    // Scroll to bottom
+                    chatMessages.scrollTop = chatMessages.scrollHeight;
+                  }
+                }
+
+                function stopStreamingMessage() {
+                  if (currentStreamingMessage) {
+                    currentStreamingMessage.id = ''; // Remove the ID so it's no longer "current"
+                    currentStreamingMessage = null;
+                    streamingContent = ''; // Reset content accumulator
+                    console.log('Stopped streaming message');
+                  }
+                }
+
+                // Legacy functions for backward compatibility
+                function showTypingIndicator() {
+                  startStreamingMessage();
+                }
+
+                function hideTypingIndicator() {
+                  stopStreamingMessage();
+                }
+
     function sendMessage() {
       const text = chatInput.value.trim();
       const hasAccumulatedScreenshots = accumulatedScreenshots.length > 0;
@@ -2761,7 +2897,10 @@
       }
       
       sendBtn.disabled = true;
-      sendBtn.textContent = 'Sending...';
+      sendBtn.textContent = 'Generating...';
+      
+      // Show typing indicator while waiting for response
+      showTypingIndicator();
 
       // Send to backend with model selection, chat history, and custom prompt
       if (window.electronAPI) {
@@ -3107,14 +3246,35 @@
     if (window.electronAPI) {
 
 
-      // Chat response handlers
+      // Chat response handlers - streaming
+      window.electronAPI.onChatStreamStart(() => {
+        console.log('Chat streaming started');
+        startStreamingMessage();
+      });
+
+      window.electronAPI.onChatStreamChunk((chunk) => {
+        console.log('Received chat chunk:', chunk);
+        appendToStreamingMessage(chunk);
+      });
+
+      window.electronAPI.onChatStreamComplete(() => {
+        console.log('Chat streaming completed');
+        stopStreamingMessage();
+        sendBtn.disabled = false;
+        sendBtn.textContent = 'Send';
+      });
+
+      // Legacy chat response handlers (for backwards compatibility)
       window.electronAPI.onChatResponse((response) => {
+        hideTypingIndicator(); // Hide typing indicator before adding response
         addMessage(response, 'ai');
         sendBtn.disabled = false;
         sendBtn.textContent = 'Send';
       });
 
       window.electronAPI.onChatError((error) => {
+        hideTypingIndicator(); // Hide typing indicator before showing error
+        stopStreamingMessage(); // Also stop any ongoing streaming
         // Check if this is a permission error
         if (error.includes('Screen Recording Permission') || error.includes('Permission Required')) {
           // Show permission-specific error handling
@@ -3127,7 +3287,76 @@
         sendBtn.textContent = 'Send';
       });
 
-      // Screenshot handlers with markdown rendering
+      // Screenshot streaming functions
+      let currentStreamingSolution = null;
+      let streamingSolutionContent = '';
+
+      function startStreamingSolution() {
+        hideLoader(); // Hide any existing loader
+        
+        // Get the solution element and prepare it for streaming
+        currentStreamingSolution = document.getElementById('solution');
+        if (currentStreamingSolution) {
+          currentStreamingSolution.innerHTML = '';
+          currentStreamingSolution.classList.remove('empty');
+          currentStreamingSolution.classList.add('markdown-body');
+          currentStreamingSolution.style.display = 'block';
+        }
+        
+        streamingSolutionContent = '';
+        console.log('Started streaming solution - element ready for content');
+      }
+
+      function appendToStreamingSolution(chunk) {
+        if (currentStreamingSolution) {
+          // Append the chunk to the accumulated content
+          streamingSolutionContent += chunk;
+          
+          // Render as markdown
+          const renderedContent = renderMarkdown(streamingSolutionContent);
+          currentStreamingSolution.innerHTML = renderedContent;
+          
+          // Show the solution area if hidden
+          if (currentStreamingSolution.style.display === 'none') {
+            currentStreamingSolution.style.display = 'block';
+          }
+          
+          // Remove empty class if it exists
+          currentStreamingSolution.classList.remove('empty');
+        }
+      }
+
+      function stopStreamingSolution() {
+        if (currentStreamingSolution) {
+          currentStreamingSolution = null;
+          streamingSolutionContent = ''; // Reset content accumulator
+          console.log('Stopped streaming solution');
+          
+          // Auto-clear after 2 hours
+          setTimeout(() => {
+            setSolutionContent('');
+            console.log('Auto-cleared solution after 2 hours');
+          }, 7200000);
+        }
+      }
+
+      // Screenshot streaming handlers
+      window.electronAPI.onScreenshotStreamStart(() => {
+        console.log('Screenshot streaming started');
+        startStreamingSolution();
+      });
+
+      window.electronAPI.onScreenshotStreamChunk((chunk) => {
+        console.log('Received screenshot chunk:', chunk.length, 'characters');
+        appendToStreamingSolution(chunk);
+      });
+
+      window.electronAPI.onScreenshotStreamComplete(() => {
+        console.log('Screenshot streaming completed');
+        stopStreamingSolution();
+      });
+
+      // Legacy screenshot handlers (for backwards compatibility)
       window.electronAPI.onScreenshotSolution((solution) => {
         console.log('Received solution:', solution);
         console.log('Solution length:', solution.length);
@@ -3148,6 +3377,11 @@
 
       window.electronAPI.onScreenshotError((error) => {
         console.error('Screenshot error:', error);
+
+        // Stop any ongoing streaming
+        if (currentStreamingSolution) {
+          currentStreamingSolution = null;
+        }
 
         // Hide loader on error
         hideLoader();

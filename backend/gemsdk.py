@@ -391,3 +391,236 @@ class GeminiClient:
 
             logger.error(f"Full traceback: {traceback.format_exc()}")
             raise Exception(f"Failed to analyze images: {str(e)}")
+
+    def analyze_image_with_text_stream(self, image_base64: str, prompt: str):
+        """
+        Analyze an image with the given text prompt - streaming version.
+
+        Args:
+            image_base64: Base64 encoded image data
+            prompt: Text prompt to analyze the image
+
+        Yields:
+            String chunks from Gemini
+        """
+        try:
+            logger.info("Starting streaming image analysis...")
+
+            # Decode base64 image
+            logger.info("Decoding base64 image data...")
+            image_data = base64.b64decode(image_base64)
+            logger.info(f"Image data decoded, size: {len(image_data)} bytes")
+
+            # Create PIL Image object
+            logger.info("Creating PIL Image object...")
+            image = Image.open(BytesIO(image_data))
+            logger.info(f"PIL Image created successfully, size: {image.size}")
+
+            # Resize image if needed for better performance
+            image = self._resize_image_if_needed(image)
+
+            # Convert to RGB if needed
+            if image.mode != "RGB":
+                logger.info(f"Converting image from {image.mode} to RGB")
+                image = image.convert("RGB")
+
+            logger.info(
+                f"Streaming analysis of image of size {image.size} with prompt: {prompt[:50]}..."
+            )
+
+            # Send to Gemini for streaming analysis
+            logger.info("Sending streaming request to Gemini API...")
+
+            try:
+                # Direct streaming call
+                logger.info("Attempting direct Gemini streaming API call...")
+                response = self._model.generate_content([prompt, image], stream=True)
+
+                for chunk in response:
+                    if chunk.text:
+                        yield chunk.text
+
+                logger.info("Streaming response completed successfully")
+
+            except Exception as direct_error:
+                logger.error(f"Direct streaming call failed: {direct_error}")
+                logger.error(
+                    f"Direct streaming call exception type: {type(direct_error).__name__}"
+                )
+                # Re-raise the error since streaming should work directly
+                raise direct_error
+
+        except Exception as e:
+            logger.error(f"Error in streaming image analysis: {e}")
+            logger.error(f"Exception type: {type(e).__name__}")
+            import traceback
+
+            logger.error(f"Full traceback: {traceback.format_exc()}")
+            raise Exception(f"Failed to analyze image with streaming: {str(e)}")
+
+    def analyze_multiple_images_stream(self, images_base64: list, prompt: str):
+        """
+        Analyze multiple images with the given text prompt - streaming version.
+
+        Args:
+            images_base64: List of base64 encoded image data
+            prompt: Text prompt to analyze the images
+
+        Yields:
+            String chunks from Gemini
+        """
+        try:
+            logger.info(
+                f"Starting streaming analysis of {len(images_base64)} images..."
+            )
+
+            # Prepare content array starting with prompt
+            content = [prompt]
+
+            # Process each image
+            for i, image_data in enumerate(images_base64):
+                logger.info(f"Processing image {i+1}/{len(images_base64)}...")
+
+                # Remove data URL prefix if present
+                if image_data.startswith("data:image"):
+                    image_data = image_data.split(",")[1]
+
+                # Decode base64 image
+                image_bytes = base64.b64decode(image_data)
+                logger.info(f"Image {i+1} decoded, size: {len(image_bytes)} bytes")
+
+                # Create PIL Image object
+                image = Image.open(BytesIO(image_bytes))
+                logger.info(f"Image {i+1} created, size: {image.size}")
+
+                # Resize if needed for better performance
+                image = self._resize_image_if_needed(image)
+
+                # Convert to RGB if needed
+                if image.mode != "RGB":
+                    logger.info(f"Converting image {i+1} from {image.mode} to RGB")
+                    image = image.convert("RGB")
+
+                content.append(image)
+
+            logger.info(
+                f"Sending streaming request for {len(images_base64)} images to Gemini API..."
+            )
+
+            try:
+                # Direct streaming call
+                logger.info(
+                    "Attempting direct Gemini streaming API call with multiple images..."
+                )
+                response = self._model.generate_content(content, stream=True)
+
+                for chunk in response:
+                    if chunk.text:
+                        yield chunk.text
+
+                logger.info("Streaming response completed successfully")
+
+            except Exception as direct_error:
+                logger.error(f"Direct streaming call failed: {direct_error}")
+                logger.error(
+                    f"Direct streaming call exception type: {type(direct_error).__name__}"
+                )
+                # Re-raise the error since streaming should work directly
+                raise direct_error
+
+        except Exception as e:
+            logger.error(f"Error in streaming multiple images analysis: {e}")
+            logger.error(f"Exception type: {type(e).__name__}")
+            import traceback
+
+            logger.error(f"Full traceback: {traceback.format_exc()}")
+            raise Exception(f"Failed to analyze images with streaming: {str(e)}")
+
+    def chat_with_history_stream(
+        self, conversation_parts: list, current_message: str, custom_prompt: str = None
+    ):
+        """
+        Chat with conversation history using streaming.
+
+        Args:
+            conversation_parts: Previous conversation history
+            current_message: Current user message
+            custom_prompt: Optional custom system prompt
+
+        Yields:
+            String chunks from Gemini
+        """
+        try:
+            logger.info("Starting streaming chat with history...")
+
+            # Configure generation settings for better streaming performance
+            generation_config = {
+                "temperature": 0.7,
+                "top_p": 0.95,
+                "top_k": 40,
+                "max_output_tokens": 2048,
+            }
+
+            # Create a fresh model instance for this conversation
+            model = genai.GenerativeModel(
+                self.model_name,
+                generation_config=generation_config,
+                safety_settings=[
+                    {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"},
+                    {
+                        "category": "HARM_CATEGORY_HATE_SPEECH",
+                        "threshold": "BLOCK_NONE",
+                    },
+                    {
+                        "category": "HARM_CATEGORY_SEXUALLY_EXPLICIT",
+                        "threshold": "BLOCK_NONE",
+                    },
+                    {
+                        "category": "HARM_CATEGORY_DANGEROUS_CONTENT",
+                        "threshold": "BLOCK_NONE",
+                    },
+                ],
+            )
+
+            # Prepare conversation content
+            content = []
+
+            # Add custom system prompt if provided
+            if custom_prompt:
+                content.append(f"System: {custom_prompt}")
+
+            # Add conversation history
+            if conversation_parts:
+                context = "\n".join(
+                    conversation_parts[-10:]
+                )  # Last 10 messages for context
+                content.append(
+                    f"Previous conversation:\n{context}\n\nUser's current message: {current_message}"
+                )
+            else:
+                if custom_prompt:
+                    content.append(f"User's message: {current_message}")
+                else:
+                    content.append(current_message)
+
+            # Join content for single text input
+            full_content = "\n".join(content)
+
+            logger.info(f"Sending streaming chat request to Gemini...")
+
+            # Send streaming request
+            response = model.generate_content(full_content, stream=True)
+
+            for chunk in response:
+                if chunk.text:
+                    yield chunk.text
+
+            logger.info("Streaming chat response completed successfully")
+
+        except Exception as e:
+            logger.error(f"Error in streaming chat: {e}")
+            logger.error(f"Exception type: {type(e).__name__}")
+            import traceback
+
+            logger.error(f"Full traceback: {traceback.format_exc()}")
+            raise Exception(f"Failed to chat with streaming: {str(e)}")

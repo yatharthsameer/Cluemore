@@ -19,6 +19,25 @@ contextBridge.exposeInMainWorld('electronAPI', {
         });
     },
 
+    // Streaming screenshot handlers
+    onScreenshotStreamStart: (callback) => {
+        ipcRenderer.on('screenshot-stream-start', (event) => {
+            callback();
+        });
+    },
+
+    onScreenshotStreamChunk: (callback) => {
+        ipcRenderer.on('screenshot-stream-chunk', (event, chunk) => {
+            callback(chunk);
+        });
+    },
+
+    onScreenshotStreamComplete: (callback) => {
+        ipcRenderer.on('screenshot-stream-complete', (event) => {
+            callback();
+        });
+    },
+
     // Chat functionality with model parameter and custom prompt
     sendChatMessage: (text, imageData, model, chatHistory, customPrompt) => ipcRenderer.invoke('chat:send-message', text, imageData, model, chatHistory, customPrompt),
 
@@ -31,6 +50,25 @@ contextBridge.exposeInMainWorld('electronAPI', {
     onChatError: (callback) => {
         ipcRenderer.on('chat-error', (event, error) => {
             callback(error);
+        });
+    },
+
+    // Streaming chat handlers
+    onChatStreamStart: (callback) => {
+        ipcRenderer.on('chat-stream-start', (event) => {
+            callback();
+        });
+    },
+
+    onChatStreamChunk: (callback) => {
+        ipcRenderer.on('chat-stream-chunk', (event, chunk) => {
+            callback(chunk);
+        });
+    },
+
+    onChatStreamComplete: (callback) => {
+        ipcRenderer.on('chat-stream-complete', (event) => {
+            callback();
         });
     },
 
