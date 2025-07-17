@@ -1042,7 +1042,7 @@ app.whenReady().then(async () => {
 
   // Auto-updater IPC handlers
   ipcMain.handle('updater:check-for-updates', async (event) => {
-    if (process.env.NODE_ENV === 'production') {
+    if (app.isPackaged) {
       try {
         const result = await autoUpdater.checkForUpdates();
         return { success: true, updateInfo: result?.updateInfo };
@@ -1051,12 +1051,12 @@ app.whenReady().then(async () => {
         return { success: false, error: error.message };
       }
     } else {
-      return { success: false, error: 'Updates only available in production' };
+      return { success: false, error: 'Updates only available in packaged app' };
     }
   });
 
   ipcMain.handle('updater:download-update', async (event) => {
-    if (process.env.NODE_ENV === 'production') {
+    if (app.isPackaged) {
       try {
         await autoUpdater.downloadUpdate();
         return { success: true };
@@ -1065,16 +1065,16 @@ app.whenReady().then(async () => {
         return { success: false, error: error.message };
       }
     } else {
-      return { success: false, error: 'Updates only available in production' };
+      return { success: false, error: 'Updates only available in packaged app' };
     }
   });
 
   ipcMain.handle('updater:quit-and-install', async (event) => {
-    if (process.env.NODE_ENV === 'production') {
+    if (app.isPackaged) {
       autoUpdater.quitAndInstall();
       return { success: true };
     } else {
-      return { success: false, error: 'Updates only available in production' };
+      return { success: false, error: 'Updates only available in packaged app' };
     }
   });
 

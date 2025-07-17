@@ -1,6 +1,6 @@
 {
   "name": "cluemore",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "AI-powered chat application with Gemini and OpenAI integration",
   "main": "main.js",
   "homepage": "https://cluemore.herokuapp.com",
@@ -17,7 +17,7 @@
     "build-mac": "electron-builder --mac --publish=never",
     "build-mas": "electron-builder --mac mas",
     "dist": "npm run build-production && electron-builder --publish=never",
-    "build-production": "NODE_ENV=production npm ci --only=production",
+    "build-production": "NODE_ENV=production npm ci",
     "pack": "electron-builder --dir",
     "postinstall": "electron-builder install-app-deps",
     "test": "echo \"Error: no test specified\" && exit 1",
@@ -141,7 +141,7 @@
     "@electron/notarize": "^2.5.0",
     "@electron/osx-sign": "^2.0.0",
     "dotenv": "^17.2.0",
-    "electron": "^37.2.0",
+    "electron": "^37.2.3",
     "electron-builder": "^26.0.12"
   },
   "dependencies": {

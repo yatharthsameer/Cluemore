@@ -1688,6 +1688,32 @@
       background: rgba(200, 200, 200, 0.8);
     }
 
+    /* Check for Updates button styling */
+    #checkForUpdatesBtn:hover {
+      background: rgba(90, 150, 200, 0.9) !important;
+    }
+
+    #checkForUpdatesBtn:disabled {
+      background: rgba(50, 50, 50, 0.5) !important;
+      cursor: not-allowed !important;
+      opacity: 0.6 !important;
+    }
+
+    body.light-theme #checkForUpdatesBtn {
+      background: rgba(70, 130, 180, 0.8) !important;
+      color: #fff !important;
+      border: 1px solid #5a9fd4 !important;
+    }
+
+    body.light-theme #checkForUpdatesBtn:hover {
+      background: rgba(90, 150, 200, 0.9) !important;
+    }
+
+    body.light-theme #checkForUpdatesBtn:disabled {
+      background: rgba(50, 50, 50, 0.5) !important;
+      opacity: 0.6 !important;
+    }
+
     /* Light theme chat message styling */
     body.light-theme .message.user {
       background: rgba(70, 130, 180, 0.1);
@@ -1808,6 +1834,10 @@
         <div id="settingsDropdown">
           <div class="settings-title">Settings</div>
           <div class="settings-item">
+            <label>Version:</label>
+            <div style="color: #70a1d4; font-size: 11px; font-weight: bold;">Cluemore v2.0.1</div>
+            </div>
+            <div class="settings-item">
             <label for="themeSelector">Theme:</label>
             <select id="themeSelector">
               <option value="dark">Dark</option>
@@ -1818,6 +1848,20 @@
             <label for="opacitySlider">Opacity:</label>
             <input type="range" id="opacitySlider" min="20" max="100" value="100" />
             <span id="opacityValue">100%</span>
+          </div>
+          <div class="settings-item">
+            <button id="checkForUpdatesBtn" style="
+                                  width: 100%;
+                                  padding: 6px 12px;
+                                  background: rgba(70, 130, 180, 0.8);
+                                  color: #fff;
+                                  border: 1px solid #5a9fd4;
+                                  border-radius: 4px;
+                                  cursor: pointer;
+                                  font: 11px monospace;
+                                  transition: all 0.2s;
+                                  -webkit-app-region: no-drag;
+                                ">Check for Updates</button>
           </div>
         </div>
       </div>
@@ -1831,8 +1875,7 @@
       <div id="infoIcon">
         i
         <div id="shortcutsTooltip">
-          <div class="tooltip-title">Cluemore v1.3.0</div>
-          <div style="color: #888; font-size: 10px; text-align: center; margin-bottom: 8px; border-bottom: 1px solid rgba(85, 85, 85, 0.3); padding-bottom: 6px;">Keyboard Shortcuts</div>
+          <div class="tooltip-title">Keyboard Shortcuts</div>
           <div class="shortcut-item">
             <span class="shortcut-key">Cmd+Shift+1</span>
             <span class="shortcut-desc">Take screenshot</span>
@@ -2485,6 +2528,41 @@
                                                   }
                                                   console.log('Opacity changed to:', currentOpacity + '%');
                                                 });
+
+                                                            // Check for Updates button handler
+                                                            const checkForUpdatesBtn = document.getElementById('checkForUpdatesBtn');
+                                                            checkForUpdatesBtn.addEventListener('click', async (e) => {
+                                                              e.stopPropagation();
+
+                                                              const originalText = checkForUpdatesBtn.textContent;
+                                                              checkForUpdatesBtn.textContent = 'Checking...';
+                                                              checkForUpdatesBtn.disabled = true;
+
+                                                              try {
+                                                                if (window.electronAPI && window.electronAPI.checkForUpdates) {
+                                                                  console.log('🔄 Manual update check triggered');
+                                                                  const result = await window.electronAPI.checkForUpdates();
+
+                                                                  if (result.success) {
+                                                                    if (result.updateInfo) {
+                                                                      showErrorNotification(`🎉 Update available: v${result.updateInfo.version}! Download will start automatically.`);
+                                                                    } else {
+                                                                      showErrorNotification('✅ You are running the latest version!');
+                                                                    }
+                                                                  } else {
+                                                                    showErrorNotification(`❌ Update check failed: ${result.error}`);
+                                                                  }
+                                                                } else {
+                                                                  showErrorNotification('⚠️ Update functionality not available in development mode.');
+                                                                }
+                                                              } catch (error) {
+                                                                console.error('Manual update check error:', error);
+                                                                showErrorNotification(`❌ Update check error: ${error.message}`);
+                                                              } finally {
+                                                                checkForUpdatesBtn.textContent = originalText;
+                                                                checkForUpdatesBtn.disabled = false;
+                                                              }
+                                                            });
 
                                                                                                                   // Logout functionality
                                                                                                                   const logoutIcon = document.getElementById('logoutIcon');
