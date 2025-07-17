@@ -6,10 +6,17 @@ const http = require('http');
 const keytar = require('keytar');
 
 // Load environment variables only in development
-if (process.env.NODE_ENV !== 'production') {
-  require('dotenv').config({
-    path: process.env.NODE_ENV === 'production' ? '.env.production' : '.env.development'
-  });
+// Use try-catch to handle missing dotenv in production builds
+try {
+  if (process.env.NODE_ENV !== 'production') {
+    require('dotenv').config({
+      path: process.env.NODE_ENV === 'production' ? '.env.production' : '.env.development'
+    });
+    console.log('📄 Environment variables loaded from .env file');
+  }
+} catch (error) {
+  // dotenv not available in production build - this is expected
+  console.log('📄 Using system environment variables (dotenv not available)');
 }
 
 let win;

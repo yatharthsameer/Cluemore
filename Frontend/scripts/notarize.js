@@ -1,4 +1,9 @@
-require('dotenv').config();
+// Load environment variables for notarization (if available)
+try {
+    require('dotenv').config();
+} catch (error) {
+    console.log('dotenv not available - using system environment variables');
+}
 
 const { notarize } = require('@electron/notarize');
 const fs = require('fs');
