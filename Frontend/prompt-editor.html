@@ -3,31 +3,31 @@
 <head>
   <meta charset="utf-8">
   <style>
-    body, textarea {
+    * {
       margin: 0;
       padding: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(20, 20, 20, 0.95);
-      backdrop-filter: blur(18px);
-      border: none;
-      color: #fff;
-      font: 14px/1.4 monospace;
-      border-radius: 8px;
-      overflow: hidden;
+      box-sizing: border-box;
     }
 
     body {
+      width: 100%;
+      height: 100vh;
+      background: rgba(15, 15, 15, 0.95);
+      backdrop-filter: blur(20px);
+      color: #fff;
+      font-family: 'SF Mono', 'Monaco', 'Menlo', 'Consolas', monospace;
       display: flex;
       flex-direction: column;
-      box-sizing: border-box;
-      border: 1px solid #555;
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid rgba(80, 80, 80, 0.6);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
     }
 
     .header {
-      padding: 12px 16px;
-      background: rgba(30, 30, 30, 0.9);
-      border-bottom: 1px solid #444;
+      padding: 16px 20px 12px;
+      background: rgba(25, 25, 25, 0.8);
+      border-bottom: 1px solid rgba(60, 60, 60, 0.5);
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -35,113 +35,203 @@
     }
 
     .title {
-      font-size: 13px;
-      font-weight: bold;
-      color: #fff;
+      font-size: 15px;
+      font-weight: 600;
+      color: #ffffff;
+      letter-spacing: -0.2px;
     }
 
     .close-btn {
-      background: rgba(220, 53, 69, 0.8);
+      background: rgba(239, 68, 68, 0.9);
       border: none;
       color: #fff;
-      width: 20px;
-      height: 20px;
-      border-radius: 50%;
+      width: 24px;
+      height: 24px;
+      border-radius: 6px;
       cursor: pointer;
-      font-size: 12px;
+      font-size: 14px;
+      font-weight: bold;
       display: flex;
       align-items: center;
       justify-content: center;
+      transition: all 0.2s ease;
     }
 
     .close-btn:hover {
-      background: rgba(220, 53, 69, 1);
+      background: rgba(239, 68, 68, 1);
+      transform: scale(1.05);
+    }
+
+    .editor-container {
+      flex: 1;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+    }
+
+    .textarea-wrapper {
+      flex: 1;
+      background: rgba(30, 30, 30, 0.6);
+      border: 1px solid rgba(80, 80, 80, 0.4);
+      border-radius: 8px;
+      overflow: hidden;
+      position: relative;
+      transition: border-color 0.2s ease;
+    }
+
+    .textarea-wrapper:focus-within {
+      border-color: rgba(96, 165, 250, 0.6);
+      box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.1);
     }
 
     textarea {
+      width: 100%;
+      height: 100%;
+      background: transparent;
+      border: none;
       resize: none;
       outline: none;
-      background: transparent;
-      flex: 1;
       padding: 16px;
-      box-sizing: border-box;
-      border: none;
+      color: #ffffff;
+      font-size: 14px;
+      line-height: 1.6;
+      font-family: inherit;
       overflow-y: auto;
-      font-size: 13px;
-      line-height: 1.4;
-      word-wrap: break-word;
     }
 
-    /* Custom scrollbar styling for the textarea */
+    textarea::placeholder {
+      color: rgba(160, 160, 160, 0.7);
+      font-style: italic;
+    }
+
+    /* Custom scrollbar styling */
     textarea::-webkit-scrollbar {
       width: 8px;
     }
 
     textarea::-webkit-scrollbar-track {
-      background: rgba(30, 30, 30, 0.5);
-      border-radius: 4px;
+      background: transparent;
     }
 
     textarea::-webkit-scrollbar-thumb {
-      background: rgba(85, 85, 85, 0.8);
+      background: rgba(100, 100, 100, 0.5);
       border-radius: 4px;
     }
 
     textarea::-webkit-scrollbar-thumb:hover {
-      background: rgba(108, 117, 125, 0.9);
+      background: rgba(120, 120, 120, 0.7);
     }
 
     .footer {
-      padding: 12px 16px;
-      background: rgba(30, 30, 30, 0.9);
-      border-top: 1px solid #444;
+      padding: 16px 20px 20px;
+      background: rgba(25, 25, 25, 0.8);
+      border-top: 1px solid rgba(60, 60, 60, 0.5);
       display: flex;
       justify-content: space-between;
       align-items: center;
       flex-shrink: 0;
-      gap: 8px;
+      gap: 16px;
     }
 
-    .btn {
-      padding: 6px 12px;
-      border: none;
-      border-radius: 4px;
-      font-size: 12px;
-      cursor: pointer;
-      font-family: monospace;
-    }
-
-    .btn-primary {
-      background: rgba(70, 130, 180, 0.8);
-      color: #fff;
-    }
-
-    .btn-primary:hover {
-      background: rgba(70, 130, 180, 1);
-    }
-
-    .btn-secondary {
-      background: rgba(108, 117, 125, 0.8);
-      color: #fff;
-    }
-
-    .btn-secondary:hover {
-      background: rgba(108, 117, 125, 1);
-    }
-
-    .btn-danger {
-      background: rgba(220, 53, 69, 0.8);
-      color: #fff;
-    }
-
-    .btn-danger:hover {
-      background: rgba(220, 53, 69, 1);
+    .footer-left {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
     }
 
     .help-text {
+      font-size: 11px;
+      color: rgba(160, 160, 160, 0.8);
+      line-height: 1.3;
+    }
+
+    .footer-right {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .btn {
+      padding: 8px 16px;
+      border: none;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      font-family: inherit;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn:hover {
+      transform: translateY(-1px);
+    }
+
+    .btn-reset {
+      background: rgba(107, 114, 128, 0.8);
+      color: #ffffff;
+      border: 1px solid rgba(107, 114, 128, 0.3);
+    }
+
+    .btn-reset:hover {
+      background: rgba(107, 114, 128, 1);
+      border-color: rgba(107, 114, 128, 0.6);
+    }
+
+    .btn-cancel {
+      background: rgba(55, 55, 55, 0.8);
+      color: #ffffff;
+      border: 1px solid rgba(75, 75, 75, 0.5);
+    }
+
+    .btn-cancel:hover {
+      background: rgba(75, 75, 75, 1);
+      border-color: rgba(95, 95, 95, 0.7);
+    }
+
+    .btn-save {
+      background: rgba(34, 197, 94, 0.9);
+      color: #ffffff;
+      border: 1px solid rgba(34, 197, 94, 0.3);
+      font-weight: 600;
+    }
+
+    .btn-save:hover {
+      background: rgba(34, 197, 94, 1);
+      border-color: rgba(34, 197, 94, 0.6);
+      box-shadow: 0 4px 12px rgba(34, 197, 94, 0.3);
+    }
+
+    /* Character count indicator */
+    .char-count {
+      position: absolute;
+      bottom: 8px;
+      right: 12px;
       font-size: 10px;
-      color: #888;
-      margin-top: 4px;
+      color: rgba(160, 160, 160, 0.6);
+      background: rgba(20, 20, 20, 0.7);
+      padding: 2px 6px;
+      border-radius: 4px;
+      pointer-events: none;
+    }
+
+    /* Animate in */
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: scale(0.95) translateY(-10px);
+      }
+      to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+      }
+    }
+
+    body {
+      animation: slideIn 0.2s ease-out;
     }
   </style>
 </head>
@@ -151,16 +241,33 @@
     <button class="close-btn" id="closeBtn">×</button>
   </div>
   
-  <textarea id="promptTextarea" autofocus placeholder="Enter your system prompt here..."></textarea>
+  <div class="editor-container">
+    <div class="textarea-wrapper">
+      <textarea 
+        id="promptTextarea" 
+        autofocus 
+        placeholder="Enter your system prompt here... 
+
+This prompt will guide how the AI responds to your requests. Be specific about the tone, style, and type of responses you want."></textarea>
+      <div class="char-count" id="charCount">0 characters</div>
+    </div>
+  </div>
   
   <div class="footer">
-    <div>
-      <button class="btn btn-danger" id="resetBtn">Reset to Default</button>
-      <div class="help-text">Cmd+Enter to save, Escape to cancel</div>
+    <div class="footer-left">
+      <button class="btn btn-reset" id="resetBtn">
+        <span>↺</span> Reset to Default
+      </button>
+      <div class="help-text">
+        ⌘+Enter to save • Escape to cancel<br>
+        ⌘+R to reset • Auto-saves on close
+      </div>
     </div>
-    <div>
-      <button class="btn btn-secondary" id="cancelBtn">Cancel</button>
-      <button class="btn btn-primary" id="saveBtn">Save</button>
+    <div class="footer-right">
+      <button class="btn btn-cancel" id="cancelBtn">Cancel</button>
+      <button class="btn btn-save" id="saveBtn">
+        <span>✓</span> Save Prompt
+      </button>
     </div>
   </div>
 
@@ -171,6 +278,7 @@
     const cancelBtn = document.getElementById('cancelBtn');
     const saveBtn = document.getElementById('saveBtn');
     const panelTitle = document.getElementById('panelTitle');
+    const charCount = document.getElementById('charCount');
 
     let currentMode = 'interview'; // 'interview' or 'chat'
     let originalPrompt = '';
@@ -180,12 +288,33 @@
       promptTextarea.focus();
     });
 
+    // Character count update
+    function updateCharCount() {
+      const count = promptTextarea.value.length;
+      charCount.textContent = `${count} character${count !== 1 ? 's' : ''}`;
+      
+      // Color coding for length
+      if (count < 50) {
+        charCount.style.color = 'rgba(239, 68, 68, 0.7)'; // Too short
+      } else if (count < 2000) {
+        charCount.style.color = 'rgba(34, 197, 94, 0.7)'; // Good length
+      } else {
+        charCount.style.color = 'rgba(245, 158, 11, 0.7)'; // Getting long
+      }
+    }
+
+    promptTextarea.addEventListener('input', updateCharCount);
+
     // Handle keyboard shortcuts
     promptTextarea.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
         closePanel();
       } else if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault();
         savePrompt();
+      } else if (e.key === 'r' && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault();
+        resetToDefault();
       }
     });
 
@@ -204,13 +333,23 @@
 
     function savePrompt() {
       const newPrompt = promptTextarea.value.trim();
-      if (newPrompt) {
+      if (newPrompt && newPrompt.length >= 10) {
         if (window.electronAPI && window.electronAPI.savePrompt) {
           window.electronAPI.savePrompt(currentMode, newPrompt);
         }
         closePanel();
       } else {
-        alert('Please enter a valid prompt');
+        // Visual feedback for invalid input
+        const wrapper = document.querySelector('.textarea-wrapper');
+        wrapper.style.borderColor = 'rgba(239, 68, 68, 0.8)';
+        wrapper.style.boxShadow = '0 0 0 3px rgba(239, 68, 68, 0.2)';
+        
+        setTimeout(() => {
+          wrapper.style.borderColor = '';
+          wrapper.style.boxShadow = '';
+        }, 2000);
+        
+        promptTextarea.focus();
       }
     }
 
@@ -218,6 +357,17 @@
       if (window.electronAPI && window.electronAPI.getDefaultPrompt) {
         window.electronAPI.getDefaultPrompt(currentMode).then(defaultPrompt => {
           promptTextarea.value = defaultPrompt;
+          updateCharCount();
+          
+          // Visual feedback
+          const wrapper = document.querySelector('.textarea-wrapper');
+          wrapper.style.borderColor = 'rgba(34, 197, 94, 0.6)';
+          wrapper.style.boxShadow = '0 0 0 3px rgba(34, 197, 94, 0.1)';
+          
+          setTimeout(() => {
+            wrapper.style.borderColor = '';
+            wrapper.style.boxShadow = '';
+          }, 1500);
         });
       }
     }
@@ -228,14 +378,26 @@
         currentMode = data.mode;
         originalPrompt = data.prompt;
         promptTextarea.value = data.prompt;
-        panelTitle.textContent = data.mode === 'chat' ? 'Edit Chat System Prompt' : 'Edit Interview System Prompt';
+        
+        // Update title based on mode
+        const modeNames = {
+          'chat': 'Chat System Prompt',
+          'interview': 'Stealth Mode Prompt'
+        };
+        panelTitle.textContent = `Edit ${modeNames[data.mode] || 'System Prompt'}`;
+        
+        updateCharCount();
         
         // Focus after a short delay to ensure window is ready
         setTimeout(() => {
           promptTextarea.focus();
-        }, 100);
+          promptTextarea.setSelectionRange(promptTextarea.value.length, promptTextarea.value.length);
+        }, 150);
       });
     }
+
+    // Initialize character count on load
+    updateCharCount();
   </script>
 </body>
 </html> 

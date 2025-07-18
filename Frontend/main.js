@@ -379,8 +379,8 @@ function createMainWindow() {
 function createPromptEditorPanel() {
   // Only use panel type on macOS to prevent focus stealing
   const windowOptions = {
-    width: 500,
-    height: 400,
+    width: 700,
+    height: 550,
     frame: false,
     resizable: false,
     transparent: true,
