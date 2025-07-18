@@ -656,69 +656,228 @@ function setupAutoUpdater() {
   autoUpdater.logger = console;
   autoUpdater.logger.transports.file.level = 'info';
   
-  // Update available
+  // Configure GitHub provider with proper settings
+  autoUpdater.setFeedURL({
+    provider: 'github',
+    owner: 'yatharthsameer',
+    repo: 'cluemore',
+    private: false,
+    releaseType: 'release' // Only check actual releases, not pre-releases
+  });
+
+  // Set auto-download to true for completely automatic updates
+  autoUpdater.autoDownload = true;
+  autoUpdater.autoInstallOnAppQuit = true;
+  
+  // Allow pre-release downloads if needed
+  autoUpdater.allowPrerelease = false;
+  
+  // Force a specific architecture if needed
+  if (process.arch === 'arm64') {
+    console.log('🏗️ Configuring for Apple Silicon (ARM64)');
+  }
+
+  // Add more detailed logging
+  console.log('🔄 Auto-updater configuration:');
+  console.log(`   Current version: ${app.getVersion()}`);
+  console.log(`   Platform: ${process.platform}`);
+  console.log(`   Architecture: ${process.arch}`);
+  console.log(`   Repository: yatharthsameer/cluemore`);
+  console.log(`   Auto-download: ${autoUpdater.autoDownload}`);
+  console.log(`   Allow prerelease: ${autoUpdater.allowPrerelease}`);
+
+  // Update available - automatically download without asking
   autoUpdater.on('update-available', (info) => {
-    console.log('🔄 Update available:', info.version);
+    const currentVersion = app.getVersion();
+    const availableVersion = info.version;
     
-    const response = dialog.showMessageBoxSync({
-      type: 'info',
-      buttons: ['Later', 'Download'],
-      defaultId: 1,
-      title: 'Cluemore Update Available',
-      message: `A new version is available (v${info.version}).`,
-      detail: 'Download now and install when ready?'
+    // Normalize versions for comparison (remove 'v' prefix if present)
+    const normalizeVersion = (v) => v.replace(/^v/, '');
+    const currentNormalized = normalizeVersion(currentVersion);
+    const availableNormalized = normalizeVersion(availableVersion);
+
+    console.log('🔄 Update available event triggered!');
+    console.log(`   Current version: ${currentVersion} (normalized: ${currentNormalized})`);
+    console.log(`   Available version: ${availableVersion} (normalized: ${availableNormalized})`);
+    console.log(`   Release date: ${info.releaseDate}`);
+    console.log(`   Platform: ${process.platform}, Architecture: ${process.arch}`);
+    console.log(`   Full update info:`, {
+      version: info.version,
+      files: info.files?.map(f => ({ url: f.url, size: f.size })),
+      path: info.path,
+      sha512: info.sha512,
+      releaseDate: info.releaseDate
     });
 
-    if (response === 1) {
-      console.log('📥 Starting download...');
-      autoUpdater.downloadUpdate();
+    // Check if this is actually a newer version
+    if (currentNormalized === availableNormalized) {
+      console.log('⚠️ False positive: Available version matches current version, skipping download');
+
+      // Send "up to date" notification instead
+      if (win && !win.isDestroyed()) {
+        win.webContents.send('update-notification', {
+          type: 'up-to-date',
+          version: currentVersion,
+          message: 'You are running the latest version!'
+        });
+      }
+      return;
     }
+
+    console.log('📥 Starting auto-download...');
+    console.log(`   autoDownload setting: ${autoUpdater.autoDownload}`);
+
+    // Check if there are compatible files for this platform/architecture
+    const compatibleFiles = info.files?.filter(file => {
+      const isArm64 = file.url.includes('arm64') || file.url.includes('aarch64');
+      const isDmg = file.url.includes('.dmg');
+      const isMac = process.platform === 'darwin';
+      const isCorrectArch = process.arch === 'arm64' ? isArm64 : !isArm64;
+
+      console.log(`   Checking file: ${file.url}`);
+      console.log(`     isDmg: ${isDmg}, isMac: ${isMac}, isCorrectArch: ${isCorrectArch}`);
+
+      return isMac && isDmg && isCorrectArch;
+    });
+
+    console.log(`   Compatible files found: ${compatibleFiles?.length || 0}`);
+    if (compatibleFiles?.length === 0) {
+      console.error('❌ No compatible files found for this platform/architecture');
+
+      if (win && !win.isDestroyed()) {
+        win.webContents.send('update-notification', {
+          type: 'error',
+          message: `No compatible update files found for ${process.platform} ${process.arch}`
+        });
+      }
+      return;
+    }
+
+    // Send notification to renderer if main window exists
+    if (win && !win.isDestroyed()) {
+      win.webContents.send('update-notification', {
+        type: 'download-started',
+        version: info.version,
+        message: `Downloading update v${info.version}...`
+      });
+    }
+
+    // Force start download if autoDownload isn't working
+    setTimeout(() => {
+      console.log('🔧 Manually triggering download as fallback...');
+      autoUpdater.downloadUpdate().catch(error => {
+        console.error('❌ Manual download trigger failed:', error);
+      });
+    }, 2000);
   });
 
   // Download progress
   autoUpdater.on('download-progress', (progressObj) => {
-    console.log(`📥 Download progress: ${Math.round(progressObj.percent)}%`);
+    console.log(`📥 Download progress: ${Math.round(progressObj.percent)}% (${Math.round(progressObj.transferred / 1024 / 1024)}MB / ${Math.round(progressObj.total / 1024 / 1024)}MB)`);
+    console.log(`   Speed: ${Math.round(progressObj.bytesPerSecond / 1024)}KB/s`);
     
     // Send progress to renderer if main window exists
     if (win && !win.isDestroyed()) {
       win.webContents.send('update-progress', {
         percent: Math.round(progressObj.percent),
         transferred: progressObj.transferred,
-        total: progressObj.total
+        total: progressObj.total,
+        bytesPerSecond: progressObj.bytesPerSecond
       });
     }
   });
 
-  // Update downloaded
+  // Update downloaded - automatically install and restart
   autoUpdater.on('update-downloaded', (info) => {
     console.log('✅ Update downloaded:', info.version);
+    console.log('🔄 Auto-installing update and restarting...');
     
-    const response = dialog.showMessageBoxSync({
-      type: 'question',
-      buttons: ['Later', 'Install & Restart'],
-      defaultId: 1,
-      title: 'Update Ready to Install',
-      message: 'Update downloaded successfully.',
-      detail: 'Restart the app to apply the update now?'
-    });
-
-    if (response === 1) {
-      console.log('🔄 Installing update and restarting...');
-      autoUpdater.quitAndInstall();
+    // Send notification to renderer
+    if (win && !win.isDestroyed()) {
+      win.webContents.send('update-notification', {
+        type: 'installing',
+        version: info.version,
+        message: `Installing update v${info.version}... App will restart automatically.`
+      });
     }
+
+    // Give user a moment to see the notification, then restart
+    setTimeout(() => {
+      autoUpdater.quitAndInstall(false, true);
+    }, 2000);
   });
 
   // Update not available
   autoUpdater.on('update-not-available', (info) => {
-    console.log('✅ App is up to date:', info.version);
+    console.log('✅ App is up to date!');
+    console.log(`   Current version: ${app.getVersion()}`);
+    console.log(`   Latest version: ${info.version}`);
+
+    // Send notification to renderer if this was a manual check
+    if (win && !win.isDestroyed()) {
+      win.webContents.send('update-notification', {
+        type: 'up-to-date',
+        version: info.version,
+        message: 'You are running the latest version!'
+      });
+    }
   });
 
   // Error handling
   autoUpdater.on('error', (error) => {
     console.error('❌ Auto-updater error:', error);
+    console.error('   Error details:', {
+      message: error.message,
+      stack: error.stack,
+      name: error.name,
+      code: error.code,
+      errno: error.errno,
+      syscall: error.syscall,
+      hostname: error.hostname,
+      path: error.path
+    });
+    
+    // Determine error type for better user messaging
+    let userMessage = 'Update failed';
+    if (error.message.includes('ENOTFOUND') || error.message.includes('network')) {
+      userMessage = 'Update failed: Network connection error';
+    } else if (error.message.includes('404') || error.message.includes('not found')) {
+      userMessage = 'Update failed: No compatible update found for your system';
+    } else if (error.message.includes('EACCES') || error.message.includes('permission')) {
+      userMessage = 'Update failed: Permission denied';
+    } else if (error.message.includes('signature') || error.message.includes('verification')) {
+      userMessage = 'Update failed: File verification error';
+    } else {
+      userMessage = `Update failed: ${error.message}`;
+    }
+
+    // Send error notification to renderer
+    if (win && !win.isDestroyed()) {
+      win.webContents.send('update-notification', {
+        type: 'error',
+        message: userMessage
+      });
+    }
   });
 
-  console.log('🔄 Auto-updater configured successfully');
+  // Add checking-for-update event
+  autoUpdater.on('checking-for-update', () => {
+    console.log('🔍 Checking for updates...');
+    console.log(`   Current version: ${app.getVersion()}`);
+    console.log(`   Checking repository: yatharthsameer/cluemore`);
+    console.log(`   Check time: ${new Date().toISOString()}`);
+  });
+
+  // Clear any cached update information to prevent stale data
+  try {
+    if (autoUpdater.app && autoUpdater.app.appUpdateConfigPath) {
+      console.log('🗑️ Clearing update cache for fresh check');
+    }
+  } catch (error) {
+    console.log('ℹ️ No update cache to clear');
+  }
+
+  console.log('🔄 Auto-updater configured for automatic updates');
 }
 
 app.whenReady().then(async () => {
@@ -984,6 +1143,10 @@ app.whenReady().then(async () => {
     return { success: true, url: BACKEND_URL };
   });
 
+  ipcMain.handle('app:get-version', async (event) => {
+    return app.getVersion();
+  });
+
   // Permission status IPC handler
   ipcMain.handle('permissions:check-status', async (event) => {
     return checkPermissionStatus();
@@ -1040,43 +1203,69 @@ app.whenReady().then(async () => {
     }
   });
 
-  // Auto-updater IPC handlers
+    // Auto-updater IPC handlers
   ipcMain.handle('updater:check-for-updates', async (event) => {
     if (app.isPackaged) {
       try {
+        const currentVersion = app.getVersion();
+        console.log('🔄 Manual update check triggered');
+        console.log(`   Current app version: ${currentVersion}`);
+        console.log(`   Environment: ${process.env.NODE_ENV || 'development'}`);
+        console.log(`   Platform: ${process.platform}, Architecture: ${process.arch}`);
+        
         const result = await autoUpdater.checkForUpdates();
-        return { success: true, updateInfo: result?.updateInfo };
+        console.log('📋 Update check result:', {
+          updateInfo: result?.updateInfo ? {
+            version: result.updateInfo.version,
+            files: result.updateInfo.files?.map(f => ({ url: f.url, size: f.size })),
+            releaseDate: result.updateInfo.releaseDate
+          } : null,
+          downloadPromise: !!result?.downloadPromise,
+          cancellationToken: !!result?.cancellationToken
+        });
+
+        // Check if update is actually available and newer
+        if (result && result.updateInfo) {
+          const availableVersion = result.updateInfo.version;
+          
+          // Normalize versions for comparison (remove 'v' prefix if present)
+          const normalizeVersion = (v) => v.replace(/^v/, '');
+          const currentNormalized = normalizeVersion(currentVersion);
+          const availableNormalized = normalizeVersion(availableVersion);
+          
+          console.log(`🔍 Version comparison:`);
+          console.log(`   Current: ${currentVersion} (normalized: ${currentNormalized})`);
+          console.log(`   Available: ${availableVersion} (normalized: ${availableNormalized})`);
+          
+          if (currentNormalized === availableNormalized) {
+            console.log('✅ Versions match - no update needed');
+            return { success: true, updateInfo: null, message: 'You are running the latest version!' };
+          }
+          
+          console.log('🔄 Update found, will auto-download and install');
+          return { success: true, updateInfo: result.updateInfo, message: `Update v${availableVersion} found. Downloading automatically...` };
+        } else {
+          // No update available - notification already sent by event listener
+          console.log('✅ No updates available');
+          return { success: true, updateInfo: null, message: 'You are running the latest version!' };
+        }
       } catch (error) {
         console.error('Manual update check failed:', error);
+        console.error('   Error details:', {
+          message: error.message,
+          stack: error.stack,
+          name: error.name,
+          code: error.code
+        });
         return { success: false, error: error.message };
       }
     } else {
+      console.log('⚠️ Update check skipped - not in packaged app');
       return { success: false, error: 'Updates only available in packaged app' };
     }
   });
 
-  ipcMain.handle('updater:download-update', async (event) => {
-    if (app.isPackaged) {
-      try {
-        await autoUpdater.downloadUpdate();
-        return { success: true };
-      } catch (error) {
-        console.error('Download update failed:', error);
-        return { success: false, error: error.message };
-      }
-    } else {
-      return { success: false, error: 'Updates only available in packaged app' };
-    }
-  });
 
-  ipcMain.handle('updater:quit-and-install', async (event) => {
-    if (app.isPackaged) {
-      autoUpdater.quitAndInstall();
-      return { success: true };
-    } else {
-      return { success: false, error: 'Updates only available in packaged app' };
-    }
-  });
 
   // Existing IPC Handlers for chat functionality
   ipcMain.handle('chat:send-message', async (event, text, imageData, model, chatHistory, customPrompt) => {

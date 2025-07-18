@@ -37,10 +37,8 @@ Frontend/
 │
 └── dist/                           # Build output (created during build)
     ├── Cluemore-X.X.X-arm64.dmg    # Apple Silicon distribution
-    ├── Cluemore-X.X.X.dmg          # Intel x64 distribution
-    ├── Cluemore-X.X.X-arm64-mac.zip
-    ├── Cluemore-X.X.X-mac.zip
-    └── mac-arm64/Cluemore.app      # Raw app bundles
+    ├── Cluemore-X.X.X-arm64-mac.zip # Apple Silicon ZIP
+    └── mac-arm64/Cluemore.app      # Raw app bundle
 ```
 
 ## 🧹 **Recently Cleaned Up**
@@ -120,7 +118,7 @@ npm install
 
 1. **Don't modify** `afterAllArtifactBuild` in package.json - it fixes notarization timing
 2. **Stapling Error 65 is normal** - apps still work for distribution
-3. **Both ARM64 and x64 DMGs needed** - different architectures
+3. **ARM64 DMG for Apple Silicon Macs** - Apple Silicon architecture only
 4. **Build script checks prerequisites** automatically
 5. **Never commit credentials** - use keychain profiles only
 

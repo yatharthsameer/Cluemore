@@ -41,7 +41,7 @@ ls -la dist/*.dmg
 
 After successful build:
 - `dist/Cluemore-1.0.0-arm64.dmg` → **Apple Silicon (M1/M2/M3)**
-- `dist/Cluemore-1.0.0.dmg` → **Intel x64**
+- `dist/Cluemore-1.0.0-arm64.dmg` → **Apple Silicon**
 
 **Upload both files to your distribution platform**
 

@@ -3,14 +3,12 @@
 ## 📊 Results
 
 ### Before Optimization
-- **ARM64 DMG**: 112MB
-- **x64 DMG**: 112MB  
+- **ARM64 DMG**: 112MB (Apple Silicon)
 - **node_modules**: 597MB
 - **Production dependencies**: Not optimized
 
 ### After Optimization  
-- **ARM64 DMG**: 96MB (**14% reduction**)
-- **x64 DMG**: 112MB (x64 architecture inherently larger)
+- **ARM64 DMG**: 96MB (**14% reduction** - Apple Silicon only)
 - **node_modules**: 598MB (development), **4.7MB (production only)**
 - **Production dependencies**: Reduced by **99.2%**
 
@@ -70,8 +68,8 @@
 4. **Asset Optimization**: Current assets (80KB) are already well-optimized
 
 ### Architecture-Specific Builds:
-- Consider separate ARM64-only builds for Apple Silicon users
-- x64 builds remain larger due to Intel architecture requirements
+- Focused on ARM64-only builds for Apple Silicon users  
+- Optimized specifically for Apple Silicon Macs (M1/M2/M3)
 
 ## 🛠️ Tools Created
 

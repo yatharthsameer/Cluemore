@@ -19,7 +19,7 @@ npm run build-mac
 This guide documents the **working** distribution process for Cluemore Mac app. The setup includes:
 - ✅ Apple Developer ID code signing
 - ✅ Notarization via Apple's notarytool
-- ✅ Multi-architecture builds (ARM64 + x64)
+- ✅ Apple Silicon builds (ARM64)
 - ⚠️ Stapling known issue (doesn't affect distribution)
 
 ## 🔧 Critical Fix Applied
@@ -58,9 +58,7 @@ npm run build-mac
 ```
 Frontend/dist/
 ├── Cluemore-1.0.0-arm64.dmg         # Apple Silicon DMG
-├── Cluemore-1.0.0.dmg               # Intel x64 DMG  
 ├── Cluemore-1.0.0-arm64-mac.zip     # Apple Silicon ZIP
-├── Cluemore-1.0.0-mac.zip           # Intel x64 ZIP
 └── mac-arm64/Cluemore.app           # Raw ARM64 app bundle
 ```
 
@@ -212,7 +210,7 @@ npm run restore-electron
 Before releasing:
 - [ ] Version updated in `package.json`
 - [ ] Build completes without errors
-- [ ] Both DMG files created (ARM64 + x64)
+- [ ] ARM64 DMG file created
 - [ ] Code signature verified
 - [ ] Notarization shows "Accepted"
 - [ ] Test install on clean macOS system

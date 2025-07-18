@@ -186,14 +186,21 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
     // Auto-updater functionality
     checkForUpdates: () => ipcRenderer.invoke('updater:check-for-updates'),
-    downloadUpdate: () => ipcRenderer.invoke('updater:download-update'),
-    quitAndInstall: () => ipcRenderer.invoke('updater:quit-and-install'),
     
     onUpdateProgress: (callback) => {
         ipcRenderer.on('update-progress', (event, progress) => {
             callback(progress);
         });
-    }
+    },
+
+    onUpdateNotification: (callback) => {
+        ipcRenderer.on('update-notification', (event, data) => {
+            callback(data);
+        });
+    },
+
+    // Get app version
+    getAppVersion: () => ipcRenderer.invoke('app:get-version')
 });
 
 // nothing fancy yet – isolated world so the renderer is sandboxed 

@@ -51,7 +51,7 @@ if [[ ! -d "node_modules" ]]; then
 fi
 
 echo "🔨 Building Mac application..."
-echo "   This will create both ARM64 and x64 versions"
+echo "   This will create ARM64 version for Apple Silicon Macs"
 echo "   Build may take 5-10 minutes including notarization..."
 
 # Run the build
@@ -69,17 +69,8 @@ if [[ $? -eq 0 ]]; then
         echo "      Size: $(du -h dist/Cluemore-1.0.0-arm64.dmg | cut -f1)"
     fi
     
-    if [[ -f "dist/Cluemore-1.0.0.dmg" ]]; then
-        echo "   ✅ dist/Cluemore-1.0.0.dmg (Intel x64)"
-        echo "      Size: $(du -h dist/Cluemore-1.0.0.dmg | cut -f1)"
-    fi
-    
     if [[ -f "dist/Cluemore-1.0.0-arm64-mac.zip" ]]; then
         echo "   ✅ dist/Cluemore-1.0.0-arm64-mac.zip"
-    fi
-    
-    if [[ -f "dist/Cluemore-1.0.0-mac.zip" ]]; then
-        echo "   ✅ dist/Cluemore-1.0.0-mac.zip"
     fi
     
     echo ""
@@ -106,8 +97,8 @@ if [[ $? -eq 0 ]]; then
     
     echo ""
     echo "🚀 Ready for distribution!"
-    echo "   Upload the DMG files to your distribution platform"
-    echo "   Users can download and install without security warnings"
+    echo "   Upload the ARM64 DMG file to your distribution platform"
+    echo "   Apple Silicon Mac users can download and install without security warnings"
     
     # Note about stapling
     echo ""

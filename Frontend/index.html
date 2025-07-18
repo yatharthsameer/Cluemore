@@ -1835,7 +1835,7 @@
           <div class="settings-title">Settings</div>
           <div class="settings-item">
             <label>Version:</label>
-            <div style="color: #70a1d4; font-size: 11px; font-weight: bold;">Cluemore v2.0.1</div>
+            <div id="appVersion" style="color: #70a1d4; font-size: 11px; font-weight: bold;">Loading...</div>
             </div>
             <div class="settings-item">
             <label for="themeSelector">Theme:</label>
@@ -2544,11 +2544,7 @@
                                                                   const result = await window.electronAPI.checkForUpdates();
 
                                                                   if (result.success) {
-                                                                    if (result.updateInfo) {
-                                                                      showErrorNotification(`🎉 Update available: v${result.updateInfo.version}! Download will start automatically.`);
-                                                                    } else {
-                                                                      showErrorNotification('✅ You are running the latest version!');
-                                                                    }
+                                                                    showErrorNotification(result.message);
                                                                   } else {
                                                                     showErrorNotification(`❌ Update check failed: ${result.error}`);
                                                                   }
@@ -2559,8 +2555,10 @@
                                                                 console.error('Manual update check error:', error);
                                                                 showErrorNotification(`❌ Update check error: ${error.message}`);
                                                               } finally {
-                                                                checkForUpdatesBtn.textContent = originalText;
-                                                                checkForUpdatesBtn.disabled = false;
+                                                                setTimeout(() => {
+                                                                  checkForUpdatesBtn.textContent = originalText;
+                                                                  checkForUpdatesBtn.disabled = false;
+                                                                }, 1000);
                                                               }
                                                             });
 
@@ -3678,6 +3676,55 @@
     }
     if (fixPermissionsBtn) {
       fixPermissionsBtn.addEventListener('click', requestScreenRecordingPermission);
+    }
+
+        // Load app version dynamically
+    if (window.electronAPI && window.electronAPI.getAppVersion) {
+      window.electronAPI.getAppVersion().then(version => {
+        const versionEl = document.getElementById('appVersion');
+        if (versionEl) {
+          versionEl.textContent = `Cluemore v${version}`;
+        }
+      }).catch(error => {
+        console.error('Failed to get app version:', error);
+        const versionEl = document.getElementById('appVersion');
+        if (versionEl) {
+          versionEl.textContent = 'Cluemore v2.0.2';
+        }
+      });
+    }
+
+    // Handle automatic update notifications
+    if (window.electronAPI) {
+      window.electronAPI.onUpdateNotification((data) => {
+        console.log('Update notification:', data);
+        
+        switch (data.type) {
+          case 'download-started':
+            showErrorNotification(`📥 ${data.message}`);
+            break;
+          case 'installing':
+            showErrorNotification(`🔄 ${data.message}`);
+            break;
+          case 'up-to-date':
+            showErrorNotification(`✅ ${data.message}`);
+            break;
+          case 'error':
+            showErrorNotification(`❌ ${data.message}`);
+            break;
+          default:
+            showErrorNotification(data.message);
+        }
+      });
+
+      // Handle update progress
+      window.electronAPI.onUpdateProgress((progress) => {
+        console.log('Update progress:', progress);
+        // Only show progress notifications every 10%
+        if (progress.percent % 10 === 0) {
+          showErrorNotification(`📥 Downloading update: ${progress.percent}%`);
+        }
+      });
     }
   });
   </script>
