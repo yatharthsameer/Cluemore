@@ -52,6 +52,8 @@
       z-index: 1;
     }
 
+
+
     #clearIcon {
       width: 24px;
       height: 24px;
@@ -1489,6 +1491,40 @@
       text-align: center;
     }
 
+    /* Pin toggle styling */
+    .pin-toggle-container {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    #pinToggleCheckbox {
+      width: 14px;
+      height: 14px;
+      cursor: pointer;
+      -webkit-app-region: no-drag;
+    }
+
+    .pin-toggle-label {
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      -webkit-app-region: no-drag;
+    }
+
+    .pin-toggle-text {
+      color: #ccc;
+      font-size: 10px;
+      font-weight: bold;
+    }
+
+    .pin-toggle-hint {
+      color: #888;
+      font-size: 9px;
+      font-style: italic;
+    }
+
     /* Light theme styles */
     body.light-theme {
       background: rgba(240, 240, 240, .85);
@@ -1578,6 +1614,15 @@
     body.light-theme #themeSelector option {
       background: rgba(240, 240, 240, 0.95);
       color: #333;
+    }
+
+    /* Light theme pin toggle styling */
+    body.light-theme .pin-toggle-text {
+      color: #333;
+    }
+
+    body.light-theme .pin-toggle-hint {
+      color: #666;
     }
 
     body.light-theme #solution {
@@ -1850,6 +1895,16 @@
             <span id="opacityValue">100%</span>
           </div>
           <div class="settings-item">
+            <label>Window Level:</label>
+            <div class="pin-toggle-container">
+              <input type="checkbox" id="pinToggleCheckbox" />
+              <label for="pinToggleCheckbox" class="pin-toggle-label">
+                <span class="pin-toggle-text">Pin on top</span>
+                <span class="pin-toggle-hint">(screen-saver level)</span>
+              </label>
+            </div>
+            </div>
+            <div class="settings-item">
             <button id="checkForUpdatesBtn" style="
                                   width: 100%;
                                   padding: 6px 12px;
@@ -3363,6 +3418,104 @@
         sendBtn.textContent = 'Send';
       });
 
+      // Enhanced permission error dialog with window restoration option
+      function showPermissionErrorDialog(error) {
+        const errorDialog = document.createElement('div');
+        errorDialog.style.cssText = `
+          position: fixed;
+          top: 20px;
+          left: 50%;
+          transform: translateX(-50%);
+          background: rgba(220, 53, 69, 0.95);
+          color: white;
+          padding: 15px 20px;
+          border-radius: 6px;
+          border: 1px solid #dc3545;
+          z-index: 10000;
+          max-width: 80%;
+          text-align: center;
+          font: 12px monospace;
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        `;
+
+        errorDialog.innerHTML = `
+          <div style="margin-bottom: 12px; font-weight: bold;">🔐 Permission Issue Detected</div>
+          <div style="margin-bottom: 15px; font-size: 11px; line-height: 1.4;">${error.split('\n')[0]}</div>
+          <div style="display: flex; gap: 10px; justify-content: center;">
+            <button id="fixPermissionsBtn" style="
+              padding: 6px 12px;
+              background: rgba(255, 255, 255, 0.2);
+              color: white;
+              border: 1px solid rgba(255, 255, 255, 0.3);
+              border-radius: 4px;
+              cursor: pointer;
+              font: 10px monospace;
+            ">Fix Permissions</button>
+            <button id="restoreWindowsBtn" style="
+              padding: 6px 12px;
+              background: rgba(255, 255, 255, 0.2);
+              color: white;
+              border: 1px solid rgba(255, 255, 255, 0.3);
+              border-radius: 4px;
+              cursor: pointer;
+              font: 10px monospace;
+            ">Restore Windows</button>
+            <button id="closeErrorBtn" style="
+              padding: 6px 12px;
+              background: rgba(255, 255, 255, 0.2);
+              color: white;
+              border: 1px solid rgba(255, 255, 255, 0.3);
+              border-radius: 4px;
+              cursor: pointer;
+              font: 10px monospace;
+            ">Close</button>
+          </div>
+        `;
+
+        document.body.appendChild(errorDialog);
+
+        // Fix permissions button
+        document.getElementById('fixPermissionsBtn').addEventListener('click', async () => {
+          try {
+            await window.electronAPI.requestScreenRecordingPermission();
+            errorDialog.remove();
+          } catch (error) {
+            console.error('Error requesting permissions:', error);
+          }
+        });
+
+        // Restore windows button
+        document.getElementById('restoreWindowsBtn').addEventListener('click', async () => {
+          try {
+            const result = await window.electronAPI.emergencyRestoreWindows();
+            if (result.success) {
+              console.log('✅ Windows restored successfully');
+              // Show brief success message
+              const successMsg = document.createElement('div');
+              successMsg.textContent = '✅ Windows restored!';
+              successMsg.style.cssText = errorDialog.style.cssText + 'background: rgba(40, 167, 69, 0.95); border-color: #28a745;';
+              document.body.appendChild(successMsg);
+              setTimeout(() => successMsg.remove(), 2000);
+            }
+            errorDialog.remove();
+          } catch (error) {
+            console.error('Error restoring windows:', error);
+          }
+        });
+
+        // Close button
+        document.getElementById('closeErrorBtn').addEventListener('click', () => {
+          errorDialog.remove();
+        });
+
+        // Auto-remove after 15 seconds
+        setTimeout(() => {
+          if (document.body.contains(errorDialog)) {
+            errorDialog.remove();
+          }
+        }, 15000);
+      }
+
       // Screenshot streaming functions
       let currentStreamingSolution = null;
       let streamingSolutionContent = '';
@@ -3540,6 +3693,52 @@
           processAccumulatedScreenshots();
         }
       });
+
+      // Pin toggle functionality
+      const pinToggleCheckbox = document.getElementById('pinToggleCheckbox');
+      let isPinned = false;
+
+      // Initialize pin status
+      async function initializePinStatus() {
+        try {
+          const status = await window.electronAPI.getPinStatus();
+          isPinned = status.pinned;
+          updatePinToggleUI();
+          console.log('Pin status initialized:', isPinned);
+        } catch (error) {
+          console.error('Error getting pin status:', error);
+        }
+      }
+
+      // Update pin toggle UI
+      function updatePinToggleUI() {
+        pinToggleCheckbox.checked = isPinned;
+        console.log('Pin toggle UI updated:', isPinned ? 'pinned' : 'normal level');
+      }
+
+      // Handle pin toggle change
+      pinToggleCheckbox.addEventListener('change', async () => {
+        try {
+          const newPinState = pinToggleCheckbox.checked;
+          const result = await window.electronAPI.togglePin(newPinState);
+
+          if (result.success) {
+            isPinned = result.pinned;
+            updatePinToggleUI();
+            console.log('Pin state toggled:', isPinned ? 'pinned on top' : 'normal level');
+          } else {
+            // Revert checkbox if toggle failed
+            pinToggleCheckbox.checked = isPinned;
+          }
+        } catch (error) {
+          console.error('Error toggling pin state:', error);
+          // Revert checkbox if error occurred
+          pinToggleCheckbox.checked = isPinned;
+        }
+      });
+
+      // Initialize pin status when page loads
+      initializePinStatus();
 
       // Handle screenshot captured for chat mode
       window.electronAPI.onChatScreenshotCaptured(onChatScreenshotCaptured);

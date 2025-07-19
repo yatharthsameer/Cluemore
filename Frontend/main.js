@@ -29,6 +29,7 @@ let authWin;
 let promptEditorWin; // Add prompt editor panel window
 let currentUser = null;
 let jwtToken = null;
+let isPinnedOnTop = false; // Default to normal window level
 // Backend URL configuration
 // Use environment variable or fallback to production URL
 const BACKEND_URL = process.env.BACKEND_URL || 'https://cluemore-166792667b90.herokuapp.com';
@@ -104,7 +105,12 @@ function makeRequest(url, options = {}) {
 // Authentication helper functions
 async function storeToken(token) {
   try {
-    await keytar.setPassword(SERVICE_NAME, ACCOUNT_NAME, token);
+    // Use permission dialog manager in case keychain access triggers a dialog
+    await permissionDialogManager.handleSystemDialog(async () => {
+      await keytar.setPassword(SERVICE_NAME, ACCOUNT_NAME, token);
+      return true;
+    }, 'keychain-store');
+
     jwtToken = token;
     console.log('JWT token stored securely');
     return true;
@@ -116,7 +122,11 @@ async function storeToken(token) {
 
 async function getStoredToken() {
   try {
-    const token = await keytar.getPassword(SERVICE_NAME, ACCOUNT_NAME);
+    // Use permission dialog manager in case keychain access triggers a dialog
+    const token = await permissionDialogManager.handleSystemDialog(async () => {
+      return await keytar.getPassword(SERVICE_NAME, ACCOUNT_NAME);
+    }, 'keychain-retrieve');
+
     if (token) {
       jwtToken = token;
       console.log('JWT token retrieved from secure storage');
@@ -131,7 +141,12 @@ async function getStoredToken() {
 
 async function removeStoredToken() {
   try {
-    await keytar.deletePassword(SERVICE_NAME, ACCOUNT_NAME);
+    // Use permission dialog manager in case keychain access triggers a dialog
+    await permissionDialogManager.handleSystemDialog(async () => {
+      await keytar.deletePassword(SERVICE_NAME, ACCOUNT_NAME);
+      return true;
+    }, 'keychain-delete');
+
     jwtToken = null;
     currentUser = null;
     console.log('JWT token removed from secure storage');
@@ -218,14 +233,379 @@ async function registerUser(email, password) {
   }
 }
 
+// Setting management functions
+function getPinOnTopSetting() {
+  try {
+    const fs = require('fs');
+    const path = require('path');
+    const userDataPath = app.getPath('userData');
+    const settingsPath = path.join(userDataPath, 'settings.json');
+
+    if (fs.existsSync(settingsPath)) {
+      const settings = JSON.parse(fs.readFileSync(settingsPath, 'utf8'));
+      return settings.pinOnTop || false;
+    }
+  } catch (error) {
+    console.error('Error reading pin setting:', error);
+  }
+  return false; // Default to false (normal level)
+}
+
+function setPinOnTopSetting(enabled) {
+  try {
+    const fs = require('fs');
+    const path = require('path');
+    const userDataPath = app.getPath('userData');
+    const settingsPath = path.join(userDataPath, 'settings.json');
+
+    let settings = {};
+    if (fs.existsSync(settingsPath)) {
+      settings = JSON.parse(fs.readFileSync(settingsPath, 'utf8'));
+    }
+
+    settings.pinOnTop = enabled;
+    fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2));
+
+    console.log(`📌 Pin on top setting saved: ${enabled}`);
+  } catch (error) {
+    console.error('Error saving pin setting:', error);
+  }
+}
+
+// Function to toggle pin on top for all windows
+function togglePinOnTop(enabled) {
+  isPinnedOnTop = enabled;
+  setPinOnTopSetting(enabled);
+
+  console.log(`📌 ${enabled ? 'Pinning' : 'Unpinning'} all windows...`);
+
+  // Apply to all existing windows
+  if (win && !win.isDestroyed()) {
+    if (enabled) {
+      win.setAlwaysOnTop(true, 'screen-saver');
+    } else {
+      win.setAlwaysOnTop(false);
+    }
+  }
+
+  if (authWin && !authWin.isDestroyed()) {
+    if (enabled) {
+      authWin.setAlwaysOnTop(true, 'screen-saver');
+    } else {
+      authWin.setAlwaysOnTop(false);
+    }
+  }
+
+  if (promptEditorWin && !promptEditorWin.isDestroyed()) {
+    if (enabled) {
+      promptEditorWin.setAlwaysOnTop(true, 'screen-saver');
+    } else {
+      promptEditorWin.setAlwaysOnTop(false);
+    }
+  }
+}
+
+// Enhanced Permission Dialog Manager
+class PermissionDialogManager {
+  constructor() {
+    this.isDialogActive = false;
+    this.originalWindowStates = new Map();
+    this.restoreTimeout = null;
+    this.maxWaitTime = 30000; // 30 seconds max wait
+    this.dialogCheckInterval = null;
+  }
+
+  // Save current window states before lowering
+  saveWindowStates() {
+    this.originalWindowStates.clear();
+
+    if (win && !win.isDestroyed()) {
+      this.originalWindowStates.set('main', {
+        window: win,
+        isAlwaysOnTop: win.isAlwaysOnTop(),
+        isVisible: win.isVisible()
+      });
+    }
+
+    if (authWin && !authWin.isDestroyed()) {
+      this.originalWindowStates.set('auth', {
+        window: authWin,
+        isAlwaysOnTop: authWin.isAlwaysOnTop(),
+        isVisible: authWin.isVisible()
+      });
+    }
+
+    if (promptEditorWin && !promptEditorWin.isDestroyed()) {
+      this.originalWindowStates.set('editor', {
+        window: promptEditorWin,
+        isAlwaysOnTop: promptEditorWin.isAlwaysOnTop(),
+        isVisible: promptEditorWin.isVisible()
+      });
+    }
+
+    console.log('🔒 Saved window states:', Array.from(this.originalWindowStates.keys()));
+  }
+
+    // Temporarily lower all windows to normal level for system dialogs
+  async lowerAllWindowsForDialog(dialogType = 'permission') {
+    if (this.isDialogActive) {
+      console.log('🔄 Dialog already active, skipping lower operation');
+      return;
+    }
+
+    console.log(`🔽 Lowering all windows for ${dialogType} dialog...`);
+    this.isDialogActive = true;
+    
+    // Save current states
+    this.saveWindowStates();
+    
+    // Check if we have any windows to manage
+    if (this.originalWindowStates.size === 0) {
+      console.log('🔽 No existing windows to lower - this is likely a startup permission request');
+    } else {
+      // Lower all windows to normal level
+      for (const [key, state] of this.originalWindowStates) {
+        if (state.window && !state.window.isDestroyed()) {
+          try {
+            state.window.setAlwaysOnTop(false);
+            console.log(`🔽 Lowered ${key} window to normal level`);
+          } catch (error) {
+            console.error(`Error lowering ${key} window:`, error);
+          }
+        }
+      }
+    }
+
+    // Small delay to ensure windows are lowered before dialog appears
+    await new Promise(resolve => setTimeout(resolve, 150));
+  }
+
+    // Restore all windows to their original states after dialog is dismissed
+  async restoreAllWindowsAfterDialog(forceDelay = 0) {
+    if (!this.isDialogActive) {
+      console.log('🔼 No active dialog, skipping restore operation');
+      return;
+    }
+
+    console.log('🔼 Restoring window levels after dialog dismissal...');
+    
+    // Clear any existing restore timeout
+    if (this.restoreTimeout) {
+      clearTimeout(this.restoreTimeout);
+      this.restoreTimeout = null;
+    }
+
+    // Wait for dialog to be fully dismissed
+    // Use longer delay for permission dialogs to ensure they're fully dismissed
+    const waitTime = Math.max(forceDelay, 500);
+    console.log(`⏳ Waiting ${waitTime}ms for dialog dismissal...`);
+    await new Promise(resolve => setTimeout(resolve, waitTime));
+
+    // Restore windows based on current pin setting and original states
+    for (const [key, state] of this.originalWindowStates) {
+      if (state.window && !state.window.isDestroyed()) {
+        try {
+          // Only restore to pinned state if:
+          // 1. Pin setting is currently enabled, AND
+          // 2. Window was originally visible (don't pin hidden windows)
+          if (isPinnedOnTop && state.isVisible) {
+            state.window.setAlwaysOnTop(true, 'screen-saver');
+            console.log(`🔼 Restored ${key} window to screen-saver level`);
+          } else {
+            state.window.setAlwaysOnTop(false);
+            console.log(`🔼 Kept ${key} window at normal level`);
+          }
+        } catch (error) {
+          console.error(`Error restoring ${key} window:`, error);
+        }
+      }
+    }
+
+    this.isDialogActive = false;
+    this.originalWindowStates.clear();
+    console.log('✅ Window restoration complete');
+  }
+
+  // Enhanced function to handle any system permission dialog
+  async handleSystemDialog(operation, dialogType = 'permission') {
+    console.log(`🔐 Handling ${dialogType} dialog for operation:`, operation.name || 'anonymous');
+
+    try {
+      // STEP 1: Lower all windows before system dialog
+      await this.lowerAllWindowsForDialog(dialogType);
+
+      // STEP 2: Check if this is likely to trigger a permission dialog
+      const isPermissionRequest = dialogType.includes('screen-recording') && process.platform === 'darwin';
+
+      if (isPermissionRequest) {
+        // For screen recording permission, handle the async dialog properly
+        return await this.handleScreenRecordingPermission(operation);
+      } else {
+        // STEP 3: Execute the operation that triggers the dialog
+        const result = await operation();
+
+        // STEP 4: Restore windows after operation completes
+        await this.restoreAllWindowsAfterDialog();
+
+        return result;
+      }
+    } catch (error) {
+      console.error(`Error in ${dialogType} dialog handling:`, error);
+
+      // STEP 5: Ensure windows are restored even if operation fails
+      await this.restoreAllWindowsAfterDialog();
+
+      throw error;
+    }
+  }
+
+    // Special handling for screen recording permission which has async dialog behavior
+  async handleScreenRecordingPermission(operation) {
+    console.log('🔐 Special handling for screen recording permission dialog');
+    
+    // Check initial permission status
+    const initialStatus = systemPreferences.getMediaAccessStatus('screen');
+    console.log(`📺 Initial screen recording status: ${initialStatus}`);
+    
+    if (initialStatus === 'granted') {
+      console.log('📺 Permission already granted, executing operation directly');
+      const result = await operation();
+      await this.restoreAllWindowsAfterDialog();
+      return result;
+    }
+
+    // Permission not granted - this will likely trigger a dialog
+    console.log('📺 Permission not granted, expecting system dialog to appear...');
+    
+    let operationResult = null;
+    let operationError = null;
+
+    // Execute the operation (which will fail but trigger the dialog)
+    try {
+      operationResult = await operation();
+    } catch (error) {
+      operationError = error;
+      console.log('📺 Operation failed as expected, system dialog should appear soon...');
+    }
+
+    // Wait for the system permission dialog to appear and be handled
+    console.log('⏳ Waiting for system permission dialog to be handled...');
+    const dialogHandled = await this.waitForPermissionDialogCompletion('screen', initialStatus);
+    
+    if (dialogHandled) {
+      console.log('✅ Permission dialog was handled by user');
+      
+      // Try the operation again if it failed initially
+      if (operationError) {
+        console.log('🔄 Retrying operation after permission grant...');
+        try {
+          operationResult = await operation();
+          operationError = null;
+        } catch (retryError) {
+          console.log('❌ Operation still failed after permission dialog');
+          operationError = retryError;
+        }
+      }
+    } else {
+      console.log('⏰ Timeout waiting for permission dialog');
+    }
+
+    // Restore windows after dialog is handled (only if we have windows to restore)
+    if (this.originalWindowStates.size > 0) {
+      await this.restoreAllWindowsAfterDialog();
+    } else {
+      console.log('🔼 No windows to restore (startup mode)');
+      this.isDialogActive = false;
+      this.originalWindowStates.clear();
+    }
+
+    // Return result or throw error
+    if (operationError) {
+      throw operationError;
+    }
+    return operationResult;
+  }
+
+  // Wait for permission dialog to be completed by polling permission status
+  async waitForPermissionDialogCompletion(permissionType, initialStatus, maxWaitMs = 30000) {
+    const startTime = Date.now();
+    const pollInterval = 500; // Check every 500ms
+
+    console.log(`⏳ Polling for ${permissionType} permission status change...`);
+
+    while (Date.now() - startTime < maxWaitMs) {
+      await new Promise(resolve => setTimeout(resolve, pollInterval));
+
+      const currentStatus = systemPreferences.getMediaAccessStatus(permissionType);
+
+      if (currentStatus !== initialStatus) {
+        console.log(`📺 Permission status changed: ${initialStatus} → ${currentStatus}`);
+
+        // Wait a bit more for dialog to fully dismiss
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        return true;
+      }
+
+      // Log every 5 seconds to show we're still waiting
+      if ((Date.now() - startTime) % 5000 < pollInterval) {
+        console.log(`⏳ Still waiting for permission dialog (${Math.round((Date.now() - startTime) / 1000)}s)...`);
+      }
+    }
+
+    console.log(`⏰ Timeout after ${maxWaitMs}ms waiting for permission dialog`);
+    return false;
+  }
+
+  // Safety mechanism to restore windows if they get stuck
+  enableSafetyRestore() {
+    if (this.restoreTimeout) {
+      clearTimeout(this.restoreTimeout);
+    }
+
+    // Auto-restore after max wait time as safety measure
+    this.restoreTimeout = setTimeout(async () => {
+      if (this.isDialogActive) {
+        console.log('⚠️ Safety timeout reached, force-restoring windows');
+        await this.restoreAllWindowsAfterDialog(100);
+      }
+    }, this.maxWaitTime);
+  }
+
+  // Clean up any active dialogs and restore windows
+  async emergencyRestore() {
+    console.log('🚨 Emergency window restore triggered');
+    if (this.restoreTimeout) {
+      clearTimeout(this.restoreTimeout);
+      this.restoreTimeout = null;
+    }
+
+    this.isDialogActive = false;
+    await this.restoreAllWindowsAfterDialog(0);
+  }
+}
+
+// Create global permission dialog manager instance
+const permissionDialogManager = new PermissionDialogManager();
+
+// Helper functions for managing window levels during permission requests
+async function temporarilyLowerAllWindows() {
+  // Use the enhanced permission dialog manager
+  return await permissionDialogManager.lowerAllWindowsForDialog('legacy');
+}
+
+async function restoreAllWindowLevels() {
+  // Use the enhanced permission dialog manager
+  return await permissionDialogManager.restoreAllWindowsAfterDialog();
+}
+
 // Permission request functions for macOS
-async function requestAllPermissions() {
+async function requestAllPermissions(isStartup = false) {
   if (process.platform !== 'darwin') {
     console.log('⏭️ Permission requests only needed on macOS');
     return true;
   }
 
-  console.log('🔐 Requesting necessary permissions...');
+  console.log(`🔐 Requesting necessary permissions... ${isStartup ? '(startup)' : '(runtime)'}`);
   
   try {
     // Request Screen Recording permission (required for screenshot functionality)
@@ -234,18 +614,20 @@ async function requestAllPermissions() {
     
     if (screenAccess !== 'granted') {
       console.log('📺 Requesting screen recording permission...');
-      // This will trigger the system permission dialog
-      await desktopCapturer.getSources({ types: ['screen'], thumbnailSize: { width: 150, height: 150 } });
+
+      // Use enhanced permission dialog manager with startup flag
+      const dialogType = isStartup ? 'screen-recording-startup' : 'screen-recording';
+      await permissionDialogManager.handleSystemDialog(async () => {
+        return await desktopCapturer.getSources({ 
+          types: ['screen'], 
+          thumbnailSize: { width: 150, height: 150 } 
+        });
+      }, dialogType);
     }
 
     // Test keychain access (required for secure token storage)
-    try {
-      console.log('🔑 Testing keychain access...');
-      await keytar.getPassword('PermissionTest', 'test');
-      console.log('🔑 Keychain access: OK');
-    } catch (error) {
-      console.log('🔑 Keychain access may require user approval:', error.message);
-    }
+    // Note: We'll test this when we actually need to store/retrieve tokens
+    console.log('🔑 Keychain access will be tested when needed (during authentication)');
 
     console.log('✅ Permission requests completed');
     return true;
@@ -279,7 +661,7 @@ function createAuthWindow() {
     width: 500,
     height: 700,
     resizable: false,
-    alwaysOnTop: true,
+    alwaysOnTop: false, // Default to normal level
     title: 'Cluemore - Login',
     transparent: true,
     frame: false,
@@ -300,7 +682,12 @@ function createAuthWindow() {
   authWin = new BrowserWindow(windowOptions);
 
   authWin.setContentProtection(true);
-  authWin.setAlwaysOnTop(true, 'screen-saver');
+
+  // Only pin on top if setting is enabled
+  if (isPinnedOnTop) {
+    authWin.setAlwaysOnTop(true, 'screen-saver');
+  }
+
   authWin.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
   authWin.setFullScreenable(false);
 
@@ -332,7 +719,7 @@ function createMainWindow() {
     width: 600,
     height: 600,
     resizable: false,
-    alwaysOnTop: true,
+    alwaysOnTop: false, // Default to normal level
     title: 'Cluemore',
     skipTaskbar: true,
     transparent: true,
@@ -354,7 +741,12 @@ function createMainWindow() {
   win = new BrowserWindow(windowOptions);
 
   win.setContentProtection(true);
-  win.setAlwaysOnTop(true, 'screen-saver');
+
+  // Only pin on top if setting is enabled
+  if (isPinnedOnTop) {
+    win.setAlwaysOnTop(true, 'screen-saver');
+  }
+
   win.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
   win.setFullScreenable(false);
 
@@ -384,7 +776,7 @@ function createPromptEditorPanel() {
     frame: false,
     resizable: false,
     transparent: true,
-    alwaysOnTop: true,
+    alwaysOnTop: false, // Default to normal level
     focusable: true,          // must be true to receive keys
     skipTaskbar: true,
     show: false,
@@ -404,7 +796,11 @@ function createPromptEditorPanel() {
 
   promptEditorWin.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
   promptEditorWin.setFullScreenable(false);
-  promptEditorWin.setAlwaysOnTop(true, 'screen-saver');
+
+  // Only pin on top if setting is enabled
+  if (isPinnedOnTop) {
+    promptEditorWin.setAlwaysOnTop(true, 'screen-saver');
+  }
 
   promptEditorWin.loadFile('prompt-editor.html');
 
@@ -504,16 +900,43 @@ async function takeScreenshot(forChat = false) {
       console.log(`📺 Screen recording permission status: ${screenAccess}`);
       
       if (screenAccess !== 'granted') {
-        const errorMessage = `🔐 Screen Recording Permission Required\n\nTo capture screenshots, Cluemore needs screen recording permission.\n\n📝 How to fix:\n1. Open System Preferences > Security & Privacy\n2. Click the "Privacy" tab\n3. Select "Screen Recording" from the left sidebar\n4. Check the box next to "Cluemore"\n5. Restart Cluemore if needed\n\nPermission status: ${screenAccess}`;
-        
-        console.error('Screen recording permission not granted:', screenAccess);
-        
-        if (forChat) {
-          win.webContents.send('chat-error', errorMessage);
-        } else {
-          win.webContents.send('screenshot-error', errorMessage);
+        console.log('📺 Screen recording permission required, attempting to request...');
+
+        try {
+          // Use enhanced permission dialog manager for screenshot permission request
+          await permissionDialogManager.handleSystemDialog(async () => {
+            return await desktopCapturer.getSources({
+              types: ['screen'],
+              thumbnailSize: { width: 150, height: 150 }
+            });
+          }, 'screen-recording-screenshot');
+
+          // Check permission status again after potential grant
+          const newScreenAccess = systemPreferences.getMediaAccessStatus('screen');
+          if (newScreenAccess !== 'granted') {
+            const errorMessage = `🔐 Screen Recording Permission Required\n\nTo capture screenshots, Cluemore needs screen recording permission.\n\n📝 How to fix:\n1. Open System Preferences > Security & Privacy\n2. Click the "Privacy" tab\n3. Select "Screen Recording" from the left sidebar\n4. Check the box next to "Cluemore"\n5. Restart Cluemore if needed\n\nPermission status: ${newScreenAccess}`;
+
+            console.error('Screen recording permission still not granted after request:', newScreenAccess);
+
+            if (forChat) {
+              win.webContents.send('chat-error', errorMessage);
+            } else {
+              win.webContents.send('screenshot-error', errorMessage);
+            }
+            return;
+          }
+          console.log('📺 Screen recording permission granted after request');
+        } catch (permissionError) {
+          console.error('Error requesting screen recording permission:', permissionError);
+          const errorMessage = `🔐 Permission Request Failed\n\nUnable to request screen recording permission. Please manually grant it in System Preferences.\n\nError: ${permissionError.message}`;
+
+          if (forChat) {
+            win.webContents.send('chat-error', errorMessage);
+          } else {
+            win.webContents.send('screenshot-error', errorMessage);
+          }
+          return;
         }
-        return;
       }
     }
 
@@ -781,13 +1204,24 @@ function setupAutoUpdater() {
 }
 
 app.whenReady().then(async () => {
-  // Request all necessary permissions upfront (macOS only)
+  // Load pin on top setting
+  isPinnedOnTop = getPinOnTopSetting();
+  console.log(`📌 Pin on top setting loaded: ${isPinnedOnTop}`);
+
+  // Request all necessary permissions upfront BEFORE creating any windows (macOS only)
   if (process.platform === 'darwin') {
     console.log('🚀 Starting permission request flow...');
-    await requestAllPermissions();
+    try {
+      await requestAllPermissions(true); // Pass startup flag
+      console.log('✅ Permission request flow completed');
+    } catch (error) {
+      console.error('❌ Permission request flow failed:', error);
+      // Continue anyway - user can grant permissions later
+    }
     
-    // Small delay to let permission dialogs settle
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    // Additional delay to ensure all permission dialogs are fully settled
+    console.log('⏳ Allowing time for permission dialogs to settle...');
+    await new Promise(resolve => setTimeout(resolve, 2000));
   }
 
   // Check if user is already authenticated
@@ -1070,25 +1504,27 @@ app.whenReady().then(async () => {
         return { success: true, message: 'Screen recording permission already granted' };
       }
 
-      // Trigger permission request by attempting to get sources
-      await desktopCapturer.getSources({ 
-        types: ['screen'], 
-        thumbnailSize: { width: 150, height: 150 } 
-      });
+      // Use enhanced permission dialog manager for manual permission request
+      await permissionDialogManager.handleSystemDialog(async () => {
+        return await desktopCapturer.getSources({
+          types: ['screen'],
+          thumbnailSize: { width: 150, height: 150 }
+        });
+      }, 'manual-screen-recording');
 
       // Check status again after request
       const newStatus = systemPreferences.getMediaAccessStatus('screen');
       console.log(`New screen recording status: ${newStatus}`);
 
       if (newStatus === 'granted') {
-        return { 
-          success: true, 
-          message: 'Screen recording permission granted! You can now take screenshots.' 
+        return {
+          success: true,
+          message: 'Screen recording permission granted! You can now take screenshots.'
         };
       } else {
-        return { 
-          success: false, 
-          message: 'Please grant screen recording permission in System Preferences > Security & Privacy > Privacy > Screen Recording, then restart Cluemore.' 
+        return {
+          success: false,
+          message: 'Please grant screen recording permission in System Preferences > Security & Privacy > Privacy > Screen Recording, then restart Cluemore.'
         };
       }
     } catch (error) {
@@ -1166,6 +1602,28 @@ app.whenReady().then(async () => {
       return true;
     }
     return false;
+  });
+
+  // IPC Handlers for pin on top functionality
+  ipcMain.handle('window:get-pin-status', async (event) => {
+    return { pinned: isPinnedOnTop };
+  });
+
+  ipcMain.handle('window:toggle-pin', async (event, enabled) => {
+    togglePinOnTop(enabled);
+    return { success: true, pinned: isPinnedOnTop };
+  });
+
+  // Emergency window restoration IPC handler
+  ipcMain.handle('window:emergency-restore', async (event) => {
+    try {
+      console.log('🚨 Emergency window restoration requested from renderer');
+      await permissionDialogManager.emergencyRestore();
+      return { success: true, message: 'Windows restored to correct levels' };
+    } catch (error) {
+      console.error('Emergency restore failed:', error);
+      return { success: false, error: error.message };
+    }
   });
 
   // Prompt Editor IPC Handlers
@@ -1254,7 +1712,35 @@ Keep responses concise but comprehensive, focusing on practical problem-solving 
 
 app.on('window-all-closed', () => { /* keep running in tray */ });
 
-app.on('will-quit', () => {
+app.on('will-quit', async () => {
+  // Ensure windows are restored before quitting
+  try {
+    await permissionDialogManager.emergencyRestore();
+  } catch (error) {
+    console.error('Error during app quit restoration:', error);
+  }
+
   // Unregister all shortcuts
   globalShortcut.unregisterAll();
+});
+
+// Global error handling to ensure windows are restored
+process.on('uncaughtException', async (error) => {
+  console.error('🚨 Uncaught exception:', error);
+  try {
+    await permissionDialogManager.emergencyRestore();
+  } catch (restoreError) {
+    console.error('Error during emergency restore:', restoreError);
+  }
+  // Don't exit the process, just log the error
+});
+
+process.on('unhandledRejection', async (reason, promise) => {
+  console.error('🚨 Unhandled rejection at:', promise, 'reason:', reason);
+  try {
+    await permissionDialogManager.emergencyRestore();
+  } catch (restoreError) {
+    console.error('Error during emergency restore:', restoreError);
+  }
+// Don't exit the process, just log the error
 }); 

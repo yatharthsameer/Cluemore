@@ -1,6 +1,6 @@
 {
   "name": "cluemore",
-  "version": "2.0.4",
+  "version": "2.0.5",
   "description": "AI-powered chat application with Gemini and OpenAI integration",
   "main": "main.js",
   "homepage": "https://cluemore.herokuapp.com",

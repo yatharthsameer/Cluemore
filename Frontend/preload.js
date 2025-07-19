@@ -125,6 +125,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
     // Settings functionality
     setWindowOpacity: (opacity) => ipcRenderer.invoke('window:set-opacity', opacity),
+    getPinStatus: () => ipcRenderer.invoke('window:get-pin-status'),
+    togglePin: (enabled) => ipcRenderer.invoke('window:toggle-pin', enabled),
+    emergencyRestoreWindows: () => ipcRenderer.invoke('window:emergency-restore'),
 
     // Authentication functionality
     login: (email, password) => ipcRenderer.invoke('auth:login', email, password),
