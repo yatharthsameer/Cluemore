@@ -129,6 +129,17 @@ contextBridge.exposeInMainWorld('electronAPI', {
     togglePin: (enabled) => ipcRenderer.invoke('window:toggle-pin', enabled),
     emergencyRestoreWindows: () => ipcRenderer.invoke('window:emergency-restore'),
 
+    // Content protection functionality  
+    getContentProtectionStatus: () => ipcRenderer.invoke('window:get-content-protection-status'),
+    toggleContentProtection: (enabled) => ipcRenderer.invoke('window:toggle-content-protection', enabled),
+
+    // Content protection events
+    onContentProtectionChanged: (callback) => {
+        ipcRenderer.on('content-protection-changed', (event, data) => {
+            callback(data);
+        });
+    },
+
     // Authentication functionality
     login: (email, password) => ipcRenderer.invoke('auth:login', email, password),
     register: (email, password) => ipcRenderer.invoke('auth:register', email, password),

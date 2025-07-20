@@ -30,6 +30,7 @@ let promptEditorWin; // Add prompt editor panel window
 let currentUser = null;
 let jwtToken = null;
 let isPinnedOnTop = false; // Default to normal window level
+let isContentProtectionEnabled = true; // Default to enabled (secure)
 // Backend URL configuration
 // Use environment variable or fallback to production URL
 const BACKEND_URL = process.env.BACKEND_URL || 'https://cluemore-166792667b90.herokuapp.com';
@@ -272,6 +273,45 @@ function setPinOnTopSetting(enabled) {
   }
 }
 
+// Content protection setting management functions
+function getContentProtectionSetting() {
+  try {
+    const fs = require('fs');
+    const path = require('path');
+    const userDataPath = app.getPath('userData');
+    const settingsPath = path.join(userDataPath, 'settings.json');
+
+    if (fs.existsSync(settingsPath)) {
+      const settings = JSON.parse(fs.readFileSync(settingsPath, 'utf8'));
+      return settings.contentProtection !== undefined ? settings.contentProtection : true; // Default to enabled
+    }
+  } catch (error) {
+    console.error('Error reading content protection setting:', error);
+  }
+  return true; // Default to enabled (secure)
+}
+
+function setContentProtectionSetting(enabled) {
+  try {
+    const fs = require('fs');
+    const path = require('path');
+    const userDataPath = app.getPath('userData');
+    const settingsPath = path.join(userDataPath, 'settings.json');
+
+    let settings = {};
+    if (fs.existsSync(settingsPath)) {
+      settings = JSON.parse(fs.readFileSync(settingsPath, 'utf8'));
+    }
+
+    settings.contentProtection = enabled;
+    fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2));
+
+    console.log(`🔒 Content protection setting saved: ${enabled}`);
+  } catch (error) {
+    console.error('Error saving content protection setting:', error);
+  }
+}
+
 // Function to toggle pin on top for all windows
 function togglePinOnTop(enabled) {
   isPinnedOnTop = enabled;
@@ -302,6 +342,39 @@ function togglePinOnTop(enabled) {
     } else {
       promptEditorWin.setAlwaysOnTop(false);
     }
+  }
+}
+
+// Function to toggle content protection for all windows
+function toggleContentProtection(enabled) {
+  isContentProtectionEnabled = enabled;
+  setContentProtectionSetting(enabled);
+
+  console.log(`🔒 ${enabled ? 'Enabling' : 'Disabling'} content protection for all windows...`);
+
+  // Apply to all existing windows
+  if (win && !win.isDestroyed()) {
+    win.setContentProtection(enabled);
+  }
+
+  if (authWin && !authWin.isDestroyed()) {
+    authWin.setContentProtection(enabled);
+  }
+
+  if (promptEditorWin && !promptEditorWin.isDestroyed()) {
+    promptEditorWin.setContentProtection(enabled);
+  }
+
+  // Notify user about the change
+  const message = enabled
+    ? '🔒 Content protection enabled - app is now invisible to screen sharing'
+    : '📱 Content protection disabled - app is now visible to screen sharing';
+
+  console.log(message);
+
+  // Send notification to the renderer if main window exists
+  if (win && !win.isDestroyed()) {
+    win.webContents.send('content-protection-changed', { enabled, message });
   }
 }
 
@@ -681,7 +754,7 @@ function createAuthWindow() {
 
   authWin = new BrowserWindow(windowOptions);
 
-  authWin.setContentProtection(true);
+  authWin.setContentProtection(isContentProtectionEnabled);
 
   // Only pin on top if setting is enabled
   if (isPinnedOnTop) {
@@ -740,7 +813,7 @@ function createMainWindow() {
 
   win = new BrowserWindow(windowOptions);
 
-  win.setContentProtection(true);
+  win.setContentProtection(isContentProtectionEnabled);
 
   // Only pin on top if setting is enabled
   if (isPinnedOnTop) {
@@ -1208,6 +1281,10 @@ app.whenReady().then(async () => {
   isPinnedOnTop = getPinOnTopSetting();
   console.log(`📌 Pin on top setting loaded: ${isPinnedOnTop}`);
 
+  // Load content protection setting
+  isContentProtectionEnabled = getContentProtectionSetting();
+  console.log(`🔒 Content protection setting loaded: ${isContentProtectionEnabled}`);
+
   // Request all necessary permissions upfront BEFORE creating any windows (macOS only)
   if (process.platform === 'darwin') {
     console.log('🚀 Starting permission request flow...');
@@ -1622,6 +1699,22 @@ app.whenReady().then(async () => {
       return { success: true, message: 'Windows restored to correct levels' };
     } catch (error) {
       console.error('Emergency restore failed:', error);
+      return { success: false, error: error.message };
+    }
+  });
+
+  // Content protection IPC handlers
+  ipcMain.handle('window:get-content-protection-status', async (event) => {
+    return { enabled: isContentProtectionEnabled };
+  });
+
+  ipcMain.handle('window:toggle-content-protection', async (event, enabled) => {
+    try {
+      console.log(`🔒 Content protection toggle requested from renderer: ${enabled}`);
+      toggleContentProtection(enabled);
+      return { success: true, enabled: isContentProtectionEnabled };
+    } catch (error) {
+      console.error('Content protection toggle failed:', error);
       return { success: false, error: error.message };
     }
   });
