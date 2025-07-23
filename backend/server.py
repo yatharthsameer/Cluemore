@@ -15,6 +15,11 @@ from auth import auth_manager, token_required  # Import authentication
 from token_tracker import token_tracker  # Import token tracking
 from database import db_manager, USE_POSTGRESQL  # Import database manager
 import json
+import asyncio
+import websockets
+import webrtcvad
+from whisper_service import transcribe_int16_pcm
+from meeting_assistant import meeting_assistant
 
 load_dotenv()
 
@@ -44,7 +49,7 @@ APP = Flask(__name__)
 # Configure CORS
 if IS_PRODUCTION:
     # In production, restrict CORS to specific origins
-    FRONTEND_URL = os.getenv("FRONTEND_URL", "https://yourapp.herokuapp.com")
+    FRONTEND_URL = os.getenv("FRONTEND_URL", "https://cluemore.herokuapp.com")
     CORS(APP, origins=[FRONTEND_URL])
 else:
     # In development, allow all origins
@@ -1624,8 +1629,237 @@ def api_delete_notes(current_user):
         return jsonify({"success": False, "error": "Internal server error"}), 500
 
 
+# ────────── Meeting Assistant API ───────────────────
+@APP.post("/api/meeting-assistant/suggest")
+@token_required
+def api_meeting_assistant_suggest(current_user):
+    """Generate response suggestion based on conversation history"""
+    try:
+        data = request.get_json()
+
+        if not data:
+            return jsonify({"success": False, "error": "No data provided"}), 400
+
+        conversation_history = data.get("conversation_history", "")
+        model = data.get("model", "gpt-4")
+        custom_prompt = data.get("custom_prompt")
+
+        log.info(
+            f"Meeting assistant request from user {current_user['id']}, model: {model}"
+        )
+
+        # Generate response suggestion
+        import asyncio
+
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+
+        try:
+            result = loop.run_until_complete(
+                meeting_assistant.generate_response_suggestion(
+                    conversation_history=conversation_history,
+                    model=model,
+                    custom_prompt=custom_prompt,
+                )
+            )
+        finally:
+            loop.close()
+
+        return jsonify(result), 200
+
+    except Exception as e:
+        log.error(f"Meeting assistant error: {e}")
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@APP.post("/api/meeting-assistant/suggest-stream")
+@token_required
+def api_meeting_assistant_suggest_stream(current_user):
+    """Generate response suggestion with streaming using Server-Sent Events"""
+    try:
+        data = request.get_json()
+
+        if not data:
+            return jsonify({"success": False, "error": "No data provided"}), 400
+
+        conversation_history = data.get("conversation_history", "")
+        model = data.get("model", "gpt-4")
+        custom_prompt = data.get("custom_prompt")
+
+        log.info(
+            f"Meeting assistant streaming request from user {current_user['id']}, model: {model}"
+        )
+
+        def generate_stream():
+            try:
+                # Generate streaming response
+                for chunk in meeting_assistant.generate_response_suggestion_stream(
+                    conversation_history=conversation_history,
+                    model=model,
+                    custom_prompt=custom_prompt,
+                ):
+                    yield f"data: {json.dumps(chunk)}\n\n"
+
+                # Send completion signal
+                yield f"data: {json.dumps({'type': 'done'})}\n\n"
+
+            except Exception as e:
+                log.error(f"Meeting assistant streaming error: {e}")
+                yield f"data: {json.dumps({'type': 'error', 'error': str(e)})}\n\n"
+
+        return Response(
+            generate_stream(),
+            mimetype="text/plain",
+            headers={
+                "Cache-Control": "no-cache",
+                "Connection": "keep-alive",
+                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Allow-Headers": "Cache-Control",
+            },
+        )
+
+    except Exception as e:
+        log.error(f"Meeting assistant streaming setup error: {e}")
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+# ────────── WebSocket Audio Server ───────────────────
+SAMPLE_RATE = 16_000
+CHUNK_MS = 20
+FRAME_BYTES = SAMPLE_RATE * CHUNK_MS // 1000 * 2  # 640
+VAD = webrtcvad.Vad(2)
+PAD_SEC = 1.0
+END_SIL_MS = 300  # reduced from 1200ms for faster Q&A turn-taking
+
+# Real-time voice activity detection parameters
+VOICE_START_THRESHOLD = 8  # Number of consecutive voiced frames to trigger speech start
+VOICE_END_THRESHOLD = 25  # Number of consecutive silent frames to trigger speech end
+
+
+class AudioStream:
+    def __init__(self):
+        self.buf = bytearray()
+        self.sil_ms = 0
+        self.triggered = False  # ▶ are we inside a speech segment?
+
+        # Real-time voice activity state
+        self.consecutive_voiced = 0
+        self.consecutive_silent = 0
+        self.currently_speaking = False
+        self.last_voice_state_sent = None
+
+    async def feed(self, chunk: bytes, send):
+        if len(chunk) != FRAME_BYTES:
+            return
+
+        voiced = VAD.is_speech(chunk, SAMPLE_RATE)
+
+        # Real-time voice activity detection
+        await self._handle_realtime_voice_activity(voiced, send)
+
+        if voiced:
+            # start / continue speech
+            if not self.triggered:
+                self.triggered = True
+                self.buf.clear()  # fresh turn
+            self.buf.extend(chunk)
+            self.sil_ms = 0
+            return  # keep collecting
+
+        # silent frame -------------------------------------------------
+        if self.triggered:
+            self.sil_ms += CHUNK_MS
+            self.buf.extend(chunk)  # keep a bit of tail silence
+            if self.sil_ms >= END_SIL_MS:
+                # end-of-turn
+                await self._flush(send)
+                self.triggered = False
+                self.sil_ms = 0
+
+    async def _handle_realtime_voice_activity(self, voiced, send):
+        """Send real-time voice activity updates for immediate interruption detection."""
+        if voiced:
+            self.consecutive_voiced += 1
+            self.consecutive_silent = 0
+
+            # Start of speech detected - require sustained speech
+            if (
+                not self.currently_speaking
+                and self.consecutive_voiced >= VOICE_START_THRESHOLD
+            ):
+                self.currently_speaking = True
+                await self._send_voice_activity(True, send)
+
+        else:
+            self.consecutive_silent += 1
+            self.consecutive_voiced = 0
+
+            # End of speech detected - allow for natural pauses
+            if (
+                self.currently_speaking
+                and self.consecutive_silent >= VOICE_END_THRESHOLD
+            ):
+                self.currently_speaking = False
+                await self._send_voice_activity(False, send)
+
+    async def _send_voice_activity(self, speaking, send):
+        """Send voice activity state to frontend."""
+        if self.last_voice_state_sent != speaking:
+            self.last_voice_state_sent = speaking
+            log.info(f"Voice activity: {'STARTED' if speaking else 'STOPPED'}")
+            await send(json.dumps({"type": "voice_activity", "speaking": speaking}))
+
+    async def _flush(self, send):
+        if not self.buf:
+            return
+        log.info(f"Processing speech turn ({len(self.buf)} bytes)")
+        text = transcribe_int16_pcm(self.buf)
+        log.info(f"Transcription (final): {text}")
+        await send(json.dumps({"type": "transcript", "text": text, "final": True}))
+        self.buf.clear()
+
+
+async def audio_websocket_handler(websocket, path):
+    """Handle WebSocket connections for audio transcription."""
+    log.info("New WebSocket connection established for audio transcription")
+    stream = AudioStream()
+    try:
+        async for message in websocket:
+            await stream.feed(message, websocket.send)
+    except websockets.exceptions.ConnectionClosed:
+        log.info("WebSocket connection closed")
+    except Exception as e:
+        log.error(f"Error in WebSocket handler: {e}")
+
+
+def start_websocket_server():
+    """Start the WebSocket server for audio transcription."""
+    try:
+        # Use a separate process for the WebSocket server
+        import subprocess
+        import sys
+
+        # Start the WebSocket server as a separate process
+        websocket_process = subprocess.Popen(
+            [
+                sys.executable,
+                os.path.join(os.path.dirname(__file__), "ws_audio_server.py"),
+            ],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+
+        log.info("🚀 Audio WebSocket server started as separate process")
+        return websocket_process
+    except Exception as e:
+        log.error(f"Failed to start WebSocket server: {e}")
+        return None
+
+
 # ────────── run ───────────────────
 if __name__ == "__main__":
+    import threading
+
     # Initialize database on startup
     log.info("Initializing database...")
     try:
@@ -1641,6 +1875,10 @@ if __name__ == "__main__":
         token_tracker.get_user_usage_summary(1)  # Test database connection
     except Exception as e:
         log.warning(f"Token tracker initialization warning: {e}")
+
+    # Start WebSocket server in a separate process
+    log.info("Starting WebSocket audio server...")
+    websocket_process = start_websocket_server()
 
     log.info(f"★ Backend ready on http://{HOST}:{PORT}")
 

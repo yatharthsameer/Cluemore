@@ -399,6 +399,92 @@
       display: flex;
     }
 
+    /* Meeting Assistant prompt edit icon */
+    #meetingAssistantPromptEditIcon {
+      position: absolute;
+      top: 20px;
+      right: 32px;
+      width: 32px;
+      height: 32px;
+      background: rgba(70, 130, 180, 0.8);
+      border: 1px solid #555;
+      border-radius: 6px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      font: 14px monospace;
+      font-weight: bold;
+      cursor: pointer;
+      z-index: 100;
+      transition: all 0.2s;
+      color: #fff;
+    }
+
+    #meetingAssistantPromptEditIcon:hover {
+      background: rgba(70, 130, 180, 1);
+      border-color: #888;
+      transform: scale(1.05);
+    }
+
+    /* Show meeting assistant prompt edit icon only when in meeting assistant page */
+    #meetingAssistantPage.active #meetingAssistantPromptEditIcon {
+      display: flex;
+    }
+
+    /* Meeting Assistant page layout */
+    #meetingAssistantContainer {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      padding: 20px;
+      min-height: 0;
+      overflow: hidden;
+      height: 0;
+      background: rgba(40, 40, 40, .9);
+      border-radius: 6px 6px 0 0;
+    }
+
+    #meetingAssistantMessages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px 0;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      min-height: 0;
+      height: 0;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+    }
+
+    #meetingAssistantMessages::-webkit-scrollbar {
+      display: none;
+    }
+
+    #meetingAssistantInputContainer {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding: 8px 0;
+      border-top: 1px solid #555;
+      flex-shrink: 0;
+    }
+
+    #meetingAssistantStatus {
+      font-size: 11px;
+      color: #888;
+      padding: 4px 8px;
+      background: rgba(60, 60, 60, 0.3);
+      border-radius: 4px;
+      text-align: center;
+    }
+
+    #meetingAssistantControls {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
     /* Error notification area */
     #errorNotification {
       position: fixed;
@@ -466,6 +552,24 @@
     }
 
     #chatPromptEditModal.show {
+      display: flex;
+    }
+
+    /* Meeting Assistant prompt edit modal */
+    #meetingAssistantPromptEditModal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.8);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 2000;
+    }
+
+    #meetingAssistantPromptEditModal.show {
       display: flex;
     }
 
@@ -924,6 +1028,93 @@
       background: #666;
     }
 
+    /* Meeting Assistant page styling */
+    #meetingAssistantContainer {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      padding: 20px;
+      min-height: 0;
+      overflow: hidden;
+      height: 0;
+      background: rgba(40, 40, 40, .9);
+      border-radius: 6px 6px 0 0;
+    }
+
+    #meetingAssistantMessages {
+      /* Hide scrollbar */
+      scrollbar-width: none; /* Firefox */
+      -ms-overflow-style: none; /* Internet Explorer 10+ */
+    }
+
+    #meetingAssistantMessages::-webkit-scrollbar {
+      display: none; /* WebKit */
+    }
+
+    #meetingAssistantHeader {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+      border-bottom: 1px solid #555;
+      padding-bottom: 10px;
+    }
+
+    #meetingAssistantTitle {
+      font-size: 16px;
+      font-weight: bold;
+      color: #ccc;
+    }
+
+    .model-select {
+      background: rgba(60, 60, 60, 0.8);
+      border: 1px solid #555;
+      border-radius: 4px;
+      color: #ccc;
+      padding: 6px 12px;
+      font-size: 12px;
+      outline: none;
+    }
+
+    .model-select:focus {
+      border-color: #007bff;
+    }
+
+    /* Meeting Assistant prompt edit icon */
+    #meetingAssistantPromptEditIcon {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      background: rgba(60, 60, 60, 0.8);
+      color: #ccc;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 14px;
+      transition: all 0.2s;
+      z-index: 10;
+      -webkit-app-region: no-drag;
+    }
+
+    #meetingAssistantPromptEditIcon:hover {
+      background: rgba(80, 80, 80, 0.9);
+      color: #fff;
+      transform: scale(1.1);
+    }
+
+    /* Show meeting assistant prompt edit icon only when in meeting assistant page */
+    #meetingAssistantPage.active #meetingAssistantPromptEditIcon {
+      display: flex;
+    }
+
+    #meetingAssistantPromptEditIcon {
+      display: none;
+    }
+
     /* Notes page styling */
     #notesContainer {
       flex: 1;
@@ -935,6 +1126,45 @@
       height: 0;
       background: rgba(40, 40, 40, .9);
       border-radius: 6px 6px 0 0;
+    }
+
+    /* Transcription page styling */
+    #transcriptionContainer {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      padding: 20px;
+      min-height: 0;
+      overflow: hidden;
+      height: 0;
+      background: rgba(40, 40, 40, .9);
+      border-radius: 6px 6px 0 0;
+    }
+
+    #transcriptionHeader {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid #555;
+    }
+
+    #transcriptionTitle {
+      color: #ccc;
+      font: 16px monospace;
+      font-weight: bold;
+    }
+
+    #transcriptionControls {
+      display: flex;
+      gap: 10px;
+    }
+
+    #transcriptionActions {
+      margin-top: 15px;
+      padding-top: 10px;
+      border-top: 1px solid #555;
     }
 
     #notesHeader {
@@ -1670,12 +1900,28 @@
       background: rgba(250, 250, 250, .9);
     }
 
+    body.light-theme #transcriptionContainer {
+      background: rgba(250, 250, 250, .9);
+    }
+
     body.light-theme #notesHeader {
+      border-bottom-color: #ccc;
+    }
+
+    body.light-theme #transcriptionHeader {
       border-bottom-color: #ccc;
     }
 
     body.light-theme #notesTitle {
       color: #333;
+    }
+
+    body.light-theme #transcriptionTitle {
+      color: #333;
+    }
+
+    body.light-theme #transcriptionActions {
+      border-top-color: #ccc;
     }
 
     body.light-theme #searchInput {
@@ -2023,11 +2269,83 @@
       </div>
     </div>
 
+    <!-- Live Transcription Page -->
+    <div id="transcriptionPage" class="page">
+      <div id="transcriptionContainer">
+        <div id="transcriptionHeader">
+          <div id="transcriptionTitle">🎤 Live Transcription</div>
+          <div id="transcriptionControls">
+            <button id="startTranscriptionBtn" class="btn"
+              style="background: #28a745; border: none; padding: 8px 16px; font-size: 12px;">
+              Start Recording
+            </button>
+            <button id="stopTranscriptionBtn" class="btn"
+              style="background: #dc3545; border: none; padding: 8px 16px; font-size: 12px; display: none;">
+              Stop Recording
+            </button>
+          </div>
+        </div>
+    
+        <div id="transcriptionStatus" style="font-size: 11px; color: #888; margin-bottom: 15px;">
+          Ready to record
+        </div>
+    
+        <div id="transcriptionOutput" style="
+                                                        background: rgba(20, 20, 20, 0.8);
+                                                        border: 1px solid #555;
+                                                        border-radius: 8px;
+                                                        padding: 15px;
+                                                        min-height: 300px;
+                                                        max-height: 400px;
+                                                        overflow-y: auto;
+                                                        font-family: 'SF Pro Text', 'Helvetica', sans-serif;
+                                                        font-size: 13px;
+                                                        line-height: 1.5;
+                                                        color: #ccc;
+                                                        margin-bottom: 15px;
+                                                      ">
+          <div style="color: #888; font-style: italic;">Transcription will appear here...</div>
+        </div>
+    
+        <div id="transcriptionActions"
+          style="display: flex; gap: 10px; margin-top: 15px; padding: 10px 0 16px 0; border-top: 1px solid #555;">
+          <button id="clearTranscriptionBtn" class="btn"
+            style="background: #6c757d; border: none; padding: 8px 16px; font-size: 12px;">
+            Clear
+          </button>
+          <button id="addToNotesBtn" class="btn"
+            style="background: #007bff; border: none; padding: 8px 16px; font-size: 12px;">
+            Add to Notes
+          </button>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Meeting Assistant Page -->
+    <div id="meetingAssistantPage" class="page">
+      <!-- Meeting Assistant Prompt Edit Icon -->
+      <div id="meetingAssistantPromptEditIcon" title="Edit interview assistant prompt">✏️</div>
+    
+      <div id="meetingAssistantContainer">
+        <div id="meetingAssistantMessages"></div>
+        <div id="meetingAssistantInputContainer">
+          <div id="meetingAssistantStatus">Ready to assist with your technical interview</div>
+          <div id="meetingAssistantControls">
+            <button id="startMeetingAssistantBtn" class="btn">🎤 Start</button>
+            <button id="stopMeetingAssistantBtn" class="btn" style="display: none;">Stop</button>
+            <button id="clearMeetingAssistantBtn" class="btn">Clear</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Button container -->
     <div id="buttonContainer">
       <button class="btn" id="interviewBtn">Stealth Mode</button>
       <button class="btn" id="chatBtn">Chat Mode</button>
       <button class="btn" id="notesBtn">Notes</button>
+      <button class="btn" id="transcriptionBtn">🎤 Live Transcription</button>
+      <button class="btn" id="meetingAssistantBtn">🎯 Interview Assistant</button>
     </div>
   </div>
 
@@ -2072,6 +2390,29 @@
         <button class="modal-btn secondary" id="resetChatPromptBtn">Reset to Default</button>
         <button class="modal-btn secondary" id="cancelChatPromptBtn">Cancel</button>
         <button class="modal-btn primary" id="saveChatPromptBtn">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Meeting Assistant Prompt Edit Modal -->
+  <div id="meetingAssistantPromptEditModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div class="modal-title">Edit Interview Assistant Prompt</div>
+        <button class="modal-close" id="meetingAssistantModalCloseBtn">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="prompt-info">
+          This prompt defines how the Interview Assistant analyzes interview questions and generates your responses.
+          Customize it with your specific background, experience, and the role you're interviewing for.
+        </div>
+        <textarea id="meetingAssistantPromptTextarea" class="prompt-textarea"
+          placeholder="Enter your custom interview assistant prompt here..."></textarea>
+      </div>
+      <div class="modal-footer">
+        <button class="modal-btn secondary" id="resetMeetingAssistantPromptBtn">Reset to Default</button>
+        <button class="modal-btn secondary" id="cancelMeetingAssistantPromptBtn">Cancel</button>
+        <button class="modal-btn primary" id="saveMeetingAssistantPromptBtn">Save</button>
       </div>
     </div>
   </div>
@@ -2483,6 +2824,115 @@
                                 }
                               });
 
+                                                                                                                                                                                                                                                          // Meeting Assistant prompt management
+                                                                                                                                                                                                                                                          const DEFAULT_MEETING_ASSISTANT_PROMPT = `You are acting as a skilled Software Engineer with 5 years of experience in a technical interview. 
+
+BACKGROUND:
+- 5+ years at top-tier startups (including Mercor) and quantitative trading firms/hedge funds
+- Computer Science degree from a prestigious university (Stanford/MIT/Carnegie Mellon)
+- Led teams building complex database schemas and distributed systems
+- Expert in backend/full-stack development, system design, and infrastructure
+- Strong experience with database architecture, API development, microservices
+- Worked in high-performance, demanding environments with rigorous standards
+
+INTERVIEW CONTEXT:
+You're interviewing for a Software Developer role focused on creating AI training prompts. The role requires writing/reviewing prompt-based questions and ensuring technical robustness.
+
+RESPONSE STYLE:
+- First person, casual but professional tone
+- Concise, technically accurate responses appropriate for interviews
+- For every answer, provide at least one concrete, real-world example from your experience to support your claim.
+- Show depth of experience without being verbose
+- Demonstrate problem-solving approach and attention to detail
+- Reference specific technologies, patterns, and real-world scenarios when relevant
+- Show leadership experience and team collaboration
+
+Based on the interviewer's question in the conversation history, provide a natural, confident response that showcases your qualifications for this specific role. Always include a real project, system, or situation you personally worked on to illustrate your answer.
+
+Conversation history:
+{conversation_history}
+
+Your response:`;
+
+                                                                                                                                                                                                                                                          function getCustomMeetingAssistantPrompt() {
+                                                                                                                                                                                                                                                            const saved = localStorage.getItem('customMeetingAssistantPrompt');
+                                                                                                                                                                                                                                                            if (saved && saved.trim()) {
+                                                                                                                                                                                                                                                              return saved;
+                                                                                                                                                                                                                                                            }
+                                                                                                                                                                                                                                                            return DEFAULT_MEETING_ASSISTANT_PROMPT;
+                                                                                                                                                                                                                                                          }
+
+                                                                                                                                                                                                                                                          function setCustomMeetingAssistantPrompt(prompt) {
+                                                                                                                                                                                                                                                            localStorage.setItem('customMeetingAssistantPrompt', prompt);
+                                                                                                                                                                                                                                                            console.log('Custom interview assistant prompt saved:', prompt.substring(0, 50) + '...');
+                                                                                                                                                                                                                                                          }
+
+                                                                                                                                                                                                                                                          function resetCustomMeetingAssistantPrompt() {
+                                                                                                                                                                                                                                                            localStorage.removeItem('customMeetingAssistantPrompt');
+                                                                                                                                                                                                                                                            console.log('Custom interview assistant prompt reset to default');
+                                                                                                                                                                                                                                                          }
+
+                                                                                                                                                                                                                                                          // Meeting Assistant prompt editing modal functionality
+                                                                                                                                                                                                                                                          const meetingAssistantPromptEditIcon = document.getElementById('meetingAssistantPromptEditIcon');
+                                                                                                                                                                                                                                                          const meetingAssistantPromptEditModal = document.getElementById('meetingAssistantPromptEditModal');
+                                                                                                                                                                                                                                                          const meetingAssistantPromptTextarea = document.getElementById('meetingAssistantPromptTextarea');
+                                                                                                                                                                                                                                                          const meetingAssistantModalCloseBtn = document.getElementById('meetingAssistantModalCloseBtn');
+                                                                                                                                                                                                                                                          const resetMeetingAssistantPromptBtn = document.getElementById('resetMeetingAssistantPromptBtn');
+                                                                                                                                                                                                                                                          const cancelMeetingAssistantPromptBtn = document.getElementById('cancelMeetingAssistantPromptBtn');
+                                                                                                                                                                                                                                                          const saveMeetingAssistantPromptBtn = document.getElementById('saveMeetingAssistantPromptBtn');
+
+                                                                                                                                                                                                                                                          // Open meeting assistant prompt editor
+                                                                                                                                                                                                                                                          if (meetingAssistantPromptEditIcon) {
+                                                                                                                                                                                                                                                            meetingAssistantPromptEditIcon.addEventListener('click', () => {
+                                                                                                                                                                                                                                                              const currentPrompt = getCustomMeetingAssistantPrompt();
+                                                                                                                                                                                                                                                              meetingAssistantPromptTextarea.value = currentPrompt;
+                                                                                                                                                                                                                                                              meetingAssistantPromptEditModal.classList.add('show');
+                                                                                                                                                                                                                                                            });
+                                                                                                                                                                                                                                                          } else {
+                                                                                                                                                                                                                                                            console.error('Meeting Assistant prompt edit icon not found');
+                                                                                                                                                                                                                                                          }
+
+                                                                                                                                                                                                                                                          // Close meeting assistant prompt modal
+                                                                                                                                                                                                                                                          function closeMeetingAssistantModal() {
+                                                                                                                                                                                                                                                            meetingAssistantPromptEditModal.classList.remove('show');
+                                                                                                                                                                                                                                                          }
+
+                                                                                                                                                                                                                                                          meetingAssistantModalCloseBtn.addEventListener('click', closeMeetingAssistantModal);
+                                                                                                                                                                                                                                                          cancelMeetingAssistantPromptBtn.addEventListener('click', closeMeetingAssistantModal);
+
+                                                                                                                                                                                                                                                          // Close modal when clicking outside
+                                                                                                                                                                                                                                                          meetingAssistantPromptEditModal.addEventListener('click', (e) => {
+                                                                                                                                                                                                                                                            if (e.target === meetingAssistantPromptEditModal) {
+                                                                                                                                                                                                                                                              closeMeetingAssistantModal();
+                                                                                                                                                                                                                                                            }
+                                                                                                                                                                                                                                                          });
+
+                                                                                                                                                                                                                                                          // Reset meeting assistant prompt to default
+                                                                                                                                                                                                                                                          resetMeetingAssistantPromptBtn.addEventListener('click', () => {
+                                                                                                                                                                                                                                                            meetingAssistantPromptTextarea.value = DEFAULT_MEETING_ASSISTANT_PROMPT;
+                                                                                                                                                                                                                                                          });
+
+                                                                                                                                                                                                                                                          // Save meeting assistant prompt
+                                                                                                                                                                                                                                                          saveMeetingAssistantPromptBtn.addEventListener('click', () => {
+                                                                                                                                                                                                                                                            const newPrompt = meetingAssistantPromptTextarea.value.trim();
+                                                                                                                                                                                                                                                            if (newPrompt) {
+                                                                                                                                                                                                                                                              setCustomMeetingAssistantPrompt(newPrompt);
+                                                                                                                                                                                                                                                              closeMeetingAssistantModal();
+                                                                                                                                                                                                                                                              console.log('Meeting assistant prompt saved successfully');
+                                                                                                                                                                                                                                                            } else {
+                                                                                                                                                                                                                                                              showErrorNotification('Please enter a valid prompt');
+                                                                                                                                                                                                                                                            }
+                                                                                                                                                                                                                                                          });
+
+                                                                                                                                                                                                                                                          // Keyboard shortcuts for meeting assistant modal
+                                                                                                                                                                                                                                                          meetingAssistantPromptTextarea.addEventListener('keydown', (e) => {
+                                                                                                                                                                                                                                                            if (e.key === 'Escape') {
+                                                                                                                                                                                                                                                              closeMeetingAssistantModal();
+                                                                                                                                                                                                                                                            } else if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+                                                                                                                                                                                                                                                              saveMeetingAssistantPromptBtn.click();
+                                                                                                                                                                                                                                                            }
+                                                                                                                                                                                                                                                          });
+
                         // Top bar tooltip functionality
                         const infoIcon = document.getElementById('infoIcon');
                         const shortcutsTooltip = document.getElementById('shortcutsTooltip');
@@ -2814,11 +3264,28 @@
     const interviewPage = document.getElementById('interviewPage');
     const chatPage = document.getElementById('chatPage');
     const notesPage = document.getElementById('notesPage');
+                        const transcriptionPage = document.getElementById('transcriptionPage');
+                        const meetingAssistantPage = document.getElementById('meetingAssistantPage');
     const chatBtn = document.getElementById('chatBtn');
     const interviewBtn = document.getElementById('interviewBtn');
     const notesBtn = document.getElementById('notesBtn');
+                        const transcriptionBtn = document.getElementById('transcriptionBtn');
+                        const meetingAssistantBtn = document.getElementById('meetingAssistantBtn');
 
     let currentPage = 'notes';
+
+                                                                                              // Meeting Assistant global variables (declared early for global Cmd+Enter handler)
+                                                                                              let isMeetingAssistantActive = false;
+                                                                                              let conversationHistory = '';
+                                                                                              let conversationBuffer = []; // Store conversation segments with timestamps
+                                                                                              let lastSuggestionTime = 0;
+                                                                                              let suggestionDebounceTimer = null;
+                                                                                              let manualTriggerEnabled = true;
+
+                                                                                              // Placeholder function - will be overridden later when Meeting Assistant loads
+                                                                                              let generateResponseSuggestion = function () {
+                                                                                                console.log('generateResponseSuggestion called before Meeting Assistant loaded');
+                                                                                              };
 
                           // Initialize the page state - Stealth Mode should be active by default
                           function initializePageState() {
@@ -2830,11 +3297,15 @@
       interviewPage.classList.remove('active');
       chatPage.classList.remove('active');
       notesPage.classList.remove('active');
+      transcriptionPage.classList.remove('active');
+      meetingAssistantPage.classList.remove('active');
       
       // Remove active class from all buttons
       chatBtn.classList.remove('active');
       interviewBtn.classList.remove('active');
       notesBtn.classList.remove('active');
+      transcriptionBtn.classList.remove('active');
+      meetingAssistantBtn.classList.remove('active');
 
       if (pageName === 'chat') {
         chatPage.classList.add('active');
@@ -2862,6 +3333,14 @@
         currentPage = 'notesPage';
         // Load saved notes when switching to notes page
         loadSavedNotes();
+      } else if (pageName === 'transcription') {
+        transcriptionPage.classList.add('active');
+        transcriptionBtn.classList.add('active');
+        currentPage = 'transcription';
+      } else if (pageName === 'meetingAssistant') {
+        meetingAssistantPage.classList.add('active');
+        meetingAssistantBtn.classList.add('active');
+        currentPage = 'meetingAssistant';
       }
     }
 
@@ -3042,9 +3521,11 @@
       }
     }
 
-    // Button event listeners
+                        // Button event listeners
     chatBtn.addEventListener('click', () => showPage('chat'));
-                              interviewBtn.addEventListener('click', () => {
+                    transcriptionBtn.addEventListener('click', () => showPage('transcription'));
+                    meetingAssistantBtn.addEventListener('click', () => showPage('meetingAssistant'));
+                    interviewBtn.addEventListener('click', () => {
       // Always go to Stealth Mode page
       showPage('notes');
     });
@@ -3070,6 +3551,10 @@
         notesTextarea.value = '';
         saveNotes(); // This will save empty content to API
         console.log('Notes page cleared and saved to API');
+      } else if (currentPage === 'transcription') {
+        // Clear transcription output
+        clearTranscription();
+        console.log('Transcription page cleared');
       }
     });
 
@@ -3691,6 +4176,24 @@
           // In interview mode with screenshots - process them
           console.log('Processing accumulated screenshots via global Cmd+Enter');
           processAccumulatedScreenshots();
+        } else if (currentPage === 'meetingAssistant') {
+          // In Meeting Assistant mode - generate response
+          console.log('Meeting Assistant Cmd+Enter triggered');
+          if (typeof isMeetingAssistantActive !== 'undefined' &&
+            typeof conversationBuffer !== 'undefined' &&
+            typeof generateResponseSuggestion !== 'undefined' &&
+            isMeetingAssistantActive && conversationBuffer.length > 0) {
+            console.log('Generating response via global Cmd+Enter');
+            generateResponseSuggestion();
+          } else {
+            console.log('Cannot generate response - variables/functions not ready or not active or no conversation', {
+              hasActive: typeof isMeetingAssistantActive !== 'undefined',
+              hasBuffer: typeof conversationBuffer !== 'undefined',
+              hasFunction: typeof generateResponseSuggestion !== 'undefined',
+              active: typeof isMeetingAssistantActive !== 'undefined' ? isMeetingAssistantActive : 'undefined',
+              bufferLength: typeof conversationBuffer !== 'undefined' ? conversationBuffer.length : 'undefined'
+            });
+          }
         }
       });
 
@@ -3924,6 +4427,737 @@
           showErrorNotification(`📥 Downloading update: ${progress.percent}%`);
         }
       });
+    }
+
+    // ────────── Audio Transcription Functionality ───────────────────
+
+    // Transcription state variables
+    let isTranscribing = false;
+    let audioContext = null;
+    let audioWorkletNode = null;
+    let mediaStreamSource = null;
+    let systemAudioStream = null;
+    let transcriptionText = '';
+    let currentSegment = '';
+
+    // DOM elements
+    const startTranscriptionBtn = document.getElementById('startTranscriptionBtn');
+    const stopTranscriptionBtn = document.getElementById('stopTranscriptionBtn');
+    const transcriptionStatus = document.getElementById('transcriptionStatus');
+    const transcriptionOutput = document.getElementById('transcriptionOutput');
+    const clearTranscriptionBtn = document.getElementById('clearTranscriptionBtn');
+    const addToNotesBtn = document.getElementById('addToNotesBtn');
+
+    // Start audio capture and transcription
+    async function startAudioCapture() {
+      try {
+        transcriptionStatus.textContent = 'Requesting permissions...';
+
+        // Capture entire display with video and audio for system audio access
+        let stream = null;
+        let audioCaptureMethod = '';
+
+        // Debug: Check if getDisplayMedia is available
+        console.log('🔍 Debugging getDisplayMedia availability...');
+        console.log('navigator.mediaDevices exists:', !!navigator.mediaDevices);
+        console.log('getDisplayMedia exists:', !!navigator.mediaDevices?.getDisplayMedia);
+        console.log('getUserMedia exists:', !!navigator.mediaDevices?.getUserMedia);
+        console.log('Electron userAgent:', navigator.userAgent);
+        console.log('Secure context:', window.isSecureContext);
+        console.log('Current URL protocol:', window.location.protocol);
+
+        if (!navigator.mediaDevices) {
+          throw new Error('navigator.mediaDevices not available - this should not happen in Electron');
+        }
+
+        if (!navigator.mediaDevices.getDisplayMedia) {
+          throw new Error('getDisplayMedia not available - Electron version may be too old or context issue');
+        }
+
+        // Test basic getUserMedia first to ensure media APIs work
+        console.log('🧪 Testing getUserMedia first...');
+        try {
+          const testStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          console.log('✅ getUserMedia works, stopping test stream');
+          testStream.getTracks().forEach(track => track.stop());
+        } catch (userMediaError) {
+          console.log('⚠️ getUserMedia failed:', userMediaError.message);
+        }
+
+        try {
+          console.log('🎬 Attempting getDisplayMedia...');
+
+          // Try getDisplayMedia with the session handler
+          console.log('📝 Trying getDisplayMedia with session handler...');
+
+          stream = await navigator.mediaDevices.getDisplayMedia({
+            video: true,
+            audio: true
+          });
+
+          audioCaptureMethod = 'getDisplayMedia with session handler';
+
+          // Check what we got
+          const audioTracks = stream.getAudioTracks();
+          const videoTracks = stream.getVideoTracks();
+
+          console.log(`✅ getDisplayMedia successful!`);
+          console.log(`Audio tracks: ${audioTracks.length}, Video tracks: ${videoTracks.length}`);
+
+          if (audioTracks.length === 0) {
+            console.warn('⚠️ No audio tracks - trying again with specific constraints...');
+
+            // Stop the current stream
+            stream.getTracks().forEach(track => track.stop());
+
+            // Try with more specific constraints
+            stream = await navigator.mediaDevices.getDisplayMedia({
+              video: {
+                displaySurface: 'monitor'
+              },
+              audio: {
+                sampleRate: 48000
+              }
+            });
+
+            const newAudioTracks = stream.getAudioTracks();
+            console.log(`Retry result - Audio tracks: ${newAudioTracks.length}`);
+
+            if (newAudioTracks.length === 0) {
+              console.error('❌ Still no audio tracks after retry');
+            }
+          }
+
+          if (audioTracks.length > 0) {
+            console.log(`Audio settings:`, audioTracks[0].getSettings());
+            console.log(`Audio constraints:`, audioTracks[0].getConstraints());
+          }
+
+          // Keep video track alive
+          if (videoTracks.length > 0) {
+            console.log('📹 Keeping video track alive for audio');
+          }
+
+        } catch (error) {
+          console.error('🚨 getDisplayMedia failed:', error);
+          console.error('Error name:', error.name);
+          console.error('Error message:', error.message);
+
+          throw new Error(`getDisplayMedia failed: ${error.name} - ${error.message}. 
+            
+This could be due to:
+1. Missing Screen Recording permission (check System Settings → Privacy & Security → Screen Recording)
+2. User cancelled the screen picker
+3. macOS version compatibility issue
+
+Please ensure:
+✅ Screen Recording permission is granted to Cluemore
+✅ Select a screen source when prompted
+✅ macOS 13+ for system audio support`);
+        }
+
+        console.log(`Audio capture method: ${audioCaptureMethod}`);
+        transcriptionStatus.textContent = `Audio capture method: ${audioCaptureMethod}`;
+
+        systemAudioStream = stream;
+
+        // Check if we have audio tracks
+        const audioTracks = stream.getAudioTracks();
+        const videoTracks = stream.getVideoTracks();
+
+        console.log(`✅ Stream obtained: ${audioTracks.length} audio tracks, ${videoTracks.length} video tracks`);
+
+        if (audioTracks.length === 0) {
+          console.warn(`⚠️ No audio tracks found in stream from ${audioCaptureMethod}`);
+          throw new Error(`No audio tracks available from ${audioCaptureMethod}.
+
+This could happen if:
+• System audio is not supported on this macOS version (need 13+)  
+• Screen Recording permission is missing
+• User selected a window instead of entire screen
+• Audio privacy settings are blocking capture
+
+Solutions:
+1. Ensure macOS 13+ (Ventura/Sonoma/Sequoia)
+2. Grant Screen Recording permission in System Settings
+3. Select "Entire Screen" when prompted (not individual windows)
+4. Check System Settings → Privacy & Security → Microphone (if applicable)`);
+        }
+
+        transcriptionStatus.textContent = 'Setting up audio processing...';
+
+        // Create audio context
+        audioContext = new AudioContext({ sampleRate: 48000 });
+
+        // Resume audio context (required by some browsers)
+        if (audioContext.state === 'suspended') {
+          await audioContext.resume();
+          console.log('Audio context resumed');
+        }
+
+        // Load and register the audio worklet
+        await audioContext.audioWorklet.addModule('audio-worklet.js');
+
+        // Create media stream source (only if we have audio tracks)
+        mediaStreamSource = audioContext.createMediaStreamSource(stream);
+
+        // Create audio worklet node
+        audioWorkletNode = new AudioWorkletNode(audioContext, 'pcm-chunker', {
+          channelCount: 1,
+          channelCountMode: 'explicit',
+          channelInterpretation: 'speakers'
+        });
+
+        // Handle PCM chunks from the worklet
+        audioWorkletNode.port.onmessage = (event) => {
+          const { pcm, sampleRate, originalSampleRate, timestamp } = event.data;
+
+          // Debug log occasionally
+          if (Math.random() < 0.02) { // 2% of chunks
+            const maxSample = Math.max(...pcm.map(Math.abs));
+            console.log(`Audio chunk: ${pcm.length} samples @ ${sampleRate}Hz, max=${maxSample}, type=${pcm.constructor.name}`);
+          }
+
+          // Send to main process for WebSocket transmission
+          if (window.electronAPI && window.electronAPI.sendAudioChunk) {
+            // Convert Int16Array to regular array for IPC transfer
+            const pcmArray = Array.from(pcm);
+            window.electronAPI.sendAudioChunk({
+              pcm: pcmArray,
+              sampleRate,
+              originalSampleRate,
+              timestamp
+            });
+          }
+        };
+
+        // Connect the audio pipeline (no output connection needed)
+        mediaStreamSource.connect(audioWorkletNode);
+        // Note: We don't connect audioWorkletNode to destination since we only need processing
+
+        // Start the WebSocket connection
+        const result = await window.electronAPI.startAudioCapture();
+        if (!result.success) {
+          throw new Error(result.error);
+        }
+
+        isTranscribing = true;
+        startTranscriptionBtn.style.display = 'none';
+        stopTranscriptionBtn.style.display = 'inline-block';
+        transcriptionStatus.textContent = '🎤 Recording... Click "Stop Recording" when done.';
+
+        console.log('Audio capture started successfully');
+
+      } catch (error) {
+        console.error('Error starting audio capture:', error);
+        transcriptionStatus.textContent = `❌ Error: ${error.message}`;
+
+        // Clean up on error
+        if (systemAudioStream) {
+          systemAudioStream.getTracks().forEach(track => track.stop());
+          systemAudioStream = null;
+        }
+        if (audioContext) {
+          await audioContext.close();
+          audioContext = null;
+        }
+      }
+    }
+
+    // Stop audio capture and transcription
+    async function stopAudioCapture() {
+      try {
+        // Stop the WebSocket connection
+        await window.electronAPI.stopAudioCapture();
+
+        // Stop audio processing
+        if (audioWorkletNode) {
+          audioWorkletNode.disconnect();
+          audioWorkletNode = null;
+        }
+        if (mediaStreamSource) {
+          mediaStreamSource.disconnect();
+          mediaStreamSource = null;
+        }
+        if (systemAudioStream) {
+          systemAudioStream.getTracks().forEach(track => track.stop());
+          systemAudioStream = null;
+        }
+        if (audioContext) {
+          await audioContext.close();
+          audioContext = null;
+        }
+
+        isTranscribing = false;
+        startTranscriptionBtn.style.display = 'inline-block';
+        stopTranscriptionBtn.style.display = 'none';
+        transcriptionStatus.textContent = '✅ Recording stopped. Transcription complete.';
+
+        console.log('Audio capture stopped successfully');
+
+      } catch (error) {
+        console.error('Error stopping audio capture:', error);
+        transcriptionStatus.textContent = `❌ Error stopping: ${error.message}`;
+      }
+    }
+
+    // Clear transcription output
+    function clearTranscription() {
+      transcriptionText = '';
+      currentSegment = '';
+      transcriptionOutput.innerHTML = '<div style="color: #888; font-style: italic;">Transcription will appear here...</div>';
+    }
+
+    // Add transcription to notes
+    function addTranscriptionToNotes() {
+      if (transcriptionText.trim()) {
+        const notesTextarea = document.getElementById('notesTextarea');
+        const currentNotes = notesTextarea.value;
+
+        // Add timestamp and transcription
+        const timestamp = new Date().toLocaleTimeString();
+        const transcriptionEntry = `\n\n--- Transcription (${timestamp}) ---\n${transcriptionText}\n`;
+
+        notesTextarea.value = currentNotes + transcriptionEntry;
+
+        // Save to backend
+        saveNotes();
+
+        // Clear transcription
+        clearTranscription();
+
+        // Show success message
+        transcriptionStatus.textContent = '✅ Transcription added to notes!';
+        setTimeout(() => {
+          transcriptionStatus.textContent = 'Ready to record';
+        }, 3000);
+      }
+    }
+
+    // Event listeners for transcription buttons
+    if (startTranscriptionBtn) {
+      startTranscriptionBtn.addEventListener('click', startAudioCapture);
+    }
+
+    if (stopTranscriptionBtn) {
+      stopTranscriptionBtn.addEventListener('click', stopAudioCapture);
+    }
+
+    if (clearTranscriptionBtn) {
+      clearTranscriptionBtn.addEventListener('click', clearTranscription);
+    }
+
+    if (addToNotesBtn) {
+      addToNotesBtn.addEventListener('click', addTranscriptionToNotes);
+    }
+
+    // Transcription event handlers
+    if (window.electronAPI) {
+      // Handle transcription start
+      window.electronAPI.onTranscriptionStart(() => {
+        console.log('Transcription started');
+        transcriptionStatus.textContent = '🎤 Recording... Processing audio...';
+      });
+
+      // Handle final transcription results
+      window.electronAPI.onTranscriptionFinal((data) => {
+        console.log('Final transcription:', data.text);
+        if (data.text && data.text.trim()) {
+          transcriptionText += (transcriptionText ? '\n\n' : '') + data.text;
+
+          // Update the display
+          transcriptionOutput.innerHTML = transcriptionText
+            .split('\n\n')
+            .map(segment => `<div style="margin-bottom: 10px; padding: 8px; background: rgba(40, 167, 69, 0.1); border-left: 3px solid #28a745; border-radius: 3px;">${segment}</div>`)
+            .join('');
+
+          // Auto-scroll to bottom
+          transcriptionOutput.scrollTop = transcriptionOutput.scrollHeight;
+        }
+      });
+
+      // Handle voice activity
+      window.electronAPI.onVoiceActivity((data) => {
+        if (data.speaking) {
+          transcriptionStatus.textContent = '🎤 Recording... Voice detected...';
+        } else {
+          transcriptionStatus.textContent = '🎤 Recording... Listening...';
+        }
+      });
+
+      // Handle transcription errors
+      window.electronAPI.onTranscriptionError((error) => {
+        console.error('Transcription error:', error);
+        transcriptionStatus.textContent = `❌ Transcription error: ${error}`;
+
+        // Auto-clear error after 5 seconds
+        setTimeout(() => {
+          if (!isTranscribing) {
+            transcriptionStatus.textContent = 'Ready to record';
+          }
+        }, 5000);
+      });
+    }
+
+    // ════════════════════════════════════════════════
+    // Meeting Assistant Functionality
+    // ════════════════════════════════════════════════
+
+    // Meeting Assistant variables are declared at the top of the script
+
+    // Meeting Assistant Elements
+    const startMeetingAssistantBtn = document.getElementById('startMeetingAssistantBtn');
+    const stopMeetingAssistantBtn = document.getElementById('stopMeetingAssistantBtn');
+    const clearMeetingAssistantBtn = document.getElementById('clearMeetingAssistantBtn');
+    const meetingAssistantStatus = document.getElementById('meetingAssistantStatus');
+    const meetingAssistantMessages = document.getElementById('meetingAssistantMessages');
+    // Suggestion panel removed - using pure chat interface
+    // Using top bar model selector instead of duplicate
+
+    // Start Meeting Assistant
+    async function startMeetingAssistant() {
+      try {
+        meetingAssistantStatus.textContent = 'Starting meeting assistant...';
+
+        // Start audio capture (reuse existing transcription system)
+        await startAudioCapture();
+
+        isMeetingAssistantActive = true;
+        startMeetingAssistantBtn.style.display = 'none';
+        stopMeetingAssistantBtn.style.display = 'inline-block';
+        meetingAssistantStatus.textContent = '🎤 Assistant active - Listening... Press Cmd+Enter to generate response';
+
+        console.log('Meeting assistant started successfully');
+
+      } catch (error) {
+        console.error('Error starting meeting assistant:', error);
+        meetingAssistantStatus.textContent = `❌ Error: ${error.message}`;
+        isMeetingAssistantActive = false;
+      }
+    }
+
+    // Stop Meeting Assistant
+    async function stopMeetingAssistant() {
+      try {
+        // Stop audio capture
+        await stopAudioCapture();
+
+        // Clean up any timers
+        if (suggestionDebounceTimer) {
+          clearTimeout(suggestionDebounceTimer);
+          suggestionDebounceTimer = null;
+        }
+
+        isMeetingAssistantActive = false;
+        startMeetingAssistantBtn.style.display = 'inline-block';
+        stopMeetingAssistantBtn.style.display = 'none';
+        meetingAssistantStatus.textContent = 'Assistant stopped';
+
+        console.log('Meeting assistant stopped successfully');
+
+      } catch (error) {
+        console.error('Error stopping meeting assistant:', error);
+        meetingAssistantStatus.textContent = `❌ Error stopping: ${error.message}`;
+      }
+    }
+
+    // Clear Meeting Assistant conversation
+    function clearMeetingAssistant() {
+      conversationHistory = '';
+      conversationBuffer = [];
+
+      // Clear messages and show welcome message
+      meetingAssistantMessages.innerHTML = `
+        <div class="assistant-welcome-message">
+          <div style="color: #888; font-style: italic; text-align: center; padding: 20px;">
+            🎯 Ready to assist with your technical interview
+            <br><br>
+            <span style="font-size: 11px;">Click "Start" to begin listening to interview questions<br>Press <strong>Cmd+Enter</strong> to generate expert-level responses</span>
+          </div>
+        </div>
+      `;
+
+      // Clear suggestion area
+      // Suggestion panel removed - using pure chat interface
+      meetingAssistantStatus.textContent = 'Ready to assist with your technical interview';
+    }
+
+    // Add conversation segment
+    function addConversationSegment(text) {
+      if (!text || !text.trim() || !isMeetingAssistantActive) return;
+
+      const timestamp = new Date().toLocaleTimeString();
+      const segment = {
+        text: text.trim(),
+        timestamp: timestamp,
+        time: Date.now()
+      };
+
+      conversationBuffer.push(segment);
+
+      // Keep only last 10 minutes of conversation
+      const tenMinutesAgo = Date.now() - (10 * 60 * 1000);
+      conversationBuffer = conversationBuffer.filter(seg => seg.time > tenMinutesAgo);
+
+      // Add message to conversation display
+      addConversationMessage(text, 'user');
+
+      // Update status to show manual trigger instruction
+      if (manualTriggerEnabled && conversationBuffer.length > 0) {
+        meetingAssistantStatus.textContent = '🎤 Listening... Press Cmd+Enter to generate response';
+      }
+    }
+
+    // Add conversation message (like chat bubbles)
+    function addConversationMessage(text, type = 'user') {
+      const messageEl = document.createElement('div');
+      messageEl.className = `message ${type}`;
+      messageEl.style.cssText = `
+        max-width: 80%;
+        padding: 8px 12px;
+        border-radius: 12px;
+        margin: 2px 0;
+        word-wrap: break-word;
+        font: 13px/1.4 monospace;
+      `;
+
+      if (type === 'user') {
+        // User message (what they said)
+        messageEl.style.cssText += `
+          background: rgba(70, 130, 180, 0.8);
+          color: #fff;
+          align-self: flex-end;
+          margin-left: auto;
+        `;
+        messageEl.innerHTML = `
+          <div style="font-size: 10px; opacity: 0.7; margin-bottom: 2px;">
+            ${new Date().toLocaleTimeString()}
+          </div>
+          <div>${text}</div>
+        `;
+      } else if (type === 'suggestion') {
+        // AI suggestion
+        messageEl.style.cssText += `
+          background: rgba(40, 167, 69, 0.2);
+          border: 1px solid #28a745;
+          color: #eee;
+          align-self: flex-start;
+          margin-right: auto;
+        `;
+        messageEl.innerHTML = `
+          <div style="font-size: 10px; opacity: 0.7; margin-bottom: 2px; color: #28a745;">
+            💡 AI Suggestion
+          </div>
+          <div>${text}</div>
+        `;
+      } else if (type === 'error') {
+        // Error message
+        messageEl.style.cssText += `
+          background: rgba(220, 53, 69, 0.2);
+          border: 1px solid #dc3545;
+          color: #eee;
+          align-self: flex-start;
+          margin-right: auto;
+        `;
+        messageEl.innerHTML = `
+          <div style="font-size: 10px; opacity: 0.7; margin-bottom: 2px; color: #dc3545;">
+            ❌ Error
+          </div>
+          <div>${text}</div>
+        `;
+      }
+
+      // Remove welcome message if it exists
+      const welcomeMsg = meetingAssistantMessages.querySelector('.assistant-welcome-message');
+      if (welcomeMsg) {
+        welcomeMsg.remove();
+      }
+
+      meetingAssistantMessages.appendChild(messageEl);
+      meetingAssistantMessages.scrollTop = meetingAssistantMessages.scrollHeight;
+
+      return messageEl; // Return element for streaming updates
+    }
+
+    // Update message content for streaming
+    function updateMessageContent(messageElement, content) {
+      const contentDiv = messageElement.querySelector('div:last-child');
+      if (contentDiv) {
+        contentDiv.textContent = content;
+        meetingAssistantMessages.scrollTop = meetingAssistantMessages.scrollHeight;
+      }
+    }
+
+    // Manual response generation (triggered by Cmd+Enter)
+
+    // Generate response suggestion (override placeholder)
+    generateResponseSuggestion = async function () {
+      try {
+        console.log('generateResponseSuggestion called', {
+          active: isMeetingAssistantActive,
+          bufferLength: conversationBuffer.length,
+          buffer: conversationBuffer
+        });
+
+        if (!isMeetingAssistantActive || conversationBuffer.length === 0) {
+          console.log('Returning early - not active or no buffer');
+          return;
+        }
+
+        // Show generating status
+        meetingAssistantStatus.textContent = '🤖 Generating response...';
+        console.log('Status updated to generating...');
+
+        // Build conversation text from buffer
+        const conversationText = conversationBuffer
+          .map(seg => `[${seg.timestamp}] ${seg.text}`)
+          .join('\n\n');
+
+        if (!conversationText.trim()) return;
+
+        meetingAssistantStatus.textContent = '🤔 Generating suggestion...';
+
+        const selectedModel = document.getElementById('modelDropdown').value;
+        const customPrompt = getCustomMeetingAssistantPrompt();
+
+        // Get auth token and backend URL like other API calls
+        const tokenResult = await window.electronAPI.getAuthToken();
+        if (!tokenResult.success) {
+          throw new Error('Authentication failed');
+        }
+
+        const backendUrlResult = await window.electronAPI.getBackendUrl();
+
+        // Start streaming response
+        let accumulatedText = '';
+        let messageElement = null;
+
+        try {
+          const response = await fetch(`${backendUrlResult.url}/api/meeting-assistant/suggest-stream`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${tokenResult.token}`
+            },
+            body: JSON.stringify({
+              conversation_history: conversationText,
+              model: selectedModel,
+              custom_prompt: customPrompt
+            })
+          });
+
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+          }
+
+          const reader = response.body.getReader();
+          const decoder = new TextDecoder();
+
+          while (true) {
+            const { done, value } = await reader.read();
+
+            if (done) break;
+
+            const chunk = decoder.decode(value);
+            const lines = chunk.split('\n');
+
+            for (const line of lines) {
+              if (line.startsWith('data: ')) {
+                try {
+                  const data = JSON.parse(line.slice(6));
+
+                  if (data.type === 'chunk') {
+                    accumulatedText += data.content;
+
+                    // Create message element on first chunk
+                    if (!messageElement) {
+                      messageElement = addConversationMessage('', 'suggestion');
+                    }
+
+                    // Update the message content with streaming text
+                    updateMessageContent(messageElement, accumulatedText);
+
+                  } else if (data.type === 'done') {
+                    meetingAssistantStatus.textContent = '💡 Suggestion ready - Press Cmd+Enter for next response';
+                    break;
+
+                  } else if (data.type === 'error') {
+                    throw new Error(data.error);
+                  }
+                } catch (parseError) {
+                  console.error('Error parsing SSE data:', parseError);
+                }
+              }
+            }
+          }
+
+        } catch (error) {
+          console.error('Streaming error:', error);
+          addConversationMessage(`Error: ${error.message || 'Unknown error'}`, 'error');
+          meetingAssistantStatus.textContent = '❌ Error generating suggestion';
+        }
+
+      } catch (error) {
+        console.error('Error generating suggestion:', error);
+        addConversationMessage('Failed to generate suggestion. Please try again.', 'error');
+        meetingAssistantStatus.textContent = '❌ Error generating suggestion';
+      }
+    };
+
+    // Copy and notes functions removed - using pure chat interface
+
+    // Event listeners for Meeting Assistant
+    if (startMeetingAssistantBtn) {
+      startMeetingAssistantBtn.addEventListener('click', startMeetingAssistant);
+    }
+
+    if (stopMeetingAssistantBtn) {
+      stopMeetingAssistantBtn.addEventListener('click', stopMeetingAssistant);
+    }
+
+    if (clearMeetingAssistantBtn) {
+      clearMeetingAssistantBtn.addEventListener('click', clearMeetingAssistant);
+    }
+
+    // Copy and notes buttons removed - using pure chat interface
+
+    // Connect Meeting Assistant to transcription events
+    if (window.electronAPI) {
+      // Override the existing onTranscriptionFinal to also feed Meeting Assistant
+      const originalOnTranscriptionFinal = window.electronAPI.onTranscriptionFinal;
+
+      window.electronAPI.onTranscriptionFinal((data) => {
+        // Call original handler for transcription display
+        if (originalOnTranscriptionFinal) {
+          console.log('Final transcription:', data.text);
+          if (data.text && data.text.trim()) {
+            transcriptionText += (transcriptionText ? '\n\n' : '') + data.text;
+
+            // Update the display
+            transcriptionOutput.innerHTML = transcriptionText
+              .split('\n\n')
+              .map(segment => `<div style="margin-bottom: 10px; padding: 8px; background: rgba(40, 167, 69, 0.1); border-left: 3px solid #28a745; border-radius: 3px;">${segment}</div>`)
+              .join('');
+
+            // Auto-scroll to bottom
+            transcriptionOutput.scrollTop = transcriptionOutput.scrollHeight;
+          }
+        }
+
+        // Also feed to Meeting Assistant
+        if (data.text && data.text.trim()) {
+          addConversationSegment(data.text);
+        }
+      });
+
+      // Cmd+Enter keyboard shortcut is handled by the global handler above
+    }
+
+    // Copy and notes functions removed - using pure chat interface
+
+    // Initialize Meeting Assistant with welcome message
+    if (meetingAssistantMessages) {
+      clearMeetingAssistant();
     }
   });
   </script>

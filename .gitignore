@@ -260,3 +260,5 @@ backend/users.db-lock
 backend/users.db-wal
 backend/users.db-shm
 backend/users.db-wal
+backend/models/ggml-base.en.bin
+Frontend/.DS_Store

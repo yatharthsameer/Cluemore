@@ -214,7 +214,52 @@ contextBridge.exposeInMainWorld('electronAPI', {
     },
 
     // Get app version
-    getAppVersion: () => ipcRenderer.invoke('app:get-version')
+    getAppVersion: () => ipcRenderer.invoke('app:get-version'),
+
+    // Audio transcription functionality
+    startAudioCapture: () => ipcRenderer.invoke('audio:start-capture'),
+    stopAudioCapture: () => ipcRenderer.invoke('audio:stop-capture'),
+    sendAudioChunk: (chunk) => ipcRenderer.send('audio:chunk', chunk),
+
+    // Audio transcription events
+    onTranscriptionStart: (callback) => {
+        ipcRenderer.on('transcription:start', (event) => {
+            callback();
+        });
+    },
+
+    onTranscriptionChunk: (callback) => {
+        ipcRenderer.on('transcription:chunk', (event, data) => {
+            callback(data);
+        });
+    },
+
+    onTranscriptionFinal: (callback) => {
+        ipcRenderer.on('transcription:final', (event, data) => {
+            callback(data);
+        });
+    },
+
+    onTranscriptionError: (callback) => {
+        ipcRenderer.on('transcription:error', (event, error) => {
+            callback(error);
+        });
+    },
+
+    onVoiceActivity: (callback) => {
+        ipcRenderer.on('transcription:voice-activity', (event, data) => {
+            callback(data);
+        });
+    },
+
+    onTurnDetection: (callback) => {
+        ipcRenderer.on('transcription:turn-detection', (event, data) => {
+            callback(data);
+        });
+    },
+
+    // Desktop capture for fallback
+    getDesktopSources: () => ipcRenderer.invoke('desktop:get-sources')
 });
 
 // nothing fancy yet – isolated world so the renderer is sandboxed 

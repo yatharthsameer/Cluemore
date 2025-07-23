@@ -1,4 +1,5 @@
-const { app, BrowserWindow, Tray, Menu, globalShortcut, nativeImage, desktopCapturer, ipcMain, systemPreferences, dialog } = require('electron');
+const { app, BrowserWindow, Tray, Menu, globalShortcut, nativeImage, desktopCapturer, ipcMain, systemPreferences, dialog, session } = require('electron');
+const WebSocket = require('ws');
 const { autoUpdater } = require('electron-updater');
 const path = require('path');
 const https = require('https');
@@ -31,6 +32,15 @@ let currentUser = null;
 let jwtToken = null;
 let isPinnedOnTop = false; // Default to normal window level
 let isContentProtectionEnabled = true; // Default to enabled (secure)
+
+// Audio transcription variables
+let audioWebSocket = null;
+let isAudioCapturing = false;
+let audioContext = null;
+let audioWorkletNode = null;
+let mediaStreamSource = null;
+let systemAudioStream = null;
+
 // Backend URL configuration
 // Use environment variable or fallback to production URL
 const BACKEND_URL = process.env.BACKEND_URL || 'https://cluemore-166792667b90.herokuapp.com';
@@ -802,7 +812,9 @@ function createMainWindow() {
     webPreferences: {
       contextIsolation: true,
       nodeIntegration: false,
-      preload: path.join(__dirname, 'preload.js')
+      preload: path.join(__dirname, 'preload.js'),
+      webSecurity: true,
+      enableBlinkFeatures: 'GetDisplayMedia'  // Explicitly enable getDisplayMedia
     }
   };
 
@@ -1277,6 +1289,56 @@ function setupAutoUpdater() {
 }
 
 app.whenReady().then(async () => {
+  console.log('🚀 App is ready, starting initialization...');
+
+  // Set up display media request handler for proper system audio capture
+  console.log('🎬 Setting up display media request handler...');
+  try {
+    session.defaultSession.setDisplayMediaRequestHandler((request, callback) => {
+      console.log('🎬 Display media request received:', request);
+      console.log('🎬 Request details - video:', request.video, 'audio:', request.audio);
+
+      desktopCapturer.getSources({ types: ['screen', 'window'] }).then((sources) => {
+        console.log('📺 Available sources:', sources.length);
+        console.log('📺 Sources list:', sources.map(s => ({ id: s.id, name: s.name })));
+
+        // Find the first screen source (preferred for system audio)
+        const screenSource = sources.find(source => source.id.startsWith('screen:'));
+        const sourceToUse = screenSource || sources[0];
+
+        if (sourceToUse) {
+          const response = {
+            video: sourceToUse
+          };
+
+          // Add audio only if requested and we have a screen source
+          if (request.audioRequested && screenSource) {
+            response.audio = 'loopback';
+            console.log('✅ Adding system audio (loopback) to response');
+          } else if (request.audioRequested) {
+            console.warn('⚠️ Audio requested but no screen source available for system audio');
+          } else {
+            console.log('🔇 No audio requested in this call');
+          }
+
+          console.log('✅ Calling callback with:', response);
+          callback(response);
+        } else {
+          console.warn('⚠️ No sources available');
+          callback({});
+        }
+      }).catch(error => {
+        console.error('❌ Error getting desktop sources:', error);
+        callback({});
+      });
+    }, {
+      useSystemPicker: false  // Disable system picker to ensure our handler runs
+    });
+    console.log('✅ Display media request handler set up successfully');
+  } catch (error) {
+    console.error('❌ Failed to set up display media request handler:', error);
+  }
+
   // Load pin on top setting
   isPinnedOnTop = getPinOnTopSetting();
   console.log(`📌 Pin on top setting loaded: ${isPinnedOnTop}`);
@@ -1799,6 +1861,148 @@ Keep responses concise but comprehensive, focusing on practical problem-solving 
     } catch (error) {
       console.error('Error getting default prompt:', error);
       return { success: false, error: error.message };
+    }
+  });
+
+  // Audio capture IPC handlers
+  ipcMain.handle('audio:start-capture', async (event) => {
+    try {
+      if (isAudioCapturing) {
+        return { success: false, error: 'Audio capture already running' };
+      }
+
+      // Connect to WebSocket server (separate port for audio)
+      const wsUrl = `${BACKEND_URL.replace('https://', 'wss://').replace('http://', 'ws://').replace(':3000', ':8765')}`;
+      audioWebSocket = new WebSocket(wsUrl);
+
+      audioWebSocket.on('open', () => {
+        console.log('🔊 WebSocket connection established for audio transcription');
+        isAudioCapturing = true;
+        if (win) {
+          win.webContents.send('transcription:start');
+        }
+      });
+
+      audioWebSocket.on('message', (data) => {
+        try {
+          const message = JSON.parse(data.toString());
+          if (win) {
+            switch (message.type) {
+              case 'transcript':
+                win.webContents.send('transcription:final', message);
+                break;
+              case 'voice_activity':
+                win.webContents.send('transcription:voice-activity', message);
+                break;
+              case 'turn_detection':
+                win.webContents.send('transcription:turn-detection', message);
+                break;
+            }
+          }
+        } catch (error) {
+          console.error('Error parsing WebSocket message:', error);
+        }
+      });
+
+      audioWebSocket.on('error', (error) => {
+        console.error('WebSocket error:', error);
+        if (win) {
+          win.webContents.send('transcription:error', error.message);
+        }
+        isAudioCapturing = false;
+      });
+
+      audioWebSocket.on('close', () => {
+        console.log('WebSocket connection closed');
+        isAudioCapturing = false;
+      });
+
+      return { success: true };
+    } catch (error) {
+      console.error('Error starting audio capture:', error);
+      return { success: false, error: error.message };
+    }
+  });
+
+  ipcMain.handle('audio:stop-capture', async (event) => {
+    try {
+      if (audioWebSocket) {
+        audioWebSocket.close();
+        audioWebSocket = null;
+      }
+      isAudioCapturing = false;
+      return { success: true };
+    } catch (error) {
+      console.error('Error stopping audio capture:', error);
+      return { success: false, error: error.message };
+    }
+  });
+
+  ipcMain.on('audio:chunk', (event, chunk) => {
+    if (audioWebSocket && audioWebSocket.readyState === WebSocket.OPEN) {
+      try {
+        // The WebSocket server expects exactly 640 bytes (320 samples * 2 bytes)
+        const targetSamples = 320; // 20ms @ 16kHz
+        const pcmData = chunk.pcm;
+
+        if (pcmData && pcmData.length > 0) {
+          // PCM data comes as Int16Array from frontend, but may need reconstruction
+          let processedData;
+
+          // Convert PCM data to Int16Array (data comes as regular array from IPC)
+          if (Array.isArray(pcmData)) {
+            processedData = new Int16Array(pcmData);
+          } else if (pcmData instanceof Int16Array) {
+            processedData = pcmData;
+          } else {
+            console.warn('Unexpected PCM data format:', typeof pcmData, pcmData.constructor?.name);
+            return;
+          }
+
+          // Ensure correct size
+          if (processedData.length !== targetSamples) {
+            const resized = new Int16Array(targetSamples);
+            if (processedData.length > targetSamples) {
+              // Truncate
+              resized.set(processedData.subarray(0, targetSamples));
+            } else {
+              // Pad with zeros
+              resized.set(processedData);
+            }
+            processedData = resized;
+          }
+
+          // Convert to Buffer (Node.js Buffer from ArrayBuffer)
+          const buffer = Buffer.from(processedData.buffer, processedData.byteOffset, processedData.byteLength);
+          audioWebSocket.send(buffer);
+
+          // Debug logging
+          if (Math.random() < 0.02) { // 2% of packets
+            const maxSample = Math.max(...processedData.map(Math.abs));
+            console.log(`Sent audio chunk: ${buffer.length} bytes, ${processedData.length} samples, max=${maxSample}`);
+          }
+        }
+      } catch (error) {
+        console.error('Error processing audio chunk:', error);
+      }
+    }
+  });
+  // Desktop capturer for fallback screen capture
+  ipcMain.handle('desktop:get-sources', async () => {
+    try {
+      const sources = await desktopCapturer.getSources({
+        types: ['screen', 'window'],
+        thumbnailSize: { width: 150, height: 150 }
+      });
+
+      return sources.map(source => ({
+        id: source.id,
+        name: source.name,
+        thumbnail: source.thumbnail.toDataURL()
+      }));
+    } catch (error) {
+      console.error('Error getting desktop sources:', error);
+      return [];
     }
   });
 });
