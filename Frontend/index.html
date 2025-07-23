@@ -1334,6 +1334,14 @@ Your response:`;
         transcriptionPage.classList.add('active');
         transcriptionBtn.classList.add('active');
         currentPage = 'transcription';
+        
+        // Reset status when switching to transcription page if not recording
+        if (currentAudioMode !== 'live-transcription') {
+          const statusEl = document.getElementById('transcriptionStatus');
+          if (statusEl) {
+            statusEl.textContent = 'Ready to record';
+          }
+        }
       } else if (pageName === 'meetingAssistant') {
         meetingAssistantPage.classList.add('active');
         meetingAssistantBtn.classList.add('active');
@@ -2472,14 +2480,30 @@ Your response:`;
       startMeetingAssistantBtn.style.display = 'inline-block';
       stopMeetingAssistantBtn.style.display = 'none';
 
-      transcriptionStatus.textContent = 'Ready to record';
-      meetingAssistantStatus.textContent = 'Ready to assist with your technical interview';
-
+            const statusEl = document.getElementById('transcriptionStatus');
+      const assistantStatusEl = document.getElementById('meetingAssistantStatus');
+      
+      if (statusEl) statusEl.textContent = 'Ready to record';
+      if (assistantStatusEl) assistantStatusEl.textContent = 'Ready to assist with your technical interview';
+      
+      // Also reset any leftover status messages
+      resetLiveTranscriptionStatus();
+      
       console.log('✅ Audio state reset complete');
     }
 
     // Expose force reset function globally
     window.forceResetAudioState = forceResetAudioState;
+
+    // Function to reset Live Transcription status when not in live-transcription mode
+    function resetLiveTranscriptionStatus() {
+      if (currentAudioMode !== 'live-transcription') {
+        const statusEl = document.getElementById('transcriptionStatus');
+        if (statusEl) {
+          statusEl.textContent = 'Ready to record';
+        }
+      }
+    }
 
     // DOM elements
     const startTranscriptionBtn = document.getElementById('startTranscriptionBtn');
@@ -2772,6 +2796,9 @@ Solutions:
         }
 
         currentAudioMode = null; // Reset audio mode when stopping
+        
+        // Reset Live Transcription status if we're not in that mode
+        resetLiveTranscriptionStatus();
 
         console.log('Audio capture stopped successfully');
 
@@ -2830,8 +2857,11 @@ Solutions:
     if (window.electronAPI) {
       // Handle transcription start
       window.electronAPI.onTranscriptionStart(() => {
-        console.log('Transcription started');
-        transcriptionStatus.textContent = '🎤 Recording... Processing audio...';
+        console.log('Transcription started for mode:', currentAudioMode);
+        // Only update Live Transcription status when in live-transcription mode
+        if (currentAudioMode === 'live-transcription') {
+          transcriptionStatus.textContent = '🎤 Recording... Processing audio...';
+        }
       });
 
       // Handle final transcription results
@@ -2945,6 +2975,9 @@ Solutions:
         meetingAssistantStatus.textContent = 'Assistant stopped';
 
         console.log('Meeting assistant stopped successfully');
+        
+        // Reset Live Transcription status since we stopped audio capture
+        setTimeout(() => resetLiveTranscriptionStatus(), 100);
 
       } catch (error) {
         console.error('Error stopping meeting assistant:', error);
@@ -2955,6 +2988,9 @@ Solutions:
         startMeetingAssistantBtn.style.display = 'inline-block';
         stopMeetingAssistantBtn.style.display = 'none';
         currentAudioMode = null;
+        
+        // Reset Live Transcription status
+        setTimeout(() => resetLiveTranscriptionStatus(), 100);
       }
     }
 
