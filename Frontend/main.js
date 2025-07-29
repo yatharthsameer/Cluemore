@@ -6,6 +6,21 @@ const https = require('https');
 const http = require('http');
 const keytar = require('keytar');
 
+// Import auth module
+const {
+  initializeAuth,
+  storeToken,
+  getStoredToken,
+  removeStoredToken,
+  verifyStoredToken,
+  authenticateUser,
+  registerUser,
+  logout: authLogout,
+  getCurrentUser: getAuthCurrentUser,
+  getJwtToken,
+  makeRequest: authMakeRequest
+} = require('./core/auth');
+
 // Basic startup logging
 console.log('🎬 Cluemore starting...');
 console.log(`   Version: ${app.getVersion()}`);
@@ -28,8 +43,7 @@ try {
 let win;
 let authWin;
 let promptEditorWin; // Add prompt editor panel window
-let currentUser = null;
-let jwtToken = null;
+// Note: currentUser and jwtToken are now managed by the auth module
 let isPinnedOnTop = false; // Default to normal window level
 let isContentProtectionEnabled = true; // Default to enabled (secure)
 
@@ -44,6 +58,9 @@ let systemAudioStream = null;
 // Backend URL configuration
 // Use environment variable or fallback to production URL
 const BACKEND_URL = process.env.BACKEND_URL || 'https://cluemore-166792667b90.herokuapp.com';
+
+// Initialize auth module
+initializeAuth(BACKEND_URL);
 
 // Log environment configuration
 console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
@@ -113,136 +130,7 @@ function makeRequest(url, options = {}) {
   });
 }
 
-// Authentication helper functions
-async function storeToken(token) {
-  try {
-    // Use permission dialog manager in case keychain access triggers a dialog
-    await permissionDialogManager.handleSystemDialog(async () => {
-      await keytar.setPassword(SERVICE_NAME, ACCOUNT_NAME, token);
-      return true;
-    }, 'keychain-store');
 
-    jwtToken = token;
-    console.log('JWT token stored securely');
-    return true;
-  } catch (error) {
-    console.error('Failed to store token:', error);
-    return false;
-  }
-}
-
-async function getStoredToken() {
-  try {
-    // Use permission dialog manager in case keychain access triggers a dialog
-    const token = await permissionDialogManager.handleSystemDialog(async () => {
-      return await keytar.getPassword(SERVICE_NAME, ACCOUNT_NAME);
-    }, 'keychain-retrieve');
-
-    if (token) {
-      jwtToken = token;
-      console.log('JWT token retrieved from secure storage');
-      return token;
-    }
-    return null;
-  } catch (error) {
-    console.error('Failed to retrieve token:', error);
-    return null;
-  }
-}
-
-async function removeStoredToken() {
-  try {
-    // Use permission dialog manager in case keychain access triggers a dialog
-    await permissionDialogManager.handleSystemDialog(async () => {
-      await keytar.deletePassword(SERVICE_NAME, ACCOUNT_NAME);
-      return true;
-    }, 'keychain-delete');
-
-    jwtToken = null;
-    currentUser = null;
-    console.log('JWT token removed from secure storage');
-    return true;
-  } catch (error) {
-    console.error('Failed to remove token:', error);
-    return false;
-  }
-}
-
-async function verifyStoredToken() {
-  try {
-    if (!jwtToken) {
-      jwtToken = await getStoredToken();
-    }
-
-    if (!jwtToken) {
-      console.log('No stored token found');
-      return false;
-    }
-
-    const response = await makeRequest(`${BACKEND_URL}/api/auth/verify`, {
-      method: 'POST',
-      body: { token: jwtToken }
-    });
-
-    if (response.success && response.valid) {
-      currentUser = response.user;
-      console.log('Token verified, user:', currentUser.email);
-      return true;
-    } else {
-      console.log('Token verification failed, removing stored token');
-      await removeStoredToken();
-      return false;
-    }
-  } catch (error) {
-    console.error('Token verification error:', error);
-    await removeStoredToken();
-    return false;
-  }
-}
-
-async function authenticateUser(email, password) {
-  try {
-    const response = await makeRequest(`${BACKEND_URL}/api/auth/login`, {
-      method: 'POST',
-      body: { email, password }
-    });
-
-    if (response.success && response.token) {
-      await storeToken(response.token);
-      currentUser = response.user;
-      console.log('User authenticated successfully:', currentUser.email);
-      return { success: true, user: currentUser, token: response.token };
-    } else {
-      console.log('Authentication failed:', response.error);
-      return { success: false, error: response.error || 'Authentication failed' };
-    }
-  } catch (error) {
-    console.error('Authentication error:', error);
-    return { success: false, error: 'Network error: ' + error.message };
-  }
-}
-
-async function registerUser(email, password) {
-  try {
-    const response = await makeRequest(`${BACKEND_URL}/api/auth/register`, {
-      method: 'POST',
-      body: { email, password }
-    });
-
-    if (response.success && response.token) {
-      await storeToken(response.token);
-      currentUser = response.user;
-      console.log('User registered successfully:', currentUser.email);
-      return { success: true, user: currentUser, token: response.token };
-    } else {
-      console.log('Registration failed:', response.error);
-      return { success: false, error: response.error || 'Registration failed' };
-    }
-  } catch (error) {
-    console.error('Registration error:', error);
-    return { success: false, error: 'Network error: ' + error.message };
-  }
-}
 
 // Setting management functions
 function getPinOnTopSetting() {
@@ -913,7 +801,7 @@ async function sendChatMessage(text, imageData = null, model = 'gemini-1.5-flash
     const response = await fetch(`${BACKEND_URL}/api/chat_protected_stream`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${jwtToken}`,
+        'Authorization': `Bearer ${getJwtToken()}`,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify(payload)
@@ -1101,7 +989,7 @@ async function processAccumulatedScreenshots(screenshots, model = 'gemini-1.5-fl
     const response = await fetch(`${BACKEND_URL}/api/screenshot_protected_stream`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${jwtToken}`,
+        'Authorization': `Bearer ${getJwtToken()}`,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify(payload)
@@ -1530,7 +1418,7 @@ app.whenReady().then(async () => {
       { type: 'separator' },
       {
         label: 'Logout', click: async () => {
-          await removeStoredToken();
+          await authLogout();
           if (win) win.close();
           createAuthWindow();
         }
@@ -1549,12 +1437,12 @@ app.whenReady().then(async () => {
   });
 
   ipcMain.handle('auth:logout', async (event) => {
-    const success = await removeStoredToken();
+    const result = await authLogout();
     if (win) {
       win.close();
     }
     createAuthWindow();
-    return { success };
+    return result;
   });
 
   ipcMain.handle('auth:verify-token', async (event, token) => {
@@ -1570,16 +1458,18 @@ app.whenReady().then(async () => {
   });
 
   ipcMain.handle('auth:get-current-user', async (event) => {
-    if (currentUser) {
-      return { success: true, user: currentUser };
+    const user = getCurrentUser();
+    if (user) {
+      return { success: true, user };
     } else {
       return { success: false, error: 'No authenticated user' };
     }
   });
 
   ipcMain.handle('auth:get-token', async (event) => {
-    if (jwtToken) {
-      return { success: true, token: jwtToken };
+    const token = getJwtToken();
+    if (token) {
+      return { success: true, token };
     } else {
       // Try to get from secure storage
       const storedToken = await getStoredToken();
