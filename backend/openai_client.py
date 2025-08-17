@@ -70,12 +70,22 @@ class OpenAIClient:
         try:
             log.info(f"Sending chat completion to OpenAI model: {model}")
 
+            # GPT-5 expects max_completion_tokens instead of max_tokens
+            token_param = (
+                {"max_completion_tokens": 4000}
+                if str(model).startswith("gpt-5")
+                else {"max_tokens": 4000}
+            )
+
+            # Only include temperature for non-GPT-5 models
+            temp_kwargs = {} if str(model).startswith("gpt-5") else {"temperature": 0.7}
+
             response = self.client.chat.completions.create(
                 model=model,
                 messages=messages,
-                max_tokens=4000,
-                temperature=0.7,
                 timeout=30,
+                **token_param,
+                **temp_kwargs,
             )
 
             return response.choices[0].message.content
@@ -287,13 +297,23 @@ class OpenAIClient:
         try:
             log.info(f"Sending streaming chat completion to OpenAI model: {model}")
 
+            # GPT-5 expects max_completion_tokens instead of max_tokens
+            token_param = (
+                {"max_completion_tokens": 4000}
+                if str(model).startswith("gpt-5")
+                else {"max_tokens": 4000}
+            )
+
+            # Only include temperature for non-GPT-5 models
+            temp_kwargs = {} if str(model).startswith("gpt-5") else {"temperature": 0.7}
+
             response = self.client.chat.completions.create(
                 model=model,
                 messages=messages,
-                max_tokens=4000,
-                temperature=0.7,
                 timeout=30,
                 stream=True,
+                **token_param,
+                **temp_kwargs,
             )
 
             for chunk in response:

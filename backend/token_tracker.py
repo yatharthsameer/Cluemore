@@ -13,6 +13,8 @@ log = logging.getLogger("token_tracker")
 # Pricing per 1K tokens (as of 2024)
 MODEL_PRICING = {
     # OpenAI GPT models
+    "gpt-5": {"input": 0.00125, "output": 0.010},
+    "gpt-5-mini": {"input": 0.00025, "output": 0.002},
     "gpt-4o": {"input": 0.005, "output": 0.015},
     "gpt-4o-mini": {"input": 0.00015, "output": 0.0006},
     "gpt-4": {"input": 0.03, "output": 0.06},

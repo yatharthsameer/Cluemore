@@ -753,8 +753,17 @@ def api_chat_protected(current_user):
                 messages.append({"role": "user", "content": user_text})
 
             # Make OpenAI call
+            extra_tokens = (
+                {"max_completion_tokens": 4000}
+                if str(actual_model).startswith("gpt-5")
+                else {"max_tokens": 4000}
+            )
+            # Remove temperature for GPT-5 models per API constraints
+            temp_kwargs = (
+                {} if str(actual_model).startswith("gpt-5") else {"temperature": 0.7}
+            )
             response_obj = ai_client.client.chat.completions.create(
-                model=actual_model, messages=messages, max_tokens=4000, temperature=0.7
+                model=actual_model, messages=messages, **temp_kwargs, **extra_tokens
             )
 
             response_text = response_obj.choices[0].message.content
@@ -919,6 +928,14 @@ def api_screenshot_protected(current_user):
 
         if model_name.startswith("gpt-"):
             # OpenAI handling
+            extra_tokens = (
+                {"max_completion_tokens": 4000}
+                if str(actual_model).startswith("gpt-5")
+                else {"max_tokens": 4000}
+            )
+            temp_kwargs = (
+                {} if str(actual_model).startswith("gpt-5") else {"temperature": 0.7}
+            )
             response_obj = ai_client.client.chat.completions.create(
                 model=actual_model,
                 messages=[
@@ -934,8 +951,8 @@ def api_screenshot_protected(current_user):
                         ],
                     }
                 ],
-                max_tokens=4000,
-                temperature=0.7,
+                **temp_kwargs,
+                **extra_tokens,
             )
 
             response = response_obj.choices[0].message.content
@@ -1643,6 +1660,11 @@ def api_meeting_assistant_suggest(current_user):
         conversation_history = data.get("conversation_history", "")
         model = data.get("model", "gpt-4")
         custom_prompt = data.get("custom_prompt")
+        # New optional context fields for sharper answers
+        recent_transcript = data.get("recent_transcript")
+        last_question = data.get("last_question")
+        last_answer = data.get("last_answer")
+        conversation_summary = data.get("conversation_summary")
 
         log.info(
             f"Meeting assistant request from user {current_user['id']}, model: {model}"
@@ -1660,6 +1682,10 @@ def api_meeting_assistant_suggest(current_user):
                     conversation_history=conversation_history,
                     model=model,
                     custom_prompt=custom_prompt,
+                    recent_transcript=recent_transcript,
+                    last_question=last_question,
+                    last_answer=last_answer,
+                    conversation_summary=conversation_summary,
                 )
             )
         finally:
@@ -1685,6 +1711,11 @@ def api_meeting_assistant_suggest_stream(current_user):
         conversation_history = data.get("conversation_history", "")
         model = data.get("model", "gpt-4")
         custom_prompt = data.get("custom_prompt")
+        # New optional context fields for sharper answers
+        recent_transcript = data.get("recent_transcript")
+        last_question = data.get("last_question")
+        last_answer = data.get("last_answer")
+        conversation_summary = data.get("conversation_summary")
 
         log.info(
             f"Meeting assistant streaming request from user {current_user['id']}, model: {model}"
@@ -1697,6 +1728,10 @@ def api_meeting_assistant_suggest_stream(current_user):
                     conversation_history=conversation_history,
                     model=model,
                     custom_prompt=custom_prompt,
+                    recent_transcript=recent_transcript,
+                    last_question=last_question,
+                    last_answer=last_answer,
+                    conversation_summary=conversation_summary,
                 ):
                     yield f"data: {json.dumps(chunk)}\n\n"
 

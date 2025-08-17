@@ -2135,6 +2135,8 @@
           <option value="gpt-4o">GPT-4o</option>
           <option value="gpt-4o-mini">GPT-4o Mini</option>
           <option value="gpt-4-turbo">GPT-4 Turbo</option>
+          <option value="gpt-5">GPT-5</option>
+          <option value="gpt-5-mini">GPT-5 Mini</option>
           <!-- <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option> -->
         </select>
       </div>
@@ -5028,6 +5030,19 @@ Solutions:
           .map(seg => `[${seg.timestamp}] ${seg.text}`)
           .join('\n\n');
 
+        // Derive sharper context fields
+        const recentTranscript = conversationText;
+        const lastQuestion = conversationBuffer.length > 0 ? conversationBuffer[conversationBuffer.length - 1].text : '';
+        // Find last AI suggestion bubble content (if any)
+        let lastAnswer = '';
+        const suggestionNodes = meetingAssistantMessages?.querySelectorAll('.message.suggestion div:last-child');
+        if (suggestionNodes && suggestionNodes.length > 0) {
+          lastAnswer = suggestionNodes[suggestionNodes.length - 1].textContent || '';
+        }
+        // Maintain a lightweight rolling summary in memory (optional)
+        window.__meetingAssistantSummary = window.__meetingAssistantSummary || '';
+        const conversationSummary = window.__meetingAssistantSummary || null;
+
         if (!conversationText.trim()) return;
 
         meetingAssistantStatus.textContent = '🤔 Generating suggestion...';
@@ -5057,7 +5072,12 @@ Solutions:
             body: JSON.stringify({
               conversation_history: conversationText,
               model: selectedModel,
-              custom_prompt: customPrompt
+              custom_prompt: customPrompt,
+              // New context fields for sharper, context-aware answers
+              recent_transcript: recentTranscript,
+              last_question: lastQuestion,
+              last_answer: lastAnswer || null,
+              conversation_summary: conversationSummary,
             })
           });
 
@@ -5094,6 +5114,15 @@ Solutions:
 
                   } else if (data.type === 'done') {
                     meetingAssistantStatus.textContent = '💡 Suggestion ready - Press Cmd+Enter for next response';
+                    // Update lightweight rolling summary (very simple heuristic)
+                    try {
+                      const latestText = accumulatedText.trim();
+                      if (latestText) {
+                        const maxLen = 1200;
+                        const merged = (window.__meetingAssistantSummary || '') + '\n' + latestText;
+                        window.__meetingAssistantSummary = merged.length > maxLen ? ('...' + merged.slice(-maxLen)) : merged;
+                      }
+                    } catch (e) { console.warn('Summary update failed', e); }
                     break;
 
                   } else if (data.type === 'error') {
