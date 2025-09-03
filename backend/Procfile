@@ -1,2 +1,2 @@
-web: gunicorn server:APP --bind 0.0.0.0:$PORT --workers=2 --timeout=120
+web: uvicorn asgi_app:app --host 0.0.0.0 --port $PORT --workers 2 --timeout-keep-alive 75
 release: python -c "from database import db_manager; db_manager.init_database()" 

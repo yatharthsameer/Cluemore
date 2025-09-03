@@ -1,12 +1,19 @@
 import asyncio, json, time, webrtcvad, websockets
 import logging
+import os
+from logging.handlers import RotatingFileHandler
 from whisper_service import transcribe_int16_pcm
 
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-)
+# Configure logging to a rotating file to avoid stdout/stderr pipe blocking
 logger = logging.getLogger("audio_server")
+logger.setLevel(logging.INFO)
+log_path = os.path.join(os.path.dirname(__file__), "ws_audio.log")
+handler = RotatingFileHandler(log_path, maxBytes=5 * 1024 * 1024, backupCount=3)
+handler.setFormatter(
+    logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+)
+logger.handlers = [handler]
+logger.propagate = False
 
 SAMPLE_RATE = 16_000
 CHUNK_MS = 20
@@ -127,20 +134,42 @@ class Stream:
 
 
 async def handler(ws):
-    logger.info("New WebSocket connection established")
+    logger.info(
+        f"New WebSocket connection established from {getattr(ws, 'remote_address', None)}"
+    )
     stream = Stream()
     try:
         async for msg in ws:
             await stream.feed(msg, ws.send)
-    except websockets.exceptions.ConnectionClosed:
-        logger.info("WebSocket connection closed")
+    except websockets.exceptions.ConnectionClosed as e:
+        logger.info(
+            f"WebSocket connection closed code={getattr(e, 'code', None)} reason={getattr(e, 'reason', None)}"
+        )
     except Exception as e:
         logger.error(f"Error in WebSocket handler: {e}")
 
 
 async def main():
-    async with websockets.serve(handler, "0.0.0.0", 8765):
-        logger.info("🚀 ASR WebSocket server started on ws://0.0.0.0:8765")
+    ping_interval_seconds = 20
+    ping_timeout_seconds = 60
+    close_timeout_seconds = 5
+    max_message_size_bytes = 2**20  # 1 MiB safety cap
+    max_queue_messages = 64
+
+    async with websockets.serve(
+        handler,
+        "0.0.0.0",
+        8765,
+        ping_interval=ping_interval_seconds,
+        ping_timeout=ping_timeout_seconds,
+        close_timeout=close_timeout_seconds,
+        max_size=max_message_size_bytes,
+        max_queue=max_queue_messages,
+        compression=None,
+    ):
+        logger.info(
+            f"🚀 ASR WebSocket server started on ws://0.0.0.0:8765 | keepalive: ping={ping_interval_seconds}s timeout={ping_timeout_seconds}s"
+        )
         await asyncio.Future()  # run forever
 
 

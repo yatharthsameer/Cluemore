@@ -19,8 +19,10 @@ Pillow==10.2.0
 python-dotenv==1.0.1
 requests==2.31.0 
 
-# Production server
-gunicorn==21.2.0 
+# Production server (ASGI)
+uvicorn==0.30.1
+starlette==0.37.2
+asgiref==3.8.1
 
 # Audio transcription
 websockets==12.0

@@ -1880,8 +1880,12 @@ def start_websocket_server():
                 sys.executable,
                 os.path.join(os.path.dirname(__file__), "ws_audio_server.py"),
             ],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
+            # Important: do NOT pipe stdout/stderr without consuming them.
+            # Piped streams have limited buffers (~64KB). If the child writes logs
+            # continuously (as our WS server does), the buffer fills up in minutes
+            # and the child process blocks on write, causing stalls and dropped WS.
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
         )
 
         log.info("🚀 Audio WebSocket server started as separate process")
@@ -1893,34 +1897,19 @@ def start_websocket_server():
 
 # ────────── run ───────────────────
 if __name__ == "__main__":
-    import threading
-
-    # Initialize database on startup
+    # Keep minimal dev runner for Flask-only debugging if needed
     log.info("Initializing database...")
     try:
         db_manager.init_database()
     except Exception as e:
         log.error(f"Database initialization failed: {e}")
-        # Continue with existing SQLite fallback
         pass
 
-    # Initialize token tracker on startup
     log.info("Initializing token tracker...")
     try:
-        token_tracker.get_user_usage_summary(1)  # Test database connection
+        token_tracker.get_user_usage_summary(1)
     except Exception as e:
         log.warning(f"Token tracker initialization warning: {e}")
 
-    # Start WebSocket server in a separate process
-    log.info("Starting WebSocket audio server...")
-    websocket_process = start_websocket_server()
-
     log.info(f"★ Backend ready on http://{HOST}:{PORT}")
-
-    # Use production-ready server for Heroku
-    if IS_PRODUCTION:
-        # In production, gunicorn will handle the server
-        pass
-    else:
-        # Development mode
-        APP.run(host=HOST, port=PORT, debug=True, threaded=True)
+    APP.run(host=HOST, port=PORT, debug=True, threaded=True)

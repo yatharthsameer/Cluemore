@@ -40,6 +40,7 @@ let audioContext = null;
 let audioWorkletNode = null;
 let mediaStreamSource = null;
 let systemAudioStream = null;
+let audioWsKeepaliveTimer = null;
 
 // Backend URL configuration
 // Use environment variable or fallback to production URL
@@ -65,6 +66,7 @@ function makeRequest(url, options = {}) {
       method: options.method || 'GET',
       headers: {
         'Content-Type': 'application/json',
+        'Accept': 'application/json',
         'User-Agent': 'Cluemore/1.0.0',
         ...options.headers
       },
@@ -106,6 +108,12 @@ function makeRequest(url, options = {}) {
     if (options.body) {
       const bodyString = JSON.stringify(options.body);
       console.log(`Request body: ${bodyString}`);
+      try {
+        // Ensure Content-Length is set for WSGI backends behind ASGI bridge
+        req.setHeader('Content-Length', Buffer.byteLength(bodyString));
+      } catch (e) {
+        console.warn('Failed to set Content-Length header:', e);
+      }
       req.write(bodyString);
     }
 
@@ -1871,13 +1879,24 @@ Keep responses concise but comprehensive, focusing on practical problem-solving 
         return { success: false, error: 'Audio capture already running' };
       }
 
-      // Connect to WebSocket server (separate port for audio)
-      const wsUrl = `${BACKEND_URL.replace('https://', 'wss://').replace('http://', 'ws://').replace(':3000', ':8765')}`;
+      // Connect to unified WebSocket endpoint on the same backend port
+      const wsUrl = `${BACKEND_URL.replace('https://', 'wss://').replace('http://', 'ws://')}/ws/audio`;
       audioWebSocket = new WebSocket(wsUrl);
 
       audioWebSocket.on('open', () => {
         console.log('🔊 WebSocket connection established for audio transcription');
         isAudioCapturing = true;
+        // Client-side keepalive: send ping frames every 20s
+        try {
+          if (audioWsKeepaliveTimer) clearInterval(audioWsKeepaliveTimer);
+          audioWsKeepaliveTimer = setInterval(() => {
+            if (audioWebSocket && audioWebSocket.readyState === WebSocket.OPEN) {
+              try { audioWebSocket.ping(); } catch (err) { console.warn('WS ping error:', err?.message || err); }
+            }
+          }, 20000);
+        } catch (e) {
+          console.warn('Failed to start WS keepalive timer', e);
+        }
         if (win) {
           win.webContents.send('transcription:start');
         }
@@ -1912,9 +1931,10 @@ Keep responses concise but comprehensive, focusing on practical problem-solving 
         isAudioCapturing = false;
       });
 
-      audioWebSocket.on('close', () => {
-        console.log('WebSocket connection closed');
+      audioWebSocket.on('close', (code, reason) => {
+        console.log('WebSocket connection closed', code, reason?.toString?.());
         isAudioCapturing = false;
+        if (audioWsKeepaliveTimer) { clearInterval(audioWsKeepaliveTimer); audioWsKeepaliveTimer = null; }
       });
 
       return { success: true };
