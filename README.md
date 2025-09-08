@@ -1,6 +1,6 @@
 # Cluemore - AI Stealth Mode
 
-A desktop application that helps you during coding interviews by providing AI-powered assistance. Built with Electron and Python Flask backend, featuring real-time screenshot analysis and chat capabilities.
+A desktop application that helps you during coding interviews by providing AI-powered assistance. Built with Electron and a unified Python ASGI backend (Flask HTTP + Starlette WebSocket) featuring real-time audio transcription and chat capabilities.
 
 ## Features
 
@@ -18,8 +18,9 @@ A desktop application that helps you during coding interviews by providing AI-po
 
 ```
 cluemore/
-├── backend/             # Python Flask API
-│   ├── server.py        # Main Flask server
+├── backend/             # Python backend (Flask HTTP + Starlette WS over ASGI)
+│   ├── server.py        # Flask (HTTP routes)
+│   ├── asgi_app.py      # Unified ASGI app (mounts Flask + /ws/audio WebSocket)
 │   ├── auth.py          # Authentication logic
 │   ├── database.py      # Database operations
 │   ├── conversation.py  # Chat conversation handling
@@ -27,7 +28,7 @@ cluemore/
 │   ├── openai_client.py # OpenAI integration
 │   ├── env.example      # Environment variables template
 │   ├── requirements.txt # Backend dependencies
-│   ├── Procfile         # Heroku deployment config
+│   ├── Procfile         # Heroku deployment config (uvicorn on single port)
 │   └── runtime.txt      # Python version for Heroku
 ├── frontend/            # Electron Mac application
 │   ├── main.js          # Main Electron process
@@ -83,15 +84,22 @@ OPENAI_API_KEY=your_openai_api_key_here
 JWT_SECRET=your_jwt_secret_here
 ```
 
-### 4. Run the Application
+### 4. Run the Application (Unified backend)
 
 ```bash
 # Start both backend and frontend
 npm run dev
 
 # Or run individually
-npm run backend:dev    # Backend only
-npm run frontend:dev   # Frontend only
+# Backend (ASGI, single port for HTTP + WS)
+cd backend
+conda activate usualenv
+pip install -r requirements.txt
+uvicorn asgi_app:app --host 0.0.0.0 --port 3000 --reload
+
+# Frontend (Electron)
+cd ../Frontend
+npm run dev
 ```
 
 ## 🚀 Deployment
@@ -164,11 +172,12 @@ This starts both backend and frontend simultaneously.
 
 ### Start Individually
 
-#### Backend Server
+#### Backend Server (ASGI)
 ```bash
-npm run backend:dev
-# or manually:
-# cd backend && python server.py
+cd backend
+conda activate usualenv
+pip install -r requirements.txt
+uvicorn asgi_app:app --host 0.0.0.0 --port 3000 --reload
 ```
 
 The backend will start on `http://localhost:3000`
@@ -235,7 +244,19 @@ npm run dev
 ```bash
 npm run backend:dev
 ```
-The Flask server runs with debug mode enabled for development.
+The backend serves both HTTP and WebSocket on the same port via uvicorn.
+
+### Realtime Audio/WebSocket
+- WebSocket endpoint: `ws://localhost:3000/ws/audio`
+- The Electron app connects to `BACKEND_URL/ws/audio` and streams 16kHz PCM (20ms frames).
+- Keepalives are enabled on both client and server for long interviews.
+
+## Troubleshooting
+
+- Could not import module "asgi_app": run uvicorn from the `backend/` directory, or use `uvicorn --app-dir backend asgi_app:app`.
+- 400 on /api/auth/register with empty body: ensure requests set `Content-Type: application/json` and proper `Content-Length`.
+- WebSocket closes with 1011/internal error: ensure you are using the unified server (no separate ws process). The WebSocket path must be `/ws/audio` on the same port as HTTP.
+- Long sessions dropping: keepalives are configured (server ping_interval/ping_timeout and client pings). If behind a proxy, keep WS and HTTP on the single `$PORT`.
 
 #### Frontend Development  
 ```bash
