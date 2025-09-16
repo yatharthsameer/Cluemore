@@ -10,6 +10,11 @@
       "plan": "heroku-postgresql:essential-0"
     }
   ],
+  "buildpacks": [
+    {
+      "url": "heroku/python"
+    }
+  ],
   "env": {
     "FLASK_ENV": {
       "description": "Flask environment",
@@ -35,7 +40,7 @@
   "formation": {
     "web": {
       "quantity": 1,
-      "size": "eco"
+      "size": "basic"
     }
   },
   "scripts": {
