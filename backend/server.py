@@ -113,6 +113,18 @@ def get_ai_client_and_model(model_name):
 
 
 # ────────── endpoints ────────────
+@APP.get("/")
+def health_check():
+    """Health check endpoint for Railway"""
+    return {"status": "healthy", "service": "cluemore-backend"}
+
+
+@APP.get("/health")
+def health():
+    """Alternative health check endpoint"""
+    return {"status": "ok"}
+
+
 @APP.post("/api/send_text")
 def api_send_text():
     j = request.get_json(force=True, silent=True) or {}

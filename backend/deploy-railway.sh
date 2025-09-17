@@ -12,6 +12,7 @@ if [ ! -f "requirements.txt" ]; then
 fi
 
 # Check if railway CLI is installed
+RAILWAY_CMD="railway"
 if ! command -v railway &> /dev/null; then
     echo "❌ Railway CLI is not installed. Installing now..."
     echo "💡 Visit: https://docs.railway.app/develop/cli for manual installation"
@@ -20,6 +21,11 @@ if ! command -v railway &> /dev/null; then
     if command -v npm &> /dev/null; then
         echo "📦 Installing Railway CLI via npm..."
         npm install -g @railway/cli
+        # Check if global install worked, otherwise use npx
+        if ! command -v railway &> /dev/null; then
+            echo "ℹ️ Using npx to run Railway CLI..."
+            RAILWAY_CMD="npx @railway/cli"
+        fi
     elif command -v brew &> /dev/null; then
         echo "🍺 Installing Railway CLI via Homebrew..."
         brew install railway
@@ -30,34 +36,29 @@ if ! command -v railway &> /dev/null; then
 fi
 
 # Login to Railway
-echo "🔐 Logging into Railway..."
-railway login
+echo "🔐 Please login to Railway in your browser..."
+echo "ℹ️ If you need to logout first, run: $RAILWAY_CMD logout"
+echo "Press Enter when ready to login..."
+read -p ""
+$RAILWAY_CMD login
 
 # Initialize Railway project
-echo "🎯 Initializing Railway project..."
-railway init
+echo "🎯 Creating new Railway project..."
+echo "📝 Enter your project name (or press Enter for 'cluemore-backend'):"
+read -p "Project name: " project_name
+project_name=${project_name:-cluemore-backend}
 
-# Link to existing project or create new one
-echo "🔗 Linking to Railway project..."
-echo "Choose an option:"
-echo "1. Create a new project"
-echo "2. Link to existing project"
-read -p "Enter your choice (1 or 2): " choice
-
-if [ "$choice" = "1" ]; then
-    echo "📝 Enter your project name:"
-    read -p "Project name: " project_name
-    railway init "$project_name"
-elif [ "$choice" = "2" ]; then
-    railway link
+# Create new project
+if [ -z "$project_name" ]; then
+    $RAILWAY_CMD init
 else
-    echo "❌ Invalid choice. Exiting."
-    exit 1
+    # Railway init doesn't take project name as argument, we'll set it after
+    $RAILWAY_CMD init
 fi
 
-# Add PostgreSQL service
+# Add PostgreSQL service (correct syntax)
 echo "🗄️ Adding PostgreSQL database..."
-railway add postgresql
+$RAILWAY_CMD add --database postgres
 
 # Set environment variables
 echo "🔧 Setting up environment variables..."
@@ -78,25 +79,25 @@ fi
 
 # Deploy to Railway
 echo "🚀 Deploying to Railway..."
-railway up
+$RAILWAY_CMD up
 
 # Check deployment status
 echo "✅ Deployment initiated!"
-echo "📝 To check logs, run: railway logs"
-echo "🔍 To check service status, run: railway status"
-echo "🌐 To open dashboard, run: railway open"
+echo "📝 To check logs, run: $RAILWAY_CMD logs"
+echo "🔍 To check service status, run: $RAILWAY_CMD status"
+echo "🌐 To open dashboard, run: $RAILWAY_CMD open"
 
 # Optional: open the dashboard
 read -p "Do you want to open Railway dashboard? (y/n): " -n 1 -r
 echo
 if [[ $REPLY =~ ^[Yy]$ ]]; then
-    railway open
+    $RAILWAY_CMD open
 fi
 
 echo "🎉 Done!"
 echo ""
 echo "📋 Next steps:"
-echo "1. Check deployment logs: railway logs"
-echo "2. Get your app URL: railway domain"
+echo "1. Check deployment logs: $RAILWAY_CMD logs"
+echo "2. Get your app URL: $RAILWAY_CMD domain"
 echo "3. Update your frontend to use the new backend URL"
 echo "4. Test your API endpoints"
