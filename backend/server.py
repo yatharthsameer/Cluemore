@@ -109,7 +109,7 @@ def get_ai_client_and_model(model_name):
     else:
         # Default to Gemini
         client = get_gemini_client()
-        return client, "gemini-1.5-flash"
+        return client, "gemini-2.5-flash"
 
 
 # ────────── endpoints ────────────
@@ -183,7 +183,7 @@ def api_test_gemini():
 
         # Simple text test using the initialized client
         genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
-        test_model = genai.GenerativeModel("gemini-1.5-flash")
+        test_model = genai.GenerativeModel("gemini-2.5-flash")
         response = test_model.generate_content("Say hello and confirm you're working!")
 
         if response.text:
@@ -212,7 +212,7 @@ def api_chat():
         # Get text, image, model, and chat history from request
         user_text = j.get("text", "").strip()
         image_data = j.get("image")
-        model_name = j.get("model", "gemini-1.5-flash")
+        model_name = j.get("model", "gemini-2.5-flash")
         chat_history = j.get("chatHistory", [])  # Get conversation history
 
         if not user_text and not image_data:
@@ -456,7 +456,7 @@ def api_screenshot():
         # Get image data and model - can be single image or array of images
         image_data = j.get("image")
         images_data = j.get("images", [])
-        model_name = j.get("model", "gemini-1.5-flash")
+        model_name = j.get("model", "gemini-2.5-flash")
 
         # Support both single image and multiple images
         if image_data and not images_data:
@@ -665,7 +665,7 @@ def api_chat_protected(current_user):
         request_data = request.get_json(force=True, silent=True) or {}
         user_text = request_data.get("text", "").strip()
         image_data = request_data.get("image")
-        model_name = request_data.get("model", "gemini-1.5-flash")
+        model_name = request_data.get("model", "gemini-2.5-flash")
         chat_history = request_data.get("chatHistory", [])
         custom_prompt = request_data.get("customPrompt")  # Get custom system prompt
 
@@ -910,7 +910,7 @@ def api_screenshot_protected(current_user):
         j = request.get_json(force=True, silent=True) or {}
         image_data = j.get("image")
         images_data = j.get("images", [])
-        model_name = j.get("model", "gemini-1.5-flash")
+        model_name = j.get("model", "gemini-2.5-flash")
         custom_prompt = j.get("customPrompt")
 
         # Support both single image and multiple images
@@ -1028,7 +1028,7 @@ def api_chat_protected_stream(current_user):
         request_data = request.get_json(force=True, silent=True) or {}
         user_text = request_data.get("text", "").strip()
         image_data = request_data.get("image")
-        model_name = request_data.get("model", "gemini-1.5-flash")
+        model_name = request_data.get("model", "gemini-2.5-flash")
         chat_history = request_data.get("chatHistory", [])
         custom_prompt = request_data.get("customPrompt")
 
@@ -1197,7 +1197,7 @@ def api_screenshot_protected_stream(current_user):
         j = request.get_json(force=True, silent=True) or {}
         image_data = j.get("image")
         images_data = j.get("images", [])
-        model_name = j.get("model", "gemini-1.5-flash")
+        model_name = j.get("model", "gemini-2.5-flash")
         custom_prompt = j.get("customPrompt")
 
         # Support both single image and multiple images

@@ -905,7 +905,7 @@ function createPromptEditorPanel() {
 }
 
 // Chat function with streaming support
-async function sendChatMessage(text, imageData = null, model = 'gemini-1.5-flash', chatHistory = [], customPrompt = null) {
+async function sendChatMessage(text, imageData = null, model = 'gemini-2.5-flash', chatHistory = [], customPrompt = null) {
   try {
     console.log('Sending streaming chat message - Text:', !!text, 'Image:', !!imageData, 'Model:', model, 'History length:', chatHistory.length);
     console.log('Custom prompt:', customPrompt ? customPrompt.substring(0, 100) + '...' : 'None (using default)');
@@ -1094,7 +1094,7 @@ async function takeScreenshot(forChat = false) {
 }
 
 // Process accumulated screenshots with streaming
-async function processAccumulatedScreenshots(screenshots, model = 'gemini-1.5-flash', customPrompt = null) {
+async function processAccumulatedScreenshots(screenshots, model = 'gemini-2.5-flash', customPrompt = null) {
   try {
     console.log('Processing accumulated screenshots with streaming:', screenshots.length, 'Model:', model);
     console.log('Custom prompt:', customPrompt ? customPrompt.substring(0, 100) + '...' : 'None (using default)');

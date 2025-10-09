@@ -43,21 +43,21 @@ class GeminiSDK:
             raise RuntimeError("GEMINI_API_KEY not set")
 
         # Default to a valid model in v1beta
-        self.model_name = model or os.getenv("GEMINI_MODEL", "gemini-1.5-flash")
+        self.model_name = model or os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
         logger.info(f"Initializing GeminiSDK with model: {self.model_name}")
 
         genai.configure(api_key=key)
         self._model = genai.GenerativeModel(
             self.model_name,
             generation_config={
-                "temperature": 0.8,
+                "temperature": 0.2,  # Lower for more focused interview responses
                 "top_p": 0.95,
                 "top_k": 40,
-                "max_output_tokens": 256,
+                "max_output_tokens": 4096,  # Much higher for complete suggestions
             },
         )
 
-        logger.info("GeminiSDK initialized successfully")
+        logger.info("GeminiSDK initialized successfully (interview assistant mode)")
 
     def _to_genai(self, hist: list[_Msg]) -> list[dict]:
         """
@@ -116,34 +116,33 @@ class GeminiClient:
             raise RuntimeError("GEMINI_API_KEY not set")
 
         # Use vision model for image analysis
-        self.model_name = model or "gemini-1.5-flash"
+        # Try gemini-2.5-flash first as it's more stable and widely available
+        self.model_name = model or "gemini-2.5-flash"
         logger.info(f"Initializing GeminiClient with model: {self.model_name}")
 
         genai.configure(api_key=key)
 
-        # Configure generation settings for better performance
+        # Configure generation settings optimized for coding tasks
         generation_config = {
-            "temperature": 0.7,
+            "temperature": 0.2,  # Lower temp for more focused/accurate coding responses
             "top_p": 0.95,
             "top_k": 40,
-            "max_output_tokens": 2048,
+            "max_output_tokens": 8192,  # Much higher for complete code solutions
         }
 
-        # Configure safety settings to be more permissive
-        safety_settings = [
-            {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"},
-            {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_NONE"},
-            {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_NONE"},
-            {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE"},
-        ]
+        # Gemini 2.5 has safety OFF by default - we don't need to override
+        # Passing BLOCK_NONE to 2.5 can cause issues, so we let defaults apply
+        self.safety_settings = None
 
         self._model = genai.GenerativeModel(
             self.model_name,
             generation_config=generation_config,
-            safety_settings=safety_settings,
+            # Let Gemini 2.5 use its default safety settings (OFF)
         )
 
-        logger.info("GeminiClient initialized successfully")
+        logger.info(
+            f"GeminiClient initialized successfully with model {self.model_name} (using default safety: OFF)"
+        )
 
     def _resize_image_if_needed(self, image):
         """Resize image if it's too large to speed up processing."""
@@ -428,27 +427,41 @@ class GeminiClient:
                 f"Streaming analysis of image of size {image.size} with prompt: {prompt[:50]}..."
             )
 
-            # Send to Gemini for streaming analysis
-            logger.info("Sending streaming request to Gemini API...")
+            # Gemini 2.5 multimodal streaming is unreliable - use non-streaming for images
+            logger.info(
+                "Sending request to Gemini API (non-streaming for image reliability)..."
+            )
 
             try:
-                # Direct streaming call
-                logger.info("Attempting direct Gemini streaming API call...")
-                response = self._model.generate_content([prompt, image], stream=True)
+                # Use non-streaming for images to avoid Gemini 2.5 streaming flakiness
+                response = self._model.generate_content([prompt, image], stream=False)
 
-                for chunk in response:
-                    if chunk.text:
-                        yield chunk.text
+                if response.text:
+                    logger.info("Image analysis completed successfully")
+                    yield response.text
+                else:
+                    logger.warning("No text in response, checking candidates...")
+                    # Check if response was blocked
+                    if hasattr(response, "candidates") and response.candidates:
+                        candidate = response.candidates[0]
+                        if hasattr(candidate, "safety_ratings"):
+                            logger.warning(
+                                f"Safety ratings: {candidate.safety_ratings}"
+                            )
+                        if hasattr(candidate, "finish_reason"):
+                            logger.warning(f"Finish reason: {candidate.finish_reason}")
 
-                logger.info("Streaming response completed successfully")
+                    yield "Sorry, I couldn't analyze the image. Please try a different image or rephrase your request."
 
-            except Exception as direct_error:
-                logger.error(f"Direct streaming call failed: {direct_error}")
-                logger.error(
-                    f"Direct streaming call exception type: {type(direct_error).__name__}"
-                )
-                # Re-raise the error since streaming should work directly
-                raise direct_error
+            except Exception as e:
+                logger.error(f"Image analysis failed: {e}")
+                logger.error(f"Exception type: {type(e).__name__}")
+
+                # Check if it's a safety/content filter issue
+                if "response.text" in str(e) or "candidates" in str(e):
+                    yield "The image analysis encountered an issue. Please try a different image."
+                else:
+                    yield f"Sorry, an error occurred: {str(e)}"
 
         except Exception as e:
             logger.error(f"Error in streaming image analysis: {e}")
@@ -504,29 +517,39 @@ class GeminiClient:
                 content.append(image)
 
             logger.info(
-                f"Sending streaming request for {len(images_base64)} images to Gemini API..."
+                f"Sending request for {len(images_base64)} images to Gemini API (non-streaming for reliability)..."
             )
 
             try:
-                # Direct streaming call
-                logger.info(
-                    "Attempting direct Gemini streaming API call with multiple images..."
-                )
-                response = self._model.generate_content(content, stream=True)
+                # Use non-streaming for multiple images to avoid Gemini 2.5 streaming flakiness
+                response = self._model.generate_content(content, stream=False)
 
-                for chunk in response:
-                    if chunk.text:
-                        yield chunk.text
+                if response.text:
+                    logger.info("Multiple images analysis completed successfully")
+                    yield response.text
+                else:
+                    logger.warning("No text in response, checking candidates...")
+                    # Check if response was blocked
+                    if hasattr(response, "candidates") and response.candidates:
+                        candidate = response.candidates[0]
+                        if hasattr(candidate, "safety_ratings"):
+                            logger.warning(
+                                f"Safety ratings: {candidate.safety_ratings}"
+                            )
+                        if hasattr(candidate, "finish_reason"):
+                            logger.warning(f"Finish reason: {candidate.finish_reason}")
 
-                logger.info("Streaming response completed successfully")
+                    yield "Sorry, I couldn't analyze the images. Please try different images or rephrase your request."
 
-            except Exception as direct_error:
-                logger.error(f"Direct streaming call failed: {direct_error}")
-                logger.error(
-                    f"Direct streaming call exception type: {type(direct_error).__name__}"
-                )
-                # Re-raise the error since streaming should work directly
-                raise direct_error
+            except Exception as e:
+                logger.error(f"Multiple images analysis failed: {e}")
+                logger.error(f"Exception type: {type(e).__name__}")
+
+                # Check if it's a safety/content filter issue
+                if "response.text" in str(e) or "candidates" in str(e):
+                    yield "The images analysis encountered an issue. Please try different images."
+                else:
+                    yield f"Sorry, an error occurred: {str(e)}"
 
         except Exception as e:
             logger.error(f"Error in streaming multiple images analysis: {e}")
@@ -555,31 +578,17 @@ class GeminiClient:
 
             # Configure generation settings for better streaming performance
             generation_config = {
-                "temperature": 0.7,
+                "temperature": 0.2,  # Lower for more accurate responses
                 "top_p": 0.95,
                 "top_k": 40,
-                "max_output_tokens": 2048,
+                "max_output_tokens": 8192,  # Match the image analysis config
             }
 
             # Create a fresh model instance for this conversation
+            # Let Gemini 2.5 use default safety settings (OFF)
             model = genai.GenerativeModel(
                 self.model_name,
                 generation_config=generation_config,
-                safety_settings=[
-                    {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"},
-                    {
-                        "category": "HARM_CATEGORY_HATE_SPEECH",
-                        "threshold": "BLOCK_NONE",
-                    },
-                    {
-                        "category": "HARM_CATEGORY_SEXUALLY_EXPLICIT",
-                        "threshold": "BLOCK_NONE",
-                    },
-                    {
-                        "category": "HARM_CATEGORY_DANGEROUS_CONTENT",
-                        "threshold": "BLOCK_NONE",
-                    },
-                ],
             )
 
             # Prepare conversation content

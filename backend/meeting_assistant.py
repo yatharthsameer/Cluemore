@@ -309,7 +309,7 @@ class MeetingAssistant:
         try:
             # Configure and use Gemini like in server.py
             genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
-            model = genai.GenerativeModel("gemini-1.5-flash")
+            model = genai.GenerativeModel("gemini-2.5-flash")
 
             # Build conversation context for Gemini
             conversation_text = ""
@@ -373,7 +373,7 @@ class MeetingAssistant:
         """Generate streaming response using Gemini with proper conversation history"""
         try:
             genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
-            model = genai.GenerativeModel("gemini-1.5-flash")
+            model = genai.GenerativeModel("gemini-2.5-flash")
 
             # Build conversation context for Gemini
             conversation_text = ""
