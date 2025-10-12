@@ -399,6 +399,39 @@
       display: flex;
     }
 
+    /* Chat transcription panel toggle button */
+    #chatTranscriptionToggleBtn {
+      position: absolute;
+      top: 40px;
+      right: 52px;
+      width: 32px;
+      height: 32px;
+      background: rgba(180, 130, 70, 0.8);
+      border: 1px solid #555;
+      border-radius: 6px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      font: 18px monospace;
+      font-weight: bold;
+      cursor: pointer;
+      z-index: 100;
+      transition: all 0.2s;
+      color: #fff;
+      -webkit-app-region: no-drag;
+    }
+
+    #chatTranscriptionToggleBtn:hover {
+      background: rgba(180, 130, 70, 1);
+      border-color: #888;
+      transform: scale(1.05);
+    }
+
+    /* Show toggle button only when in chat page */
+    #chatPage.active #chatTranscriptionToggleBtn {
+      display: flex;
+    }
+
     /* Meeting Assistant prompt edit icon */
     #meetingAssistantPromptEditIcon {
       position: absolute;
@@ -751,7 +784,23 @@
       text-align: center;
     }
 
-    /* Chat page */
+    /* Chat page - Two column layout */
+    #chatPageLayout {
+      display: flex;
+      flex: 1;
+      gap: 0;
+      min-height: 0;
+      overflow: hidden;
+    }
+
+    #chatMainColumn {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      overflow: hidden;
+    }
+
     #chatContainer {
       flex: 1;
       display: flex;
@@ -762,6 +811,219 @@
       height: 0; /* Force flex child to respect parent constraints */
       background: rgba(40, 40, 40, .9);
       border-radius: 6px 6px 0 0;
+    }
+
+    /* Transcription Panel on the right */
+    #chatTranscriptionPanel {
+      width: 350px;
+      display: flex;
+      flex-direction: column;
+      background: rgba(35, 35, 35, 0.95);
+      border-left: 2px solid #555;
+      flex-shrink: 0;
+      transition: width 0.3s ease, opacity 0.3s ease;
+      opacity: 1;
+    }
+
+    #chatTranscriptionPanel.collapsed {
+      width: 0;
+      min-width: 0;
+      border-left: none;
+      opacity: 0;
+      overflow: hidden;
+    }
+
+    #chatTranscriptionHeader {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 12px 16px;
+      background: rgba(25, 25, 25, 0.95);
+      border-bottom: 1px solid #555;
+    }
+
+    #chatTranscriptionTitle {
+      font: 14px monospace;
+      font-weight: bold;
+      color: #70a1d4;
+    }
+
+    #chatTranscriptionMessages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      /* Hide scrollbar */
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+    }
+
+    #chatTranscriptionMessages::-webkit-scrollbar {
+      display: none;
+    }
+
+    .transcription-message {
+      background: rgba(50, 50, 50, 0.8);
+      border-radius: 6px;
+      padding: 10px;
+      border-left: 3px solid #666;
+      animation: fadeIn 0.2s ease;
+    }
+
+    .transcription-message.interviewer {
+      border-left-color: #f59e42;
+    }
+
+    .transcription-message.you {
+      border-left-color: #70a1d4;
+    }
+
+    .transcription-speaker {
+      font: 11px monospace;
+      font-weight: bold;
+      margin-bottom: 4px;
+      color: #888;
+    }
+
+    .transcription-message.interviewer .transcription-speaker {
+      color: #f59e42;
+    }
+
+    .transcription-message.you .transcription-speaker {
+      color: #70a1d4;
+    }
+
+    .transcription-text {
+      font: 12px monospace;
+      line-height: 1.4;
+      color: #eee;
+      word-wrap: break-word;
+    }
+
+    .transcription-time {
+      font: 10px monospace;
+      color: #666;
+      margin-top: 4px;
+    }
+
+    .transcription-copy-icon {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      width: 20px;
+      height: 20px;
+      background: rgba(70, 130, 180, 0.6);
+      border: 1px solid #5a9fd4;
+      border-radius: 4px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      color: #fff;
+      opacity: 0.6;
+      transition: all 0.2s;
+      -webkit-app-region: no-drag;
+    }
+
+    .transcription-copy-icon:hover {
+      opacity: 1;
+      background: rgba(70, 130, 180, 0.9);
+      transform: scale(1.1);
+    }
+
+    .transcription-copy-icon:active {
+      transform: scale(0.95);
+    }
+
+    .transcription-message {
+      position: relative;
+    }
+
+    #chatTranscriptionControls {
+      padding: 12px 16px;
+      background: rgba(25, 25, 25, 0.95);
+      border-top: 1px solid #555;
+      flex-shrink: 0;
+    }
+
+    #chatTranscriptionStatus {
+      font: 11px monospace;
+      color: #888;
+      margin-bottom: 8px;
+      text-align: center;
+    }
+
+    #chatTranscriptionStatus.recording {
+      color: #f44;
+      font-weight: bold;
+    }
+
+    #chatTranscriptionStatus.ready {
+      color: #4a4;
+    }
+
+    #chatTranscriptionButtons {
+      display: flex;
+      gap: 8px;
+    }
+
+    .transcription-btn {
+      flex: 1;
+      padding: 8px 12px;
+      background: rgba(60, 60, 60, 0.8);
+      color: #eee;
+      border: 1px solid #666;
+      border-radius: 4px;
+      cursor: pointer;
+      font: 11px monospace;
+      transition: all 0.2s;
+      -webkit-app-region: no-drag;
+    }
+
+    .transcription-btn:hover {
+      background: rgba(80, 80, 80, 0.9);
+      border-color: #888;
+    }
+
+    .transcription-btn.start {
+      background: rgba(70, 130, 180, 0.8);
+      border-color: #5a9fd4;
+    }
+
+    .transcription-btn.start:hover {
+      background: rgba(90, 150, 200, 0.9);
+    }
+
+    .transcription-btn.stop {
+      background: rgba(180, 70, 70, 0.8);
+      border-color: #c44;
+    }
+
+    .transcription-btn.stop:hover {
+      background: rgba(200, 90, 90, 0.9);
+    }
+
+    .transcription-btn.clear {
+      background: rgba(80, 50, 50, 0.8);
+      border-color: #a66;
+    }
+
+    .transcription-btn.clear:hover {
+      background: rgba(100, 60, 60, 0.9);
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(-5px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
     }
 
     #chatMessages {
@@ -837,8 +1099,32 @@
       border: 1px solid #666;
       border-radius: 4px;
       font: 13px monospace;
+      line-height: 1.5;
       outline: none;
+      resize: none;
+      overflow-y: auto;
+      min-height: 38px;
+      max-height: 120px;
+      transition: height 0.1s ease;
       -webkit-app-region: no-drag;
+    }
+    
+    #chatInput::-webkit-scrollbar {
+      width: 6px;
+    }
+    
+    #chatInput::-webkit-scrollbar-track {
+      background: rgba(40, 40, 40, 0.5);
+      border-radius: 3px;
+    }
+    
+    #chatInput::-webkit-scrollbar-thumb {
+      background: rgba(100, 100, 100, 0.6);
+      border-radius: 3px;
+    }
+    
+    #chatInput::-webkit-scrollbar-thumb:hover {
+      background: rgba(120, 120, 120, 0.8);
     }
 
     #sendBtn {
@@ -2287,28 +2573,56 @@
     <div id="chatPage" class="page">
       <!-- Chat Pencil icon for prompt editing -->
       <div id="chatPromptEditIcon" title="Edit chat system prompt">✏️</div>
-      <div id="chatContainer">
-        <div id="chatMessages"></div>
-        <div id="chatInputContainer">
-          <!-- Image preview area above input -->
-          <div id="imagePreviewContainer" style="display: none;">
-            <img id="imagePreview" />
-            <button id="removeImageBtn">×</button>
-          </div>
-          <!-- Chat Screenshot Preview Area -->
-          <div id="chatScreenshotPreviewArea" style="display: none;">
-            <div id="chatScreenshotPreviewContainer">
-              <span id="chatScreenshotCount">0 screenshots</span>
-              <span id="chatProcessHint">Press Enter to send with message</span>
-            </div>
-          </div>
-          <div id="inputRow">
-            <input type="text" id="chatInput" placeholder="Ask a question..." />
-            <button id="sendBtn">Send</button>
-            </div>
-            </div>
-            </div>
-    </div>
+      <!-- Transcription panel toggle button -->
+      <div id="chatTranscriptionToggleBtn" title="Toggle interview transcription panel">›</div>
+      <!-- Two-column layout: Chat on left, Transcription on right -->
+      <div id="chatPageLayout">
+        <!-- Left column: Chat interface -->
+        <div id="chatMainColumn">
+          <div id="chatContainer">
+            <div id="chatMessages"></div>
+            <div id="chatInputContainer">
+              <!-- Image preview area above input -->
+              <div id="imagePreviewContainer" style="display: none;">
+                <img id="imagePreview" />
+                <button id="removeImageBtn">×</button>
+              </div>
+              <!-- Chat Screenshot Preview Area -->
+              <div id="chatScreenshotPreviewArea" style="display: none;">
+                <div id="chatScreenshotPreviewContainer">
+                  <span id="chatScreenshotCount">0 screenshots</span>
+                  <span id="chatProcessHint">Press Enter to send with message</span>
+                </div>
+              </div>
+              <div id="inputRow">
+                <textarea id="chatInput" placeholder="Ask a question..." rows="1"></textarea>
+                <button id="sendBtn">Send</button>
+                </div>
+                </div>
+                </div>
+                </div>
+                <!-- Right column: Interview Transcription Panel -->
+                <div id="chatTranscriptionPanel">
+                  <!-- Panel header -->
+                  <div id="chatTranscriptionHeader">
+                    <div id="chatTranscriptionTitle">🎤 Interview</div>
+                  </div>
+                
+                  <!-- Transcription messages area -->
+                  <div id="chatTranscriptionMessages"></div>
+                
+                  <!-- Audio controls -->
+                  <div id="chatTranscriptionControls">
+                    <div id="chatTranscriptionStatus">Ready to record</div>
+                    <div id="chatTranscriptionButtons">
+                      <button id="chatStartAudioBtn" class="transcription-btn start">🎤 Start</button>
+                      <button id="chatStopAudioBtn" class="transcription-btn stop" style="display: none;">⏹ Stop</button>
+                      <button id="chatClearTranscriptionBtn" class="transcription-btn clear">Clear</button>
+                    </div>
+                  </div>
+                </div>
+                </div>
+                </div>
 
     <!-- Notes Page -->
     <div id="notesPage" class="page">
@@ -3425,6 +3739,7 @@ No Bullets, only paragraphs.`;
 
                 let currentImageData = null;
                                                                                           let chatHistory = []; // Store conversation history
+                    let currentStreamingResponse = ''; // Accumulate streaming AI response
 
                 function addMessage(text, type = 'user', imageData = null) {
       const messageEl = document.createElement('div');
@@ -3572,6 +3887,7 @@ No Bullets, only paragraphs.`;
 
       // Clear input and images
       chatInput.value = '';
+      autoResizeChatInput(); // Reset input height after clearing
       hideImagePreview();
       if (hasAccumulatedScreenshots) {
         clearAccumulatedScreenshots();
@@ -3594,6 +3910,51 @@ No Bullets, only paragraphs.`;
         window.electronAPI.sendChatMessage(messageText, imageData, model, chatHistory, customChatPrompt, reasoning, verbosity);
       }
     }
+
+        // Set up streaming chat response handlers
+        if (window.electronAPI) {
+          // When streaming starts
+          window.electronAPI.onChatStreamStart(() => {
+            console.log('Chat stream started');
+            currentStreamingResponse = ''; // Reset accumulator
+            startStreamingMessage(); // Show streaming UI
+          });
+
+          // Accumulate each chunk
+          window.electronAPI.onChatStreamChunk((chunk) => {
+            currentStreamingResponse += chunk;
+            appendToStreamingMessage(chunk); // Update UI
+          });
+
+          // When streaming completes
+          window.electronAPI.onChatStreamComplete(() => {
+            console.log('Chat stream completed');
+            stopStreamingMessage(); // Hide streaming UI
+
+            // Add the complete AI response to chat history
+            if (currentStreamingResponse && currentStreamingResponse.trim()) {
+              chatHistory.push({
+                role: 'assistant',
+                content: currentStreamingResponse.trim()
+              });
+              console.log('Added AI response to chat history. Total messages:', chatHistory.length);
+            }
+
+            // Reset for next message
+            currentStreamingResponse = '';
+            sendBtn.disabled = false;
+            sendBtn.textContent = 'Send';
+          });
+
+          // Handle errors
+          window.electronAPI.onChatError((error) => {
+            console.error('Chat error:', error);
+            stopStreamingMessage();
+            addMessage('Error: ' + error, 'error');
+            sendBtn.disabled = false;
+            sendBtn.textContent = 'Send';
+          });
+        }
 
                         // Button event listeners
     chatBtn.addEventListener('click', () => showPage('chat'));
@@ -3908,10 +4269,36 @@ No Bullets, only paragraphs.`;
       }
     });
 
+          // Auto-resize chat input as user types
+          function autoResizeChatInput() {
+            chatInput.style.height = 'auto'; // Reset height
+            const scrollHeight = chatInput.scrollHeight;
+            const maxHeight = 120; // Max 4 lines (approximately 30px per line)
+
+            if (scrollHeight <= maxHeight) {
+              chatInput.style.height = scrollHeight + 'px';
+              chatInput.style.overflowY = 'hidden';
+            } else {
+              chatInput.style.height = maxHeight + 'px';
+              chatInput.style.overflowY = 'auto';
+            }
+          }
+
+          // Listen for input changes to auto-resize
+          chatInput.addEventListener('input', autoResizeChatInput);
+
+          // Initial resize
+          autoResizeChatInput();
+
     // Chat input handlers
     sendBtn.addEventListener('click', sendMessage);
-    chatInput.addEventListener('keypress', (e) => {
-      if (e.key === 'Enter') sendMessage();
+          chatInput.addEventListener('keydown', (e) => {
+            // Enter without Shift = send message
+            // Shift+Enter = new line
+            if (e.key === 'Enter' && !e.shiftKey) {
+              e.preventDefault(); // Prevent default new line
+              sendMessage();
+            }
     });
 
                                                           removeImageBtn.addEventListener('click', () => {
@@ -3934,45 +4321,13 @@ No Bullets, only paragraphs.`;
 
     // Handle electron API
     if (window.electronAPI) {
+      // NOTE: Chat streaming handlers are set up earlier (lines 3914-3957)
+      // to ensure proper chat history tracking
 
-
-      // Chat response handlers - streaming
-      window.electronAPI.onChatStreamStart(() => {
-        console.log('Chat streaming started');
-        startStreamingMessage();
-      });
-
-      window.electronAPI.onChatStreamChunk((chunk) => {
-        console.log('Received chat chunk:', chunk);
-        appendToStreamingMessage(chunk);
-      });
-
-      window.electronAPI.onChatStreamComplete(() => {
-        console.log('Chat streaming completed');
-        stopStreamingMessage();
-        sendBtn.disabled = false;
-        sendBtn.textContent = 'Send';
-      });
-
-      // Legacy chat response handlers (for backwards compatibility)
+      // Legacy chat response handlers (for backwards compatibility with non-streaming)
       window.electronAPI.onChatResponse((response) => {
         hideTypingIndicator(); // Hide typing indicator before adding response
         addMessage(response, 'ai');
-        sendBtn.disabled = false;
-        sendBtn.textContent = 'Send';
-      });
-
-      window.electronAPI.onChatError((error) => {
-        hideTypingIndicator(); // Hide typing indicator before showing error
-        stopStreamingMessage(); // Also stop any ongoing streaming
-        // Check if this is a permission error
-        if (error.includes('Screen Recording Permission') || error.includes('Permission Required')) {
-          // Show permission-specific error handling
-          showPermissionErrorDialog(error);
-          addMessage(`Permission Error: Click the "Fix Permissions" button to resolve this issue.`, 'error');
-        } else {
-          addMessage(`Error: ${error}`, 'error');
-        }
         sendBtn.disabled = false;
         sendBtn.textContent = 'Send';
       });
@@ -5260,6 +5615,358 @@ Solutions:
     if (meetingAssistantMessages) {
       clearMeetingAssistant();
     }
+
+    // ============================================
+    // Chat Transcription Panel Functionality
+    // ============================================
+
+    const chatTranscriptionPanel = document.getElementById('chatTranscriptionPanel');
+    const chatTranscriptionMessages = document.getElementById('chatTranscriptionMessages');
+    const chatTranscriptionStatus = document.getElementById('chatTranscriptionStatus');
+    const chatStartAudioBtn = document.getElementById('chatStartAudioBtn');
+    const chatStopAudioBtn = document.getElementById('chatStopAudioBtn');
+    const chatClearTranscriptionBtn = document.getElementById('chatClearTranscriptionBtn');
+
+    let isChatAudioCapturing = false;
+    let chatAudioContext = null;
+    let chatAudioWorkletNode = null;
+    let chatMediaStreamSource = null;
+    let chatSystemAudioStream = null;
+    let chatTranscriptionBuffer = []; // Store interview questions with timestamps
+    let chatLastSpeaker = 'interviewer'; // Track who spoke last to alternate speakers
+
+    // Collapse/Expand functionality
+    function toggleChatTranscriptionPanel() {
+      chatTranscriptionPanel.classList.toggle('collapsed');
+
+      // Update toggle button title
+      const isCollapsed = chatTranscriptionPanel.classList.contains('collapsed');
+      const externalToggle = document.getElementById('chatTranscriptionToggleBtn');
+      if (externalToggle) {
+        externalToggle.title = isCollapsed ? 'Show interview transcription panel' : 'Hide interview transcription panel';
+      }
+    }
+
+    // External toggle button (next to pencil icon)
+    const chatTranscriptionToggleBtn = document.getElementById('chatTranscriptionToggleBtn');
+    if (chatTranscriptionToggleBtn) {
+      chatTranscriptionToggleBtn.addEventListener('click', toggleChatTranscriptionPanel);
+    }
+
+    // Add transcription message to the panel
+    function addChatTranscriptionMessage(text, speaker = 'interviewer') {
+      const messageEl = document.createElement('div');
+      messageEl.className = `transcription-message ${speaker}`;
+
+      const speakerLabel = speaker === 'interviewer' ? '👤 Interviewer' : '🎤 You';
+      const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+      messageEl.innerHTML = `
+        <button class="transcription-copy-icon" title="Add to chat input">↗</button>
+        <div class="transcription-speaker">${speakerLabel}</div>
+        <div class="transcription-text">${text}</div>
+        <div class="transcription-time">${timestamp}</div>
+      `;
+
+      // Add click handler to the copy icon
+      const copyIcon = messageEl.querySelector('.transcription-copy-icon');
+      copyIcon.addEventListener('click', () => {
+        appendToChatInput(text, copyIcon);
+      });
+
+      chatTranscriptionMessages.appendChild(messageEl);
+
+      // Auto-scroll to latest message
+      chatTranscriptionMessages.scrollTop = chatTranscriptionMessages.scrollHeight;
+
+      return messageEl;
+    }
+
+    // Append transcription text to chat input
+    function appendToChatInput(text, iconElement) {
+      const chatInput = document.getElementById('chatInput');
+      if (!chatInput) return;
+
+      // Get current input value
+      const currentValue = chatInput.value.trim();
+
+      // Append with proper spacing
+      if (currentValue) {
+        chatInput.value = currentValue + '\n\n' + text;
+      } else {
+        chatInput.value = text;
+      }
+
+      // Auto-resize the input to fit new content
+      if (typeof autoResizeChatInput === 'function') {
+        autoResizeChatInput();
+      }
+
+      // Focus the input and move cursor to end
+      chatInput.focus();
+      chatInput.setSelectionRange(chatInput.value.length, chatInput.value.length);
+
+      // Scroll input to show cursor
+      chatInput.scrollTop = chatInput.scrollHeight;
+
+      // Visual feedback on the icon
+      if (iconElement) {
+        const originalText = iconElement.textContent;
+        iconElement.textContent = '✓';
+        iconElement.style.background = 'rgba(40, 167, 69, 0.8)';
+        iconElement.style.borderColor = '#28a745';
+
+        setTimeout(() => {
+          iconElement.textContent = originalText;
+          iconElement.style.background = '';
+          iconElement.style.borderColor = '';
+        }, 800);
+      }
+    }
+
+    // Clear all transcription messages
+    function clearChatTranscription() {
+      chatTranscriptionMessages.innerHTML = '';
+      chatTranscriptionBuffer = [];
+      chatLastSpeaker = 'interviewer';
+      chatTranscriptionStatus.textContent = 'Ready to record';
+      chatTranscriptionStatus.className = '';
+    }
+
+    // Add transcription to buffer (for potential AI assistance)
+    function addToChatTranscriptionBuffer(text, speaker) {
+      const timestamp = new Date().toLocaleTimeString();
+      const segment = {
+        text: text.trim(),
+        speaker: speaker,
+        timestamp: timestamp,
+        time: Date.now()
+      };
+
+      chatTranscriptionBuffer.push(segment);
+
+      // Keep only last 15 minutes of conversation
+      const fifteenMinutesAgo = Date.now() - (15 * 60 * 1000);
+      chatTranscriptionBuffer = chatTranscriptionBuffer.filter(seg => seg.time > fifteenMinutesAgo);
+    }
+
+    // Start audio capture for chat transcription
+    async function startChatAudioCapture() {
+      try {
+        console.log('Starting audio capture for chat transcription...');
+        chatTranscriptionStatus.textContent = '🎤 Initializing...';
+        chatTranscriptionStatus.className = '';
+
+        // Get system audio stream FIRST (to avoid WebSocket timeout)
+        console.log('🎬 Getting system audio stream...');
+        chatSystemAudioStream = await navigator.mediaDevices.getDisplayMedia({
+          video: true,
+          audio: true
+        });
+
+        const audioTracks = chatSystemAudioStream.getAudioTracks();
+        console.log(`Got ${audioTracks.length} audio tracks`);
+
+        if (audioTracks.length === 0) {
+          throw new Error('No audio tracks available. Please select a screen with "Share audio" enabled.');
+        }
+
+        chatTranscriptionStatus.textContent = 'Setting up audio processing...';
+
+        // Create audio context with 48kHz (worklet will downsample to 16kHz)
+        chatAudioContext = new (window.AudioContext || window.webkitAudioContext)({
+          sampleRate: 48000
+        });
+
+        // Resume audio context if suspended
+        if (chatAudioContext.state === 'suspended') {
+          await chatAudioContext.resume();
+          console.log('Audio context resumed');
+        }
+
+        // Load and register the audio worklet
+        await chatAudioContext.audioWorklet.addModule('audio-worklet.js');
+
+        // Create media stream source
+        chatMediaStreamSource = chatAudioContext.createMediaStreamSource(chatSystemAudioStream);
+
+        // Create audio worklet node with correct processor name
+        chatAudioWorkletNode = new AudioWorkletNode(chatAudioContext, 'pcm-chunker', {
+          channelCount: 1,
+          channelCountMode: 'explicit',
+          channelInterpretation: 'speakers'
+        });
+
+        // Handle PCM chunks from the worklet
+        chatAudioWorkletNode.port.onmessage = (event) => {
+          const { pcm, sampleRate, originalSampleRate, timestamp } = event.data;
+
+          // Debug log occasionally
+          if (Math.random() < 0.02) { // 2% of chunks
+            const maxSample = Math.max(...pcm.map(Math.abs));
+            console.log(`Chat audio chunk: ${pcm.length} samples @ ${sampleRate}Hz, max=${maxSample}`);
+          }
+
+          // Send to main process for WebSocket transmission
+          if (window.electronAPI && window.electronAPI.sendAudioChunk) {
+            // Convert Int16Array to regular array for IPC transfer
+            const pcmArray = Array.from(pcm);
+            window.electronAPI.sendAudioChunk({
+              pcm: pcmArray,
+              sampleRate,
+              originalSampleRate,
+              timestamp
+            });
+          }
+        };
+
+        // Connect the audio pipeline (no output connection needed)
+        chatMediaStreamSource.connect(chatAudioWorkletNode);
+        // Note: We don't connect to destination since we only need processing
+
+        // Start the WebSocket connection
+        const result = await window.electronAPI.startAudioCapture();
+        if (!result.success) {
+          throw new Error(result.error || 'Failed to start audio capture');
+        }
+
+        isChatAudioCapturing = true;
+        chatStartAudioBtn.style.display = 'none';
+        chatStopAudioBtn.style.display = 'block';
+        chatTranscriptionStatus.textContent = '🔴 Recording... Click Stop when done';
+        chatTranscriptionStatus.className = 'recording';
+
+        console.log('✅ Audio capture started successfully');
+      } catch (error) {
+        console.error('Error starting audio capture:', error);
+        chatTranscriptionStatus.textContent = '❌ Error: ' + error.message;
+        chatTranscriptionStatus.className = '';
+        stopChatAudioCapture();
+      }
+    }
+
+    // Stop audio capture for chat transcription
+    async function stopChatAudioCapture() {
+      console.log('Stopping audio capture for chat transcription...');
+
+      try {
+        if (chatAudioWorkletNode) {
+          chatAudioWorkletNode.disconnect();
+          chatAudioWorkletNode = null;
+        }
+
+        if (chatMediaStreamSource) {
+          chatMediaStreamSource.disconnect();
+          chatMediaStreamSource = null;
+        }
+
+        if (chatSystemAudioStream) {
+          chatSystemAudioStream.getTracks().forEach(track => track.stop());
+          chatSystemAudioStream = null;
+        }
+
+        if (chatAudioContext) {
+          await chatAudioContext.close();
+          chatAudioContext = null;
+        }
+
+        await window.electronAPI.stopAudioCapture();
+
+        isChatAudioCapturing = false;
+        chatStartAudioBtn.style.display = 'block';
+        chatStopAudioBtn.style.display = 'none';
+        chatTranscriptionStatus.textContent = 'Ready to record';
+        chatTranscriptionStatus.className = 'ready';
+
+        console.log('✅ Audio capture stopped');
+      } catch (error) {
+        console.error('Error stopping audio capture:', error);
+      }
+    }
+
+    // Wire up button event listeners
+    if (chatStartAudioBtn) {
+      chatStartAudioBtn.addEventListener('click', startChatAudioCapture);
+    }
+
+    if (chatStopAudioBtn) {
+      chatStopAudioBtn.addEventListener('click', stopChatAudioCapture);
+    }
+
+    if (chatClearTranscriptionBtn) {
+      chatClearTranscriptionBtn.addEventListener('click', clearChatTranscription);
+    }
+
+    // Connect to transcription events from Electron
+    // NOTE: We're hooking into the existing global transcription event handlers
+    // that are already set up for the Live Transcription and Meeting Assistant modes.
+    // The WebSocket server sends messages to ALL connected handlers.
+
+    // Store original handler if it exists
+    const originalTranscriptionFinal = window.__originalOnTranscriptionFinal;
+
+    // Create a wrapper that handles both chat panel and other modes
+    if (window.electronAPI) {
+      // Override onTranscriptionFinal to also update chat panel when in chat mode
+      const setupChatTranscriptionHandler = () => {
+        // Store original if not already stored
+        if (!window.__originalOnTranscriptionFinal && window.electronAPI.onTranscriptionFinal) {
+          window.__originalOnTranscriptionFinal = true; // Mark as stored
+        }
+
+        // Handle transcription messages when in chat mode
+        window.electronAPI.onTranscriptionFinal((data) => {
+          console.log('Transcription received in chat panel handler:', data);
+
+          // Only process if we're in chat mode AND audio is capturing
+          if (currentPage === 'chat' && isChatAudioCapturing && data.text && data.text.trim()) {
+            console.log('Processing transcription for chat panel:', data.text);
+
+            // Simple speaker detection: alternate between interviewer and you
+            // In a real interview, the interviewer usually speaks more, so we bias towards that
+            const speaker = chatLastSpeaker === 'interviewer' ? 'you' : 'interviewer';
+            chatLastSpeaker = speaker;
+
+            // Add to UI
+            addChatTranscriptionMessage(data.text, speaker);
+
+            // Add to buffer for potential AI queries
+            addToChatTranscriptionBuffer(data.text, speaker);
+
+            // Update status
+            chatTranscriptionStatus.textContent = '🔴 Recording... Last: ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+          }
+        });
+
+        // Handle voice activity
+        window.electronAPI.onVoiceActivity((data) => {
+          if (currentPage === 'chat' && isChatAudioCapturing) {
+            if (data.speaking) {
+              chatTranscriptionStatus.textContent = '🔴 Recording... Voice detected';
+              chatTranscriptionStatus.className = 'recording';
+            } else {
+              chatTranscriptionStatus.textContent = '🔴 Recording... Listening...';
+              chatTranscriptionStatus.className = 'recording';
+            }
+          }
+        });
+
+        // Handle transcription errors
+        window.electronAPI.onTranscriptionError((error) => {
+          if (currentPage === 'chat' && isChatAudioCapturing) {
+            console.error('Chat transcription error:', error);
+            chatTranscriptionStatus.textContent = '❌ Error: ' + error;
+            chatTranscriptionStatus.className = '';
+            stopChatAudioCapture();
+          }
+        });
+      };
+
+      setupChatTranscriptionHandler();
+    }
+
+    console.log('✅ Chat transcription panel initialized');
+
   });
   </script>
 <!-- Development Console Helpers -->

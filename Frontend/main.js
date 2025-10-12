@@ -807,8 +807,8 @@ function createMainWindow() {
   }
 
   const windowOptions = {
-    width: 600,
-    height: 600,
+    width: 950,
+    height: 700,
     resizable: false,
     alwaysOnTop: false, // Default to normal level
     title: 'Cluemore',
