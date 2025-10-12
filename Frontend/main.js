@@ -61,7 +61,7 @@ function makeRequest(url, options = {}) {
 
     const requestOptions = {
       hostname: urlObj.hostname,
-      port: urlObj.port || (isHttps ? 443 : 80),
+      port: urlObj.port || (isHttps ? 443 : 3000),
       path: urlObj.pathname + urlObj.search,
       method: options.method || 'GET',
       headers: {
@@ -905,10 +905,11 @@ function createPromptEditorPanel() {
 }
 
 // Chat function with streaming support
-async function sendChatMessage(text, imageData = null, model = 'gemini-2.5-flash', chatHistory = [], customPrompt = null) {
+async function sendChatMessage(text, imageData = null, model = 'gemini-2.5-flash', chatHistory = [], customPrompt = null, reasoning = 'low', verbosity = 'medium') {
   try {
     console.log('Sending streaming chat message - Text:', !!text, 'Image:', !!imageData, 'Model:', model, 'History length:', chatHistory.length);
     console.log('Custom prompt:', customPrompt ? customPrompt.substring(0, 100) + '...' : 'None (using default)');
+    console.log('GPT-5 Settings - Reasoning:', reasoning, 'Verbosity:', verbosity);
 
     const payload = {};
     if (text) payload.text = text;
@@ -916,6 +917,8 @@ async function sendChatMessage(text, imageData = null, model = 'gemini-2.5-flash
     payload.model = model;
     payload.chatHistory = chatHistory;
     payload.customPrompt = customPrompt;
+    payload.reasoning = reasoning;
+    payload.verbosity = verbosity;
 
     // Use streaming endpoint
     const response = await fetch(`${BACKEND_URL}/api/chat_protected_stream`, {
@@ -1094,15 +1097,18 @@ async function takeScreenshot(forChat = false) {
 }
 
 // Process accumulated screenshots with streaming
-async function processAccumulatedScreenshots(screenshots, model = 'gemini-2.5-flash', customPrompt = null) {
+async function processAccumulatedScreenshots(screenshots, model = 'gemini-2.5-flash', customPrompt = null, reasoning = 'low', verbosity = 'medium') {
   try {
     console.log('Processing accumulated screenshots with streaming:', screenshots.length, 'Model:', model);
     console.log('Custom prompt:', customPrompt ? customPrompt.substring(0, 100) + '...' : 'None (using default)');
+    console.log('GPT-5 Settings - Reasoning:', reasoning, 'Verbosity:', verbosity);
 
     const payload = {
       images: screenshots,
       model: model,
-      customPrompt: customPrompt
+      customPrompt: customPrompt,
+      reasoning: reasoning,
+      verbosity: verbosity
     };
 
     // Use streaming endpoint
@@ -1720,9 +1726,9 @@ app.whenReady().then(async () => {
 
 
   // Existing IPC Handlers for chat functionality
-  ipcMain.handle('chat:send-message', async (event, text, imageData, model, chatHistory, customPrompt) => {
+  ipcMain.handle('chat:send-message', async (event, text, imageData, model, chatHistory, customPrompt, reasoning, verbosity) => {
     // Add JWT token to authenticated requests
-    await sendChatMessage(text, imageData, model, chatHistory, customPrompt);
+    await sendChatMessage(text, imageData, model, chatHistory, customPrompt, reasoning, verbosity);
     return true;
   });
 
@@ -1737,8 +1743,8 @@ app.whenReady().then(async () => {
   });
 
   // IPC Handler for processing accumulated screenshots
-  ipcMain.handle('screenshot:process-accumulated', async (event, screenshots, model, customPrompt) => {
-    await processAccumulatedScreenshots(screenshots, model, customPrompt);
+  ipcMain.handle('screenshot:process-accumulated', async (event, screenshots, model, customPrompt, reasoning, verbosity) => {
+    await processAccumulatedScreenshots(screenshots, model, customPrompt, reasoning, verbosity);
     return true;
   });
 

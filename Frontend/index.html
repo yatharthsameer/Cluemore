@@ -1687,7 +1687,9 @@
       font-weight: bold;
     }
 
-    #themeSelector {
+    #themeSelector,
+    #reasoningSelector,
+    #verbositySelector {
       background: rgba(40, 40, 40, 0.9);
       color: #eee;
       border: 1px solid #555;
@@ -1699,12 +1701,16 @@
       -webkit-app-region: no-drag;
     }
 
-    #themeSelector:hover {
+    #themeSelector:hover,
+    #reasoningSelector:hover,
+    #verbositySelector:hover {
       background: rgba(50, 50, 50, 0.9);
       border-color: #70a1d4;
     }
 
-    #themeSelector option {
+    #themeSelector option,
+    #reasoningSelector option,
+    #verbositySelector option {
       background: rgba(30, 30, 30, 0.95);
       color: #eee;
     }
@@ -1851,20 +1857,26 @@
     }
 
     body.light-theme #modelDropdown,
-    body.light-theme #themeSelector {
+    body.light-theme #themeSelector,
+    body.light-theme #reasoningSelector,
+    body.light-theme #verbositySelector {
       background: rgba(220, 220, 220, 0.9);
       color: #333;
       border: 1px solid #ccc;
     }
 
     body.light-theme #modelDropdown:hover,
-    body.light-theme #themeSelector:hover {
+    body.light-theme #themeSelector:hover,
+    body.light-theme #reasoningSelector:hover,
+    body.light-theme #verbositySelector:hover {
       background: rgba(200, 200, 200, 0.9);
       border-color: #70a1d4;
     }
 
     body.light-theme #modelDropdown option,
-    body.light-theme #themeSelector option {
+    body.light-theme #themeSelector option,
+    body.light-theme #reasoningSelector option,
+    body.light-theme #verbositySelector option {
       background: rgba(240, 240, 240, 0.95);
       color: #333;
     }
@@ -2130,14 +2142,11 @@
     <div id="topBar">
       <div id="modelSelector">
         <select id="modelDropdown">
-          <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
+          <option value="gemini-2.5-flash">Gemini 2.5 Flash (Default)</option>
           <option value="gemini-1.5-pro">Gemini 1.5 Pro</option>
-          <option value="gpt-4o">GPT-4o</option>
-          <option value="gpt-4o-mini">GPT-4o Mini</option>
-          <option value="gpt-4-turbo">GPT-4 Turbo</option>
-          <option value="gpt-5">GPT-5</option>
           <option value="gpt-5-mini">GPT-5 Mini</option>
-          <!-- <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option> -->
+          <option value="gpt-5">GPT-5</option>
+          <option value="gpt-5-nano">GPT-5 Nano</option>
         </select>
       </div>
       <div id="logoutIcon">
@@ -2151,7 +2160,7 @@
         ⚙
         <div id="settingsTooltip">
           <div class="tooltip-title">Settings</div>
-          <div class="tooltip-content">Customize theme and opacity</div>
+          <div class="tooltip-content">Customize theme, opacity, and GPT-5 controls</div>
         </div>
         <div id="settingsDropdown">
           <div class="settings-title">Settings</div>
@@ -2172,6 +2181,23 @@
             <span id="opacityValue">100%</span>
           </div>
           <div class="settings-item">
+            <label for="reasoningSelector">GPT-5 Reasoning:</label>
+            <select id="reasoningSelector">
+              <option value="minimal">Minimal (Fastest)</option>
+              <option value="low" selected>Low (Balanced)</option>
+              <option value="medium">Medium</option>
+              <option value="high">High (Best Quality)</option>
+            </select>
+            </div>
+            <div class="settings-item">
+              <label for="verbositySelector">GPT-5 Verbosity:</label>
+              <select id="verbositySelector">
+                <option value="low">Low (Concise)</option>
+                <option value="medium" selected>Medium (Balanced)</option>
+                <option value="high">High (Detailed)</option>
+              </select>
+            </div>
+            <div class="settings-item">
             <label>Window Level:</label>
             <div class="pin-toggle-container">
               <input type="checkbox" id="pinToggleCheckbox" />
@@ -2659,14 +2685,17 @@
                             console.log(`Processing ${accumulatedScreenshots.length} accumulated screenshots`);
                               const model = getCurrentModel();
                               const customPrompt = getCustomPrompt();
+                              const reasoning = getCurrentReasoning();
+                              const verbosity = getCurrentVerbosity();
                               console.log(`Using model: ${model}`);
                               console.log(`Using custom prompt: ${customPrompt.substring(0, 100)}...`);
+                              console.log('GPT-5 Settings - Reasoning:', reasoning, 'Verbosity:', verbosity);
                             hideScreenshotPreviewArea();
                             showLoader(); // Show loader when processing starts
 
                             try {
                               if (window.electronAPI) {
-                                await window.electronAPI.processAccumulatedScreenshots([...accumulatedScreenshots], model, customPrompt);
+                                await window.electronAPI.processAccumulatedScreenshots([...accumulatedScreenshots], model, customPrompt, reasoning, verbosity);
                                 clearAccumulatedScreenshots();
                               }
                             } catch (error) {
@@ -2761,7 +2790,7 @@
                           });
 
                               // Chat prompt management
-                                const DEFAULT_CHAT_PROMPT = "You are a helpful, concise chat assistant (ChatGPT-style). Each turn may include:\n\nimage: one screenshot (UI, doc, chart, code, error)\n\ntext: the user's message\n\nDo:\n\nRead visible text, labels, buttons, charts, states; infer simple causes; note uncertainty if unreadable\n\nCombine screenshot info with the user's text to answer directly, then suggest 1–2 next steps\n\nBe brief, friendly, and accurate; use bullets or short paragraphs; quote UI labels exactly\n\nFor code/errors: give minimal, correct fixes in code blocks\n\nFor data/charts: report key numbers, units, and timeframe\n\nFlag missing info and proceed with a best-effort answer\n\nDon't:\n\nInvent elements not visible\n\nPerform web browsing or real clicks; give instructions instead\n\nShare sensitive PII seen in the image; summarize instead\n\nSafety:\n\nNo disallowed content; give general info (not professional advice) for medical/legal/financial topics\n\nFinal rule: be useful in one message—answer first, steps second.";
+                                  const DEFAULT_CHAT_PROMPT = "You are ChatGPT, a helpful AI assistant.";
 
                               function getCustomChatPrompt() {
                                 const saved = localStorage.getItem('customChatPrompt');
@@ -2983,15 +3012,21 @@ No Bullets, only paragraphs.`;
                                                 const themeSelector = document.getElementById('themeSelector');
                                                 const opacitySlider = document.getElementById('opacitySlider');
                                                 const opacityValue = document.getElementById('opacityValue');
+                                                    const reasoningSelector = document.getElementById('reasoningSelector');
+                                                    const verbositySelector = document.getElementById('verbositySelector');
 
                                                 // Load saved settings
                                                 let currentTheme = localStorage.getItem('theme') || 'dark';
                                                 let currentOpacity = parseInt(localStorage.getItem('opacity') || '100');
+                                                    let currentReasoning = localStorage.getItem('gpt5Reasoning') || 'low';
+                                                    let currentVerbosity = localStorage.getItem('gpt5Verbosity') || 'medium';
 
                                                 // Initialize settings
                                                 themeSelector.value = currentTheme;
                                                 opacitySlider.value = currentOpacity;
                                                 opacityValue.textContent = currentOpacity + '%';
+                                                    reasoningSelector.value = currentReasoning;
+                                                    verbositySelector.value = currentVerbosity;
 
                                                 // Apply initial theme
                                                 document.body.className = currentTheme === 'light' ? 'light-theme' : '';
@@ -3046,6 +3081,29 @@ No Bullets, only paragraphs.`;
                                                   }
                                                   console.log('Opacity changed to:', currentOpacity + '%');
                                                 });
+
+                                                    // Reasoning change handler
+                                                    reasoningSelector.addEventListener('change', (e) => {
+                                                      currentReasoning = e.target.value;
+                                                      localStorage.setItem('gpt5Reasoning', currentReasoning);
+                                                      console.log('GPT-5 Reasoning changed to:', currentReasoning);
+                                                    });
+
+                                                    // Verbosity change handler
+                                                    verbositySelector.addEventListener('change', (e) => {
+                                                      currentVerbosity = e.target.value;
+                                                      localStorage.setItem('gpt5Verbosity', currentVerbosity);
+                                                      console.log('GPT-5 Verbosity changed to:', currentVerbosity);
+                                                    });
+
+                                                    // Functions to get current GPT-5 settings
+                                                    function getCurrentReasoning() {
+                                                      return currentReasoning;
+                                                    }
+
+                                                    function getCurrentVerbosity() {
+                                                      return currentVerbosity;
+                                                    }
 
                                                             // Check for Updates button handler
                                                             const checkForUpdatesBtn = document.getElementById('checkForUpdatesBtn');
@@ -3525,12 +3583,15 @@ No Bullets, only paragraphs.`;
       // Show typing indicator while waiting for response
       showTypingIndicator();
 
-      // Send to backend with model selection, chat history, and custom prompt
+      // Send to backend with model selection, chat history, custom prompt, and GPT-5 settings
       if (window.electronAPI) {
         const customChatPrompt = getCustomChatPrompt();
+        const reasoning = getCurrentReasoning();
+        const verbosity = getCurrentVerbosity();
         console.log('Sending message with chat history:', chatHistory.length, 'previous messages');
         console.log('Using custom chat prompt:', customChatPrompt.substring(0, 50) + '...');
-        window.electronAPI.sendChatMessage(messageText, imageData, model, chatHistory, customChatPrompt);
+        console.log('GPT-5 Settings - Reasoning:', reasoning, 'Verbosity:', verbosity);
+        window.electronAPI.sendChatMessage(messageText, imageData, model, chatHistory, customChatPrompt, reasoning, verbosity);
       }
     }
 

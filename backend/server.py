@@ -128,7 +128,7 @@ def health():
 @APP.post("/api/send_text")
 def api_send_text():
     j = request.get_json(force=True, silent=True) or {}
-    text = (j.get("text") or "").strip()
+    text = (j.get("input_text") or "").strip()
     use_ai = bool(j.get("generate_ai"))  # front-end always sends true
 
     spoken = CHAT.reply(text, use_ai=use_ai)
@@ -214,6 +214,8 @@ def api_chat():
         image_data = j.get("image")
         model_name = j.get("model", "gemini-2.5-flash")
         chat_history = j.get("chatHistory", [])  # Get conversation history
+        reasoning = j.get("reasoning", "low")
+        verbosity = j.get("verbosity", "medium")
 
         if not user_text and not image_data:
             log.error("No text or image provided in request")
@@ -222,6 +224,7 @@ def api_chat():
         log.info(
             f"Received chat - Text: {'Yes' if user_text else 'No'}, Image: {'Yes' if image_data else 'No'}, Model: {model_name}, History: {len(chat_history)} messages"
         )
+        log.info(f"GPT-5 Settings - Reasoning: {reasoning}, Verbosity: {verbosity}")
         if user_text:
             log.info(f"Text content: {user_text[:100]}...")
         if image_data:
@@ -266,35 +269,37 @@ def api_chat():
                         # Message with image
                         messages.append(
                             {
+                                "type": "message",
                                 "role": role,
                                 "content": [
-                                    {"type": "text", "text": content},
+                                    {"type": "input_text", "text": content},
                                     {
-                                        "type": "image_url",
-                                        "image_url": {
-                                            "url": f"data:image/png;base64,{image}"
-                                        },
+                                        "type": "input_image",
+                                        "detail": "auto",
+                                        "image_url": f"data:image/png;base64,{image}",
                                     },
                                 ],
                             }
                         )
                     else:
                         # Text-only message
-                        messages.append({"role": role, "content": content})
+                        messages.append(
+                            {"type": "message", "role": role, "content": content}
+                        )
 
                 # Add current message
                 if user_text and image_data:
                     # Both text and image
                     messages.append(
                         {
+                            "type": "message",
                             "role": "user",
                             "content": [
-                                {"type": "text", "text": user_text},
+                                {"type": "input_text", "text": user_text},
                                 {
-                                    "type": "image_url",
-                                    "image_url": {
-                                        "url": f"data:image/png;base64,{image_data}"
-                                    },
+                                    "type": "input_image",
+                                    "detail": "auto",
+                                    "image_url": f"data:image/png;base64,{image_data}",
                                 },
                             ],
                         }
@@ -303,22 +308,29 @@ def api_chat():
                     # Image only
                     messages.append(
                         {
+                            "type": "message",
                             "role": "user",
                             "content": [
                                 {
-                                    "type": "image_url",
-                                    "image_url": {
-                                        "url": f"data:image/png;base64,{image_data}"
-                                    },
+                                    "type": "input_image",
+                                    "detail": "auto",
+                                    "image_url": f"data:image/png;base64,{image_data}",
                                 }
                             ],
                         }
                     )
                 else:
                     # Text only
-                    messages.append({"role": "user", "content": user_text})
+                    messages.append(
+                        {"type": "message", "role": "user", "content": user_text}
+                    )
 
-                response_text = ai_client.chat_with_history(messages, actual_model)
+                response_text = ai_client.chat(
+                    messages=messages,
+                    model=actual_model,
+                    reasoning_effort=reasoning,
+                    verbosity=verbosity,
+                )
 
             else:
                 # Gemini handling with conversation history
@@ -668,14 +680,23 @@ def api_chat_protected(current_user):
         model_name = request_data.get("model", "gemini-2.5-flash")
         chat_history = request_data.get("chatHistory", [])
         custom_prompt = request_data.get("customPrompt")  # Get custom system prompt
+        reasoning = request_data.get("reasoning", "low")  # Get GPT-5 reasoning setting
+        verbosity = request_data.get(
+            "verbosity", "medium"
+        )  # Get GPT-5 verbosity setting
 
         log.info(
             f"Protected chat - Text: {'Yes' if user_text else 'No'}, Image: {'Yes' if image_data else 'No'}, Model: {model_name}, History: {len(chat_history)} messages"
         )
         log.info(f"Custom prompt: {'Yes' if custom_prompt else 'No (using default)'}")
+        log.info(f"GPT-5 Settings - Reasoning: {reasoning}, Verbosity: {verbosity}")
 
-        if not user_text and not image_data:
-            return jsonify(error="No text or image provided"), 400
+        # Allow requests with history even if no current text/image (for follow-up questions)
+        if not user_text and not image_data and not chat_history:
+            return (
+                jsonify(error="No text, image, or conversation history provided"),
+                400,
+            )
 
         # Process the request with token tracking
         try:
@@ -717,11 +738,12 @@ def api_chat_protected(current_user):
                         {
                             "role": role,
                             "content": [
-                                {"type": "text", "text": content},
+                                {"type": "input_text", "text": content},
                                 {
-                                    "type": "image_url",
-                                    "image_url": {
-                                        "url": f"data:image/png;base64,{image}"
+                                    "type": "input_image",
+                                    "detail": "auto",
+                                    "input_image": {
+                                        "image_url": f"data:image/png;base64,{image}"
                                     },
                                 },
                             ],
@@ -736,11 +758,12 @@ def api_chat_protected(current_user):
                     {
                         "role": "user",
                         "content": [
-                            {"type": "text", "text": user_text},
+                            {"type": "input_text", "text": user_text},
                             {
-                                "type": "image_url",
-                                "image_url": {
-                                    "url": f"data:image/png;base64,{image_data}"
+                                "type": "input_image",
+                                "detail": "auto",
+                                "input_image": {
+                                    "image_url": f"data:image/png;base64,{image_data}"
                                 },
                             },
                         ],
@@ -751,11 +774,15 @@ def api_chat_protected(current_user):
                     {
                         "role": "user",
                         "content": [
-                            {"type": "text", "text": "Please analyze this image."},
                             {
-                                "type": "image_url",
-                                "image_url": {
-                                    "url": f"data:image/png;base64,{image_data}"
+                                "type": "input_text",
+                                "text": "Please analyze this image.",
+                            },
+                            {
+                                "type": "input_image",
+                                "detail": "auto",
+                                "input_image": {
+                                    "image_url": f"data:image/png;base64,{image_data}"
                                 },
                             },
                         ],
@@ -912,6 +939,8 @@ def api_screenshot_protected(current_user):
         images_data = j.get("images", [])
         model_name = j.get("model", "gemini-2.5-flash")
         custom_prompt = j.get("customPrompt")
+        reasoning = j.get("reasoning", "low")
+        verbosity = j.get("verbosity", "medium")
 
         # Support both single image and multiple images
         if image_data and not images_data:
@@ -922,6 +951,7 @@ def api_screenshot_protected(current_user):
         log.info(
             f"Received {len(images_data)} screenshot(s) for analysis with model: {model_name}"
         )
+        log.info(f"GPT-5 Settings - Reasoning: {reasoning}, Verbosity: {verbosity}")
 
         # Use custom prompt if provided, otherwise use default
         if custom_prompt and custom_prompt.strip():
@@ -939,35 +969,31 @@ def api_screenshot_protected(current_user):
         ai_client, actual_model = get_ai_client_and_model(model_name)
 
         if model_name.startswith("gpt-"):
-            # OpenAI handling
-            extra_tokens = (
-                {"max_completion_tokens": 4000}
-                if str(actual_model).startswith("gpt-5")
-                else {"max_tokens": 4000}
-            )
-            temp_kwargs = (
-                {} if str(actual_model).startswith("gpt-5") else {"temperature": 0.7}
-            )
-            response_obj = ai_client.client.chat.completions.create(
-                model=actual_model,
-                messages=[
-                    {
-                        "role": "user",
-                        "content": [{"type": "text", "text": prompt}]
-                        + [
-                            {
-                                "type": "image_url",
-                                "image_url": {"url": f"data:image/png;base64,{img}"},
-                            }
-                            for img in images_data
-                        ],
-                    }
-                ],
-                **temp_kwargs,
-                **extra_tokens,
-            )
+            # GPT-5 Responses API handling
+            # Build multimodal content array
+            content = [{"type": "input_text", "text": prompt}]
 
-            response = response_obj.choices[0].message.content
+            # Add all images to content
+            for img_base64 in images_data:
+                content.append(
+                    {
+                        "type": "input_image",
+                        "detail": "auto",
+                        "image_url": f"data:image/png;base64,{img_base64}",
+                    }
+                )
+
+            # Wrap content in a message object (GPT-5 API requirement)
+            input_data = [{"type": "message", "role": "user", "content": content}]
+
+            # Use GPT-5 create method with reasoning and verbosity
+            response_obj = ai_client.create(
+                input_data=input_data,
+                model=actual_model,
+                reasoning_effort=reasoning,
+                verbosity=verbosity,
+            )
+            response = response_obj["output_text"]
 
             # Log token usage for OpenAI
             token_tracker.log_openai_usage(
@@ -1031,13 +1057,20 @@ def api_chat_protected_stream(current_user):
         model_name = request_data.get("model", "gemini-2.5-flash")
         chat_history = request_data.get("chatHistory", [])
         custom_prompt = request_data.get("customPrompt")
+        reasoning = request_data.get("reasoning", "low")
+        verbosity = request_data.get("verbosity", "medium")
 
         log.info(
             f"Protected streaming chat - Text: {'Yes' if user_text else 'No'}, Image: {'Yes' if image_data else 'No'}, Model: {model_name}, History: {len(chat_history)} messages"
         )
+        log.info(f"GPT-5 Settings - Reasoning: {reasoning}, Verbosity: {verbosity}")
 
-        if not user_text and not image_data:
-            return jsonify(error="No text or image provided"), 400
+        # Allow requests with history even if no current text/image (for follow-up questions)
+        if not user_text and not image_data and not chat_history:
+            return (
+                jsonify(error="No text, image, or conversation history provided"),
+                400,
+            )
 
         def generate_streaming_response():
             try:
@@ -1049,7 +1082,13 @@ def api_chat_protected_stream(current_user):
 
                     # Add system prompt if custom prompt is provided
                     if custom_prompt:
-                        messages.append({"role": "system", "content": custom_prompt})
+                        messages.append(
+                            {
+                                "type": "message",
+                                "role": "system",
+                                "content": custom_prompt,
+                            }
+                        )
 
                     # Add chat history
                     for msg in chat_history:
@@ -1060,32 +1099,37 @@ def api_chat_protected_stream(current_user):
                         if image:
                             messages.append(
                                 {
+                                    "type": "message",
                                     "role": role,
                                     "content": [
-                                        {"type": "text", "text": content},
+                                        {"type": "input_text", "text": content},
                                         {
-                                            "type": "image_url",
-                                            "image_url": {
-                                                "url": f"data:image/png;base64,{image}"
-                                            },
+                                            "type": "input_image",
+                                            "detail": "auto",
+                                            "image_url": f"data:image/png;base64,{image}",
                                         },
                                     ],
                                 }
                             )
                         else:
-                            messages.append({"role": role, "content": content})
+                            messages.append(
+                                {"type": "message", "role": role, "content": content}
+                            )
 
                     # Add current message
                     if user_text and image_data:
                         messages.append(
                             {
+                                "type": "message",
                                 "role": "user",
                                 "content": [
-                                    {"type": "text", "text": user_text},
+                                    {"type": "input_text", "text": user_text},
                                     {
-                                        "type": "image_url",
-                                        "image_url": {
-                                            "url": f"data:image/png;base64,{image_data}"
+                                        "type": "input_image",
+                                        "detail": "auto",
+                                        "source": {
+                                            "type": "base64",
+                                            "data": image_data,
                                         },
                                     },
                                 ],
@@ -1094,27 +1138,35 @@ def api_chat_protected_stream(current_user):
                     elif image_data:
                         messages.append(
                             {
+                                "type": "message",
                                 "role": "user",
                                 "content": [
                                     {
-                                        "type": "text",
-                                        "text": "Please analyze this image.",
+                                        "type": "input_text",
+                                        "input_text": "Please analyze this image.",
                                     },
                                     {
-                                        "type": "image_url",
-                                        "image_url": {
-                                            "url": f"data:image/png;base64,{image_data}"
+                                        "type": "input_image",
+                                        "detail": "auto",
+                                        "source": {
+                                            "type": "base64",
+                                            "data": image_data,
                                         },
                                     },
                                 ],
                             }
                         )
                     else:
-                        messages.append({"role": "user", "content": user_text})
+                        messages.append(
+                            {"type": "message", "role": "user", "content": user_text}
+                        )
 
                     # Stream from OpenAI
-                    for chunk in ai_client.chat_with_history_stream(
-                        messages, actual_model
+                    for chunk in ai_client.chat_stream(
+                        messages=messages,
+                        model=actual_model,
+                        reasoning_effort=reasoning,
+                        verbosity=verbosity,
                     ):
                         yield f"data: {json.dumps({'chunk': chunk})}\n\n"
 
@@ -1199,6 +1251,8 @@ def api_screenshot_protected_stream(current_user):
         images_data = j.get("images", [])
         model_name = j.get("model", "gemini-2.5-flash")
         custom_prompt = j.get("customPrompt")
+        reasoning = j.get("reasoning", "low")
+        verbosity = j.get("verbosity", "medium")
 
         # Support both single image and multiple images
         if image_data and not images_data:
@@ -1209,6 +1263,7 @@ def api_screenshot_protected_stream(current_user):
         log.info(
             f"Received {len(images_data)} screenshot(s) for streaming analysis with model: {model_name}"
         )
+        log.info(f"GPT-5 Settings - Reasoning: {reasoning}, Verbosity: {verbosity}")
 
         # Use custom prompt if provided, otherwise use default
         if custom_prompt and custom_prompt.strip():
@@ -1227,9 +1282,31 @@ def api_screenshot_protected_stream(current_user):
                 ai_client, actual_model = get_ai_client_and_model(model_name)
 
                 if model_name.startswith("gpt-"):
-                    # OpenAI streaming handling
-                    for chunk in ai_client.analyze_multiple_images_stream(
-                        images_data, prompt, actual_model
+                    # OpenAI/GPT-5 streaming handling
+                    # Build multimodal content array
+                    content = [{"type": "input_text", "text": prompt}]
+
+                    # Add all images to content
+                    for img_base64 in images_data:
+                        content.append(
+                            {
+                                "type": "input_image",
+                                "detail": "auto",
+                                "image_url": f"data:image/png;base64,{img_base64}",
+                            }
+                        )
+
+                    # Wrap content in a message object (GPT-5 API requirement)
+                    input_data = [
+                        {"type": "message", "role": "user", "content": content}
+                    ]
+
+                    # Use GPT-5 create_stream with reasoning and verbosity
+                    for chunk in ai_client.create_stream(
+                        input_data=input_data,
+                        model=actual_model,
+                        reasoning_effort=reasoning,
+                        verbosity=verbosity,
                     ):
                         yield f"data: {json.dumps({'chunk': chunk})}\n\n"
                 else:

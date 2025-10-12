@@ -38,8 +38,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
         });
     },
 
-    // Chat functionality with model parameter and custom prompt
-    sendChatMessage: (text, imageData, model, chatHistory, customPrompt) => ipcRenderer.invoke('chat:send-message', text, imageData, model, chatHistory, customPrompt),
+    // Chat functionality with model parameter, custom prompt, reasoning, and verbosity
+    sendChatMessage: (text, imageData, model, chatHistory, customPrompt, reasoning, verbosity) => ipcRenderer.invoke('chat:send-message', text, imageData, model, chatHistory, customPrompt, reasoning, verbosity),
 
     onChatResponse: (callback) => {
         ipcRenderer.on('chat-response', (event, response) => {
@@ -86,8 +86,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
         });
     },
 
-    // Process accumulated screenshots with model and custom prompt parameters
-    processAccumulatedScreenshots: (screenshots, model, customPrompt) => ipcRenderer.invoke('screenshot:process-accumulated', screenshots, model, customPrompt),
+    // Process accumulated screenshots with model, custom prompt, reasoning, and verbosity parameters
+    processAccumulatedScreenshots: (screenshots, model, customPrompt, reasoning, verbosity) => ipcRenderer.invoke('screenshot:process-accumulated', screenshots, model, customPrompt, reasoning, verbosity),
 
     onCheckCurrentMode: (callback) => {
         ipcRenderer.on('check-current-mode', () => {

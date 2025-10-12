@@ -67,6 +67,7 @@ class MeetingAssistant:
                 if current_role and current_content:
                     messages.append(
                         {
+                            "type": "message",
                             "role": (
                                 "user" if current_role == "interviewer" else "assistant"
                             ),
@@ -82,6 +83,7 @@ class MeetingAssistant:
                 if current_role and current_content:
                     messages.append(
                         {
+                            "type": "message",
                             "role": (
                                 "user" if current_role == "interviewer" else "assistant"
                             ),
@@ -101,6 +103,7 @@ class MeetingAssistant:
         if current_role and current_content:
             messages.append(
                 {
+                    "type": "message",
                     "role": "user" if current_role == "interviewer" else "assistant",
                     "content": " ".join(current_content).strip(),
                 }
@@ -282,15 +285,22 @@ class MeetingAssistant:
             client = self._get_openai_client()
 
             # Build messages with system prompt first, then conversation history, then context
-            messages = [{"role": "system", "content": system_prompt}]
+            messages = [{"type": "message", "role": "system", "content": system_prompt}]
 
             # Add parsed conversation messages to maintain context
             messages.extend(conversation_messages)
 
             # Add current context as the latest user message
-            messages.append({"role": "user", "content": context_prompt})
+            messages.append(
+                {"type": "message", "role": "user", "content": context_prompt}
+            )
 
-            suggestion = client.chat_with_history(messages, model)
+            suggestion = client.chat(
+                messages=messages,
+                model=model,
+                reasoning_effort="low",
+                verbosity="medium",
+            )
 
             # Remove quotes if the response is quoted
             if suggestion.startswith('"') and suggestion.endswith('"'):
@@ -345,16 +355,23 @@ class MeetingAssistant:
             client = self._get_openai_client()
 
             # Build messages with system prompt first, then conversation history, then context
-            messages = [{"role": "system", "content": system_prompt}]
+            messages = [{"type": "message", "role": "system", "content": system_prompt}]
 
             # Add parsed conversation messages to maintain context
             messages.extend(conversation_messages)
 
             # Add current context as the latest user message
-            messages.append({"role": "user", "content": context_prompt})
+            messages.append(
+                {"type": "message", "role": "user", "content": context_prompt}
+            )
 
             # Get streaming response
-            for chunk_text in client.chat_with_history_stream(messages, model):
+            for chunk_text in client.chat_stream(
+                messages=messages,
+                model=model,
+                reasoning_effort="low",
+                verbosity="medium",
+            ):
                 yield {
                     "type": "chunk",
                     "content": chunk_text
