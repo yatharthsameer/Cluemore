@@ -887,6 +887,8 @@ function createPromptEditorPanel() {
 
   promptEditorWin = new BrowserWindow(windowOptions);
 
+  promptEditorWin.setContentProtection(isContentProtectionEnabled);
+
   promptEditorWin.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
   promptEditorWin.setFullScreenable(false);
 
