@@ -725,7 +725,13 @@ def api_chat_protected(current_user):
 
             # Add system prompt if custom prompt is provided
             if custom_prompt:
-                messages.append({"role": "system", "content": custom_prompt})
+                messages.append(
+                    {
+                        "type": "message",
+                        "role": "system",
+                        "content": custom_prompt,
+                    }
+                )
 
             # Add chat history
             for msg in chat_history:
@@ -736,35 +742,35 @@ def api_chat_protected(current_user):
                 if image:
                     messages.append(
                         {
+                            "type": "message",
                             "role": role,
                             "content": [
                                 {"type": "input_text", "text": content},
                                 {
                                     "type": "input_image",
+                                    "image_url": f"data:image/png;base64,{image}",
                                     "detail": "auto",
-                                    "input_image": {
-                                        "image_url": f"data:image/png;base64,{image}"
-                                    },
                                 },
                             ],
                         }
                     )
                 else:
-                    messages.append({"role": role, "content": content})
+                    messages.append(
+                        {"type": "message", "role": role, "content": content}
+                    )
 
             # Add current message
             if user_text and image_data:
                 messages.append(
                     {
+                        "type": "message",
                         "role": "user",
                         "content": [
                             {"type": "input_text", "text": user_text},
                             {
                                 "type": "input_image",
+                                "image_url": f"data:image/png;base64,{image_data}",
                                 "detail": "auto",
-                                "input_image": {
-                                    "image_url": f"data:image/png;base64,{image_data}"
-                                },
                             },
                         ],
                     }
@@ -772,6 +778,7 @@ def api_chat_protected(current_user):
             elif image_data:
                 messages.append(
                     {
+                        "type": "message",
                         "role": "user",
                         "content": [
                             {
@@ -780,41 +787,27 @@ def api_chat_protected(current_user):
                             },
                             {
                                 "type": "input_image",
+                                "image_url": f"data:image/png;base64,{image_data}",
                                 "detail": "auto",
-                                "input_image": {
-                                    "image_url": f"data:image/png;base64,{image_data}"
-                                },
                             },
                         ],
                     }
                 )
             else:
-                messages.append({"role": "user", "content": user_text})
+                messages.append(
+                    {"type": "message", "role": "user", "content": user_text}
+                )
 
-            # Make OpenAI call
-            extra_tokens = (
-                {"max_completion_tokens": 4000}
-                if str(actual_model).startswith("gpt-5")
-                else {"max_tokens": 4000}
-            )
-            # Remove temperature for GPT-5 models per API constraints
-            temp_kwargs = (
-                {} if str(actual_model).startswith("gpt-5") else {"temperature": 0.7}
-            )
-            response_obj = ai_client.client.chat.completions.create(
-                model=actual_model, messages=messages, **temp_kwargs, **extra_tokens
+            # Use GPT-5 Responses API for proper streaming and reasoning
+            response_text = ai_client.chat(
+                messages=messages,
+                model=actual_model,
+                reasoning_effort=reasoning,
+                verbosity=verbosity,
             )
 
-            response_text = response_obj.choices[0].message.content
-
-            # Log token usage for OpenAI
-            token_tracker.log_openai_usage(
-                user_id=current_user["id"],
-                model_name=actual_model,
-                endpoint="/api/chat_protected",
-                response=response_obj,
-                request_type="chat",
-            )
+            # Note: Responses API doesn't return usage stats in the same format
+            # Token tracking is handled in the streaming endpoint which is the primary endpoint
 
         else:
             # Gemini handling with token tracking
@@ -1126,11 +1119,8 @@ def api_chat_protected_stream(current_user):
                                     {"type": "input_text", "text": user_text},
                                     {
                                         "type": "input_image",
+                                        "image_url": f"data:image/png;base64,{image_data}",
                                         "detail": "auto",
-                                        "source": {
-                                            "type": "base64",
-                                            "data": image_data,
-                                        },
                                     },
                                 ],
                             }
@@ -1143,15 +1133,12 @@ def api_chat_protected_stream(current_user):
                                 "content": [
                                     {
                                         "type": "input_text",
-                                        "input_text": "Please analyze this image.",
+                                        "text": "Please analyze this image.",
                                     },
                                     {
                                         "type": "input_image",
+                                        "image_url": f"data:image/png;base64,{image_data}",
                                         "detail": "auto",
-                                        "source": {
-                                            "type": "base64",
-                                            "data": image_data,
-                                        },
                                     },
                                 ],
                             }

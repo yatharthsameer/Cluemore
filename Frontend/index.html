@@ -1127,6 +1127,97 @@
       background: rgba(120, 120, 120, 0.8);
     }
 
+    #quickPromptsBtn {
+      padding: 8px 10px;
+      background: rgba(180, 130, 70, 0.8);
+      color: #fff;
+      border: 1px solid #b8884a;
+      border-radius: 4px;
+      cursor: pointer;
+      font: 14px monospace;
+      font-weight: bold;
+      min-width: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      transition: all 0.2s;
+      -webkit-app-region: no-drag;
+    }
+
+    #quickPromptsBtn:hover {
+      background: rgba(180, 130, 70, 1);
+      transform: scale(1.05);
+    }
+
+    #quickPromptsDropdown {
+      position: absolute;
+      bottom: 45px;
+      right: 72px;
+      background: rgba(30, 30, 30, 0.98);
+      border: 1px solid #555;
+      border-radius: 6px;
+      min-width: 350px;
+      max-width: 500px;
+      max-height: 400px;
+      overflow-y: auto;
+      display: none;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+      z-index: 1000;
+      -webkit-app-region: no-drag;
+    }
+
+    #quickPromptsDropdown.show {
+      display: block;
+    }
+
+    .quick-prompt-item {
+      padding: 10px 14px;
+      cursor: pointer;
+      border-bottom: 1px solid rgba(85, 85, 85, 0.3);
+      transition: background 0.15s;
+      font: 12px monospace;
+      color: #eee;
+      line-height: 1.4;
+    }
+
+    .quick-prompt-item:last-child {
+      border-bottom: none;
+    }
+
+    .quick-prompt-item:hover {
+      background: rgba(70, 130, 180, 0.3);
+    }
+
+    .quick-prompt-item .prompt-title {
+      font-weight: bold;
+      color: #70a1d4;
+      margin-bottom: 4px;
+    }
+
+    .quick-prompt-item .prompt-preview {
+      color: #aaa;
+      font-size: 11px;
+    }
+
+    #quickPromptsDropdown::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    #quickPromptsDropdown::-webkit-scrollbar-track {
+      background: rgba(40, 40, 40, 0.5);
+      border-radius: 4px;
+    }
+
+    #quickPromptsDropdown::-webkit-scrollbar-thumb {
+      background: rgba(100, 100, 100, 0.6);
+      border-radius: 4px;
+    }
+
+    #quickPromptsDropdown::-webkit-scrollbar-thumb:hover {
+      background: rgba(120, 120, 120, 0.8);
+    }
+
     #sendBtn {
       padding: 8px 12px;
       background: rgba(70, 130, 180, .8);
@@ -2596,8 +2687,14 @@
               </div>
               <div id="inputRow">
                 <textarea id="chatInput" placeholder="Ask a question..." rows="1"></textarea>
+                <button id="quickPromptsBtn" title="Quick prompts">⚡</button>
                 <button id="sendBtn">Send</button>
-                </div>
+              </div>
+              
+              <!-- Quick Prompts Dropdown -->
+              <div id="quickPromptsDropdown">
+                <!-- Will be populated by JavaScript -->
+              </div>
                 </div>
                 </div>
                 </div>
@@ -4289,6 +4386,100 @@ No Bullets, only paragraphs.`;
 
           // Initial resize
           autoResizeChatInput();
+
+    // Quick Prompts functionality
+    const quickPromptsBtn = document.getElementById('quickPromptsBtn');
+    const quickPromptsDropdown = document.getElementById('quickPromptsDropdown');
+    
+    // Define predefined prompts (you can customize these later)
+    const quickPrompts = [
+      {
+        title: "Solve Problem (C++)",
+        text: "Given the problem in the image, solve it in C++ like you would do in a SWE interview, then provide time complexity and explanation."
+      },
+      {
+        title: "Explain with Example",
+        text: "Explain this code in simple terms, then show a small example with step-by-step walkthrough of how it executes."
+      },
+      {
+        title: "Explain term with Example",
+        text: "Explain this in simple terms."
+      },
+      
+      {
+        title: "Optimize Solution",
+        text: "Review this solution and suggest optimizations to improve time or space complexity."
+      },
+      {
+        title: "Find Bug",
+        text: "Analyze this code and identify any potential bugs or issues."
+      },
+      {
+        title: "Add Comments",
+        text: "Add clear, helpful comments to this code explaining what each section does."
+      },
+      {
+        title: "Interview Tips",
+        text: "What are the key points I should mention when explaining this solution in an interview?"
+      }
+    ];
+    
+    // Populate dropdown with prompts
+    function initializeQuickPrompts() {
+      quickPromptsDropdown.innerHTML = '';
+      quickPrompts.forEach((prompt, index) => {
+        const item = document.createElement('div');
+        item.className = 'quick-prompt-item';
+        item.innerHTML = `
+          <div class="prompt-title">${prompt.title}</div>
+          <div class="prompt-preview">${prompt.text}</div>
+        `;
+        item.addEventListener('click', () => {
+          insertPromptAtCursor(prompt.text);
+          quickPromptsDropdown.classList.remove('show');
+        });
+        quickPromptsDropdown.appendChild(item);
+      });
+    }
+    
+    // Insert prompt at cursor position
+    function insertPromptAtCursor(text) {
+      const start = chatInput.selectionStart;
+      const end = chatInput.selectionEnd;
+      const currentValue = chatInput.value;
+      
+      // Insert text at cursor position
+      const newValue = currentValue.substring(0, start) + text + currentValue.substring(end);
+      chatInput.value = newValue;
+      
+      // Move cursor to end of inserted text
+      const newCursorPos = start + text.length;
+      chatInput.setSelectionRange(newCursorPos, newCursorPos);
+      
+      // Auto-resize input to fit new content
+      if (typeof autoResizeChatInput === 'function') {
+        autoResizeChatInput();
+      }
+      
+      // Focus the input
+      chatInput.focus();
+    }
+    
+    // Toggle dropdown
+    quickPromptsBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      quickPromptsDropdown.classList.toggle('show');
+    });
+    
+    // Close dropdown when clicking outside
+    document.addEventListener('click', (e) => {
+      if (!quickPromptsBtn.contains(e.target) && !quickPromptsDropdown.contains(e.target)) {
+        quickPromptsDropdown.classList.remove('show');
+      }
+    });
+    
+    // Initialize prompts
+    initializeQuickPrompts();
 
     // Chat input handlers
     sendBtn.addEventListener('click', sendMessage);
