@@ -118,6 +118,13 @@ contextBridge.exposeInMainWorld('electronAPI', {
         });
     },
 
+    // Handle global Cmd+Shift+Enter shortcut for quick answer from transcription
+    onQuickAnswerFromTranscription: (callback) => {
+        ipcRenderer.on('quick-answer-from-transcription', () => {
+            callback();
+        });
+    },
+
     // Remove listeners when needed
     removeAllListeners: (channel) => {
         ipcRenderer.removeAllListeners(channel);

@@ -3607,172 +3607,180 @@ No Bullets, only paragraphs.`;
                                                                                                                     showLogoutConfirmation();
                                                                                                                   });
 
-                                                                                                                  // Custom logout confirmation (no focus stealing)
-                                                                                                                  function showLogoutConfirmation() {
-                                                                                                                    const confirmationDiv = document.createElement('div');
-                                                                                                                    confirmationDiv.id = 'logoutConfirmation';
-                                                                                                                    confirmationDiv.innerHTML = `
-                                                                                                                      <div style="
-                                                                                                                        position: fixed;
-                                                                                                                        top: 0;
-                                                                                                                        left: 0;
-                                                                                                                        width: 100%;
-                                                                                                                        height: 100%;
-                                                                                                                        background: rgba(0, 0, 0, 0.7);
-                                                                                                                        display: flex;
-                                                                                                                        align-items: center;
-                                                                                                                        justify-content: center;
-                                                                                                                        z-index: 10000;
-                                                                                                                      ">
-                                                                                                                        <div style="
-                                                                                                                          background: rgba(40, 40, 40, 0.95);
-                                                                                                                          backdrop-filter: blur(10px);
-                                                                                                                          border: 1px solid #555;
-                                                                                                                          border-radius: 8px;
-                                                                                                                          padding: 24px;
-                                                                                                                          min-width: 300px;
-                                                                                                                          text-align: center;
-                                                                                                                          color: #fff;
-                                                                                                                          font-family: monospace;
-                                                                                                                        ">
-                                                                                                                          <h3 style="margin: 0 0 16px 0; color: #fff;">Confirm Logout</h3>
-                                                                                                                          <p style="margin: 0 0 20px 0; color: #ccc;">Are you sure you want to logout?</p>
-                                                                                                                          <div style="display: flex; gap: 12px; justify-content: center;">
-                                                                                                                            <button id="cancelLogout" style="
-                                                                                                                              padding: 8px 16px;
-                                                                                                                              border: none;
-                                                                                                                              border-radius: 4px;
-                                                                                                                              background: rgba(108, 117, 125, 0.8);
-                                                                                                                              color: #fff;
-                                                                                                                              cursor: pointer;
-                                                                                                                              font-family: monospace;
-                                                                                                                            ">Cancel</button>
-                                                                                                                            <button id="confirmLogout" style="
-                                                                                                                              padding: 8px 16px;
-                                                                                                                              border: none;
-                                                                                                                              border-radius: 4px;
-                                                                                                                              background: rgba(220, 53, 69, 0.8);
-                                                                                                                              color: #fff;
-                                                                                                                              cursor: pointer;
-                                                                                                                              font-family: monospace;
-                                                                                                                            ">Logout</button>
-                                                                                                                          </div>
-                                                                                                                        </div>
-                                                                                                                      </div>
-                                                                                                                    `;
-                                                                                                                    
-                                                                                                                    document.body.appendChild(confirmationDiv);
-                                                                                                                    
-                                                                                                                    // Handle buttons
-                                                                                                                    document.getElementById('cancelLogout').addEventListener('click', () => {
-                                                                                                                      document.body.removeChild(confirmationDiv);
-                                                                                                                    });
-                                                                                                                    
-                                                                                                                    document.getElementById('confirmLogout').addEventListener('click', async () => {
-                                                                                                                      document.body.removeChild(confirmationDiv);
-                                                                                                                      await performLogout();
-                                                                                                                    });
-                                                                                                                    
-                                                                                                                    // Close on background click
-                                                                                                                    confirmationDiv.addEventListener('click', (e) => {
-                                                                                                                      if (e.target === confirmationDiv) {
+
+                                                                                                                    // Custom logout confirmation
+                                                                                                                    function showLogoutConfirmation() {
+                                                                                                                      const confirmationDiv = document.createElement('div');
+                                                                                                                      confirmationDiv.id = 'logoutConfirmation';
+                                                                                                                      confirmationDiv.innerHTML = `
+    <div style="
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.7);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10000;
+    ">
+      <div style="
+        background: rgba(40, 40, 40, 0.95);
+        backdrop-filter: blur(10px);
+        border: 1px solid #555;
+        border-radius: 8px;
+        padding: 24px;
+        min-width: 300px;
+        text-align: center;
+        color: #fff;
+        font-family: monospace;
+      ">
+        <h3 style="margin: 0 0 16px 0; color: #fff;">Confirm Logout</h3>
+        <p style="margin: 0 0 20px 0; color: #ccc;">Are you sure you want to logout?</p>
+        <div style="display: flex; gap: 12px; justify-content: center;">
+          <button id="cancelLogout" style="
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            background: rgba(108, 117, 125, 0.8);
+            color: #fff;
+            cursor: pointer;
+            font-family: monospace;
+          ">Cancel</button>
+          <button id="confirmLogout" style="
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            background: rgba(220, 53, 69, 0.8);
+            color: #fff;
+            cursor: pointer;
+            font-family: monospace;
+          ">Logout</button>
+        </div>
+      </div>
+    </div>
+  `;
+
+                                                                                                                      document.body.appendChild(confirmationDiv);
+
+                                                                                                                      document.getElementById('cancelLogout').addEventListener('click', () => {
                                                                                                                         document.body.removeChild(confirmationDiv);
-                                                                                                                      }
-                                                                                                                    });
-                                                                                                                  }
+                                                                                                                      });
 
-                                                                                                                  // Perform logout (extracted to separate function)
-                                                                                                                  async function performLogout() {
-                                                                                                                    try {
-                                                                                                                      if (window.electronAPI && window.electronAPI.logout) {
-                                                                                                                        console.log('Logging out...');
+                                                                                                                      document.getElementById('confirmLogout').addEventListener('click', async () => {
+                                                                                                                        document.body.removeChild(confirmationDiv);
+                                                                                                                        await performLogout();
+                                                                                                                      });
 
-                                                                                                                        // Clear any local data
-                                                                                                                        clearLocalData();
-
-                                                                                                                        // Call logout API
-                                                                                                                        const result = await window.electronAPI.logout();
-
-                                                                                                                        if (result.success) {
-                                                                                                                          console.log('Logout successful');
-                                                                                                                          // The main process will handle window switching
-                                                                                                                        } else {
-                                                                                                                          console.error('Logout failed:', result.error);
-                                                                                                                          // Show custom error message instead of alert() to avoid focus stealing
-                                                                                                                          showErrorNotification('Logout failed. Please try again.');
+                                                                                                                      // Close on background click
+                                                                                                                      confirmationDiv.addEventListener('click', (e) => {
+                                                                                                                        if (e.target === confirmationDiv) {
+                                                                                                                          document.body.removeChild(confirmationDiv);
                                                                                                                         }
-                                                                                                                      } else {
-                                                                                                                        console.error('Logout API not available');
-                                                                                                                        showErrorNotification('Logout functionality not available');
-                                                                                                                      }
-                                                                                                                    } catch (error) {
-                                                                                                                      console.error('Logout error:', error);
-                                                                                                                      showErrorNotification('Logout error: ' + error.message);
+                                                                                                                      });
                                                                                                                     }
-                                                                                                                  }
 
-                                                                                                                  // Function to clear local application data
-                                                                                                                  function clearLocalData() {
-                                                                                                                    try {
-                                                                                                                      // Clear chat messages and history
-                                                                                                                      const chatMessages = document.getElementById('chatMessages');
-                                                                                                                      if (chatMessages) {
-                                                                                                                        chatMessages.innerHTML = '';
+                                                                                                                      // Perform logout
+                                                                                                                      async function performLogout() {
+                                                                                                                        try {
+                                                                                                                          if (window.electronAPI && window.electronAPI.logout) {
+                                                                                                                            console.log('Logging out...');
+
+                                                                                                                          // Clear any local data
+                                                                                                                          clearLocalData();
+
+                                                                                                                          const result = await window.electronAPI.logout();
+
+                                                                                                                          if (!result.success) {
+                                                                                                                            console.error('Logout failed:', result.error);
+                                                                                                                            showErrorNotification('Logout failed. Please try again.');
+                                                                                                                          }
+                                                                                                                        } else {
+                                                                                                                          console.error('Logout API not available');
+                                                                                                                          showErrorNotification('Logout functionality not available');
+                                                                                                                        }
+                                                                                                                      } catch (error) {
+                                                                                                                        console.error('Logout error:', error);
+                                                                                                                        showErrorNotification('Logout error: ' + error.message);
                                                                                                                       }
-                                                                                                                      chatHistory = []; // Clear conversation history
-
-                                                                                                                      // Clear solution content
-                                                                                                                      setSolutionContent('');
-
-                                                                                                                      // Clear accumulated screenshots
-                                                                                                                      clearAccumulatedScreenshots();
-
-                                                                                                                      // Clear any input fields
-                                                                                                                      const chatInput = document.getElementById('chatInput');
-                                                                                                                      if (chatInput) {
-                                                                                                                        chatInput.value = '';
-                                                                                                                      }
-
-                                                                                                                      // Hide image preview if any
-                                                                                                                      hideImagePreview();
-
-                                                                                                                      console.log('Local data and chat history cleared');
-                                                                                                                    } catch (error) {
-                                                                                                                      console.error('Error clearing local data:', error);
                                                                                                                     }
-                                                                                                                  }
 
-        // Page management
-    const interviewPage = document.getElementById('interviewPage');
-    const chatPage = document.getElementById('chatPage');
-    const notesPage = document.getElementById('notesPage');
-                        const transcriptionPage = document.getElementById('transcriptionPage');
-                        const meetingAssistantPage = document.getElementById('meetingAssistantPage');
-    const chatBtn = document.getElementById('chatBtn');
-    const interviewBtn = document.getElementById('interviewBtn');
-    const notesBtn = document.getElementById('notesBtn');
-                        const transcriptionBtn = document.getElementById('transcriptionBtn');
-                        const meetingAssistantBtn = document.getElementById('meetingAssistantBtn');
+                                                                                                                      // Clear local application data
+                                                                                                                      function clearLocalData() {
+                                                                                                                        try {
+                                                                                                                        // Clear chat messages
+                                                                                                                        const chatMessages = document.getElementById('chatMessages');
+                                                                                                                        if (chatMessages) {
+                                                                                                                          chatMessages.innerHTML = '';
+                                                                                                                        }
 
-    let currentPage = 'notes';
+                                                                                                                        // Reset history if defined
+                                                                                                                        if (typeof chatHistory !== 'undefined') {
+                                                                                                                          chatHistory = [];
+                                                                                                                        }
 
-                                                                                              // Meeting Assistant global variables (declared early for global Cmd+Enter handler)
-                                                                                              let isMeetingAssistantActive = false;
-                                                                                              let conversationHistory = '';
-                                                                                              let conversationBuffer = []; // Store conversation segments with timestamps
-                                                                                              let lastSuggestionTime = 0;
-                                                                                              let suggestionDebounceTimer = null;
-                                                                                              let manualTriggerEnabled = true;
+                                                                                                                        // Clear solution content if function exists
+                                                                                                                        if (typeof setSolutionContent === 'function') {
+                                                                                                                          setSolutionContent('');
+                                                                                                                        }
 
-                                                                                              // Placeholder function - will be overridden later when Meeting Assistant loads
-                                                                                              let generateResponseSuggestion = function () {
-                                                                                                console.log('generateResponseSuggestion called before Meeting Assistant loaded');
-                                                                                              };
+                                                                                                                        // Clear screenshots if function exists
+                                                                                                                        if (typeof clearAccumulatedScreenshots === 'function') {
+                                                                                                                          clearAccumulatedScreenshots();
+                                                                                                                        }
 
-                          // Initialize the page state - Stealth Mode should be active by default
-                          function initializePageState() {
-                            showPage('notes'); // This will set the Stealth Mode button as active
-                          }
+                                                                                                                        // Clear input field
+                                                                                                                        const chatInput = document.getElementById('chatInput');
+                                                                                                                        if (chatInput) {
+                                                                                                                          chatInput.value = '';
+                                                                                                                        }
+
+                                                                                                                        // Clear image preview if function exists
+                                                                                                                        if (typeof removeImagePreview === 'function') {
+                                                                                                                          removeImagePreview();
+                                                                                                                        }
+
+                                                                                                                        console.log('Local data and chat history cleared');
+                                                                                                                      } catch (error) {
+                                                                                                                        console.error('Error clearing local data:', error);
+                                                                                                                      }
+                                                                                                                    }
+
+                                                                                                                      // Page management
+                                                                                                                      const interviewPage = document.getElementById('interviewPage');
+                                                                                                                      const chatPage = document.getElementById('chatPage');
+                                                                                                                      const notesPage = document.getElementById('notesPage');
+                                                                                                                      const transcriptionPage = document.getElementById('transcriptionPage');
+                                                                                                                      const meetingAssistantPage = document.getElementById('meetingAssistantPage');
+
+                                                                                                                      const chatBtn = document.getElementById('chatBtn');
+                                                                                                                      const interviewBtn = document.getElementById('interviewBtn');
+                                                                                                                      const notesBtn = document.getElementById('notesBtn');
+                                                                                                                      const transcriptionBtn = document.getElementById('transcriptionBtn');
+                                                                                                                      const meetingAssistantBtn = document.getElementById('meetingAssistantBtn');
+
+                                                                                                                      let currentPage = 'notes';
+
+                                                                                                                      // Meeting Assistant globals
+                                                                                                                      let isMeetingAssistantActive = false;
+                                                                                                                      let conversationSummary = '';
+                                                                                                                      let conversationHistory = []; // with timestamps
+                                                                                                                      let lastSuggestionTime = 0;
+                                                                                                                      let suggestionDebounce = null;
+                                                                                                                      let manualSuggestionsEnabled = true;
+
+                                                                                                                      // Placeholder, overridden when Meeting Assistant loads
+                                                                                                                      let generateResponseSuggestion = function () {
+                                                                                                                      console.log('generateResponseSuggestion called before Meeting Assistant is loaded');
+                                                                                                                    };
+
+                                                                                                                      // Initialize page state
+                                                                                                                      function initializePageState() {
+                                                                                                                      // Stealth / notes as default
+                                                                                                                      showPage('notes');
+                                                                                                                    }
+
 
     function showPage(pageName) {
       // Hide all pages first
@@ -3837,6 +3845,8 @@ No Bullets, only paragraphs.`;
                 let currentImageData = null;
                                                                                           let chatHistory = []; // Store conversation history
                     let currentStreamingResponse = ''; // Accumulate streaming AI response
+                     let chatTranscriptionBuffer = []; // Store interview questions with timestamps
+                    let chatLastSpeaker = 'interviewer';
 
                 function addMessage(text, type = 'user', imageData = null) {
       const messageEl = document.createElement('div');
@@ -4814,6 +4824,141 @@ No Bullets, only paragraphs.`;
               bufferLength: typeof conversationBuffer !== 'undefined' ? conversationBuffer.length : 'undefined'
             });
           }
+        }
+      });
+
+      // Handle global Cmd+Shift+Enter shortcut - Quick answer from transcription
+      window.electronAPI.onQuickAnswerFromTranscription(() => {
+        console.log('Quick answer from transcription triggered');
+        async function generateQuickAnswerFromTranscription() {
+          try {
+            console.log('Generating quick answer from transcription...');
+            console.log('Transcription buffer:', chatTranscriptionBuffer);
+            console.log('Chat history:', chatHistory);
+
+            // Check transcription presence
+            if (!Array.isArray(chatTranscriptionBuffer) || chatTranscriptionBuffer.length === 0) {
+              addMessage('⚠️ No transcription found. Start recording to capture the conversation.', 'error');
+              return;
+            }
+
+            // Take last 5 transcripts regardless of speaker (speaker categorization might be incorrect)
+            const recentTranscripts = chatTranscriptionBuffer.slice(-5);
+
+            console.log('Recent transcripts count:', recentTranscripts.length);
+
+            // Last 3 Q&A pairs (6 messages) from chat history for context
+            const recentChatContext = Array.isArray(chatHistory)
+              ? chatHistory.slice(-6)
+              : [];
+
+            console.log('Chat context messages count:', recentChatContext.length);
+
+            // Build context-aware prompt
+            let promptText = '';
+
+            // Add recent chat context if available
+            if (recentChatContext.length > 0) {
+              promptText += 'PREVIOUS DISCUSSION:\n';
+              recentChatContext.forEach(msg => {
+                if (!msg || typeof msg.content !== 'string') return;
+                const roleLabel = msg.role === 'user' ? 'Question' : 'Answer';
+                promptText += `${roleLabel}: ${msg.content.substring(0, 150)}\n`;
+              });
+              promptText += '\n';
+            }
+
+            // Add recent transcripts as context
+            promptText += 'RECENT TRANSCRIPTION (Last few statements from the conversation):\n';
+            recentTranscripts.forEach((segment, idx) => {
+              const segmentText = (segment.text || segment.content || '').toString().trim();
+              if (segmentText) {
+                promptText += `${idx + 1}. ${segmentText}\n`;
+              }
+            });
+            promptText += '\n';
+            promptText += 'Based on the above transcription, identify any questions asked and provide a concise, clear answer suitable for a verbal interview response. Keep it brief and to the point.';
+
+            console.log('Built prompt (first 200 chars):', promptText.substring(0, 200) + '...');
+
+            // Get preview text for UI (last transcript or combined)
+            const lastTranscript = recentTranscripts[recentTranscripts.length - 1];
+            const previewText = (lastTranscript?.text || lastTranscript?.content || 'recent transcripts').substring(0, 100);
+
+            // Show info in UI
+            addMessage(`📝 Answering from: "${previewText}${previewText.length >= 100 ? '...' : ''}"`, 'user');
+
+
+            // Disable send button during processing
+            const sendBtn = document.getElementById('sendBtn');
+            let originalSendText = '';
+            if (sendBtn) {
+              originalSendText = sendBtn.textContent;
+              sendBtn.disabled = true;
+              sendBtn.textContent = 'Answering...';
+            }
+
+            // Typing indicator
+            if (typeof showTypingIndicator === 'function') {
+              showTypingIndicator();
+            }
+
+            // Model + options
+            const model = typeof getCurrentModel === 'function'
+              ? getCurrentModel()
+              : 'default';
+            const customPrompt = null;
+            const reasoning = 'low';
+            const verbosity = 'low';
+
+            console.log('Calling API with:', { model, reasoning, verbosity });
+
+            // Send to backend (Electron bridge)
+            if (window.electronAPI && typeof window.electronAPI.sendChatMessage === 'function') {
+              await window.electronAPI.sendChatMessage(
+                promptText,          // text
+                null,                // imageData
+                model,               // model
+                chatHistory || [],   // chatHistory
+                customPrompt,        // customPrompt
+                reasoning,           // reasoning
+                verbosity            // verbosity
+              );
+              console.log('Quick answer request sent.');
+            } else {
+              console.error('electronAPI.sendChatMessage not available');
+              addMessage('❌ Quick answer is not available in this environment.', 'error');
+            }
+
+            // Cleanup UI state
+            if (typeof hideTypingIndicator === 'function') {
+              hideTypingIndicator();
+            }
+            if (sendBtn) {
+              sendBtn.disabled = false;
+              sendBtn.textContent = originalSendText || 'Send';
+            }
+          } catch (error) {
+            console.error('Error generating quick answer:', error);
+
+            if (typeof hideTypingIndicator === 'function') {
+              hideTypingIndicator();
+            }
+
+            addMessage(`❌ Error generating quick answer: ${error.message}`, 'error');
+
+            const sendBtn = document.getElementById('sendBtn');
+            if (sendBtn) {
+              sendBtn.disabled = false;
+              sendBtn.textContent = 'Send';
+            }
+          }
+        }
+        // Only process if in chat mode
+        if (currentPage === 'chat') {
+          generateQuickAnswerFromTranscription();
+        } else {
+          console.log('Not in chat mode, ignoring quick answer request');
         }
       });
 
@@ -5823,8 +5968,8 @@ Solutions:
     let chatAudioWorkletNode = null;
     let chatMediaStreamSource = null;
     let chatSystemAudioStream = null;
-    let chatTranscriptionBuffer = []; // Store interview questions with timestamps
-    let chatLastSpeaker = 'interviewer'; // Track who spoke last to alternate speakers
+    // let chatTranscriptionBuffer = []; // Store interview questions with timestamps
+    // let chatLastSpeaker = 'interviewer'; // Track who spoke last to alternate speakers
 
     // Collapse/Expand functionality
     function toggleChatTranscriptionPanel() {
@@ -6156,12 +6301,15 @@ Solutions:
       setupChatTranscriptionHandler();
     }
 
-    console.log('✅ Chat transcription panel initialized');
+    // ============================================
+    // Quick Answer from Transcription Feature
+    // ============================================
 
+   
   });
-  </script>
-<!-- Development Console Helpers -->
-<script src="dev-console-helpers.js"></script>
-</body>
-
-</html>
+    </script>
+    <!-- Development Console Helpers -->
+    <script src="dev-console-helpers.js"></script>
+    </body>
+    
+    </html>

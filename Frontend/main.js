@@ -1488,6 +1488,16 @@ app.whenReady().then(async () => {
     }
   });
 
+  // Global shortcut for quick answer from transcription: cmd + shift + enter
+  globalShortcut.register('CommandOrControl+Shift+Enter', async () => {
+    console.log('Cmd+Shift+Enter shortcut pressed (quick answer from transcription)');
+
+    // Ask renderer to generate quick answer from latest transcription
+    if (win) {
+      win.webContents.send('quick-answer-from-transcription');
+    }
+  });
+
   // Global shortcut for chat mode: cmd + shift + i (STEALTH MODE - no focus stealing)
   globalShortcut.register('CommandOrControl+Shift+I', async () => {
     console.log('Cmd+Shift+I shortcut pressed (global)');
