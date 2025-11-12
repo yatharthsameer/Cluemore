@@ -807,7 +807,7 @@ function createMainWindow() {
   }
 
   const windowOptions = {
-    width: 950,
+    width: 700,
     height: 700,
     resizable: false,
     alwaysOnTop: false, // Default to normal level
