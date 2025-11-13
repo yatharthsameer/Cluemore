@@ -37,11 +37,12 @@ PORT = int(os.getenv("PORT", 3000))
 ENVIRONMENT = os.getenv("FLASK_ENV", "development")
 IS_PRODUCTION = ENVIRONMENT == "production"
 
-# ────────── sanity check ──────────
-if IS_PRODUCTION:
-    log.info("🚀 Running in PRODUCTION mode")
-else:
-    log.info("🔧 Running in DEVELOPMENT mode")
+# # ────────── sanity check ──────────
+# if IS_PRODUCTION:
+
+#     log.info("🚀 Running in PRODUCTION mode")
+# else:
+#     log.info("🔧 Running in DEVELOPMENT mode")
 
 # ────────── app / state ──────────
 APP = Flask(__name__)
@@ -69,7 +70,7 @@ def get_gemini_client():
     if GEMINI_CLIENT is None:
         try:
             GEMINI_CLIENT = GeminiClient()
-            log.info("Gemini client initialized successfully")
+            # log.info("Gemini client initialized successfully")
         except Exception as e:
             if "GEMINI_API_KEY not set" in str(e):
                 raise ValueError(
@@ -86,7 +87,7 @@ def get_openai_client():
     if OPENAI_CLIENT is None:
         try:
             OPENAI_CLIENT = OpenAIClient()
-            log.info("OpenAI client initialized successfully")
+            # log."OpenAI client initialized successfully")
         except Exception as e:
             if "OPENAI_API_KEY" in str(e) or "CHATGPT_API_KEY" in str(e):
                 raise ValueError(
@@ -176,7 +177,7 @@ def api_interrupt():
 def api_test_gemini():
     """Test Gemini API with a simple text request."""
     try:
-        log.info("Testing Gemini API with text-only request...")
+        # log."Testing Gemini API with text-only request...")
 
         # Try to get Gemini client (this will handle API key errors)
         gemini_client = get_gemini_client()
@@ -187,7 +188,7 @@ def api_test_gemini():
         response = test_model.generate_content("Say hello and confirm you're working!")
 
         if response.text:
-            log.info(f"Gemini API test successful: {response.text}")
+            # log.f"Gemini API test successful: {response.text}")
             return jsonify(success=True, response=response.text)
         else:
             log.error("Gemini API test failed: empty response")
@@ -206,7 +207,7 @@ def api_test_gemini():
 def api_chat():
     """Analyze text and/or image and provide a short answer with conversation context."""
     try:
-        log.info("=== Chat API called ===")
+        # log."=== Chat API called ===")
         j = request.get_json(force=True, silent=True) or {}
 
         # Get text, image, model, and chat history from request
@@ -221,23 +222,23 @@ def api_chat():
             log.error("No text or image provided in request")
             return jsonify(error="No text or image provided"), 400
 
-        log.info(
-            f"Received chat - Text: {'Yes' if user_text else 'No'}, Image: {'Yes' if image_data else 'No'}, Model: {model_name}, History: {len(chat_history)} messages"
-        )
-        log.info(f"GPT-5 Settings - Reasoning: {reasoning}, Verbosity: {verbosity}")
-        if user_text:
-            log.info(f"Text content: {user_text[:100]}...")
-        if image_data:
-            log.info(f"Image data length: {len(image_data)} characters")
-        if chat_history:
-            log.info(f"Chat history: {len(chat_history)} previous messages")
+        # log.info(
+        #     f"Received chat - Text: {'Yes' if user_text else 'No'}, Image: {'Yes' if image_data else 'No'}, Model: {model_name}, History: {len(chat_history)} messages"
+        # )
+        # log.info(f"GPT-5 Settings - Reasoning: {reasoning}, Verbosity: {verbosity}")
+        # if user_text:
+        #     log.info(f"Text content: {user_text[:100]}...")
+        # if image_data:
+        #     log.info(f"Image data length: {len(image_data)} characters")
+        # if chat_history:
+        #     log.info(f"Chat history: {len(chat_history)} previous messages")
 
         try:
             # Get appropriate client and model (this will handle API key errors)
             ai_client, actual_model = get_ai_client_and_model(model_name)
-            log.info(
-                f"Using AI client: {type(ai_client).__name__} with model: {actual_model}"
-            )
+            # log.info(
+            #     f"Using AI client: {type(ai_client).__name__} with model: {actual_model}"
+            # )
         except ValueError as e:
             # This catches our custom API key error messages
             log.error(f"API client initialization failed: {e}")
@@ -395,9 +396,9 @@ def api_chat():
                     if image.mode != "RGB":
                         image = image.convert("RGB")
                     current_content.append(image)
-                    log.info(
-                        f"Prepared multimodal content with context: text + image ({image.size})"
-                    )
+                    # log.info(
+                    #     f"Prepared multimodal content with context: text + image ({image.size})"
+                    # )
 
                 elif image_data:
                     # Image only
@@ -420,41 +421,41 @@ def api_chat():
                     if image.mode != "RGB":
                         image = image.convert("RGB")
                     current_content.append(image)
-                    log.info(
-                        f"Prepared image-only content with context: image ({image.size})"
-                    )
+                    # log.info(
+                    #     f"Prepared image-only content with context: image ({image.size})"
+                    # )
 
                 else:
                     # Text only
                     current_content[0] += user_text
-                    log.info("Prepared text-only content with conversation context")
+                    # log.info("Prepared text-only content with conversation context")
 
                 # Send to Gemini
                 response = model.generate_content(current_content)
                 response_text = response.text
 
             if response_text:
-                log.info("Successfully received chat response from AI")
-                log.info(f"Response length: {len(response_text)}")
-                log.info(f"Response preview: {response_text[:100]}...")
+                # log.info("Successfully received chat response from AI")
+                # log.info(f"Response length: {len(response_text)}")
+                # log.info(f"Response preview: {response_text[:100]}...")
 
                 return jsonify(response=response_text, success=True)
             else:
-                log.error("Empty response from AI for chat")
+                # log.error("Empty response from AI for chat")
                 return jsonify(error="Empty response from AI", success=False)
 
         except Exception as ai_error:
-            log.error(f"AI chat analysis failed: {ai_error}")
+            # log.error(f"AI chat analysis failed: {ai_error}")
             import traceback
 
-            log.error(f"Full traceback: {traceback.format_exc()}")
+            # log.error(f"Full traceback: {traceback.format_exc()}")
             return jsonify(error=f"Failed to analyze: {str(ai_error)}", success=False)
 
     except Exception as e:
-        log.error(f"Chat API error: {e}")
+        # log.error(f"Chat API error: {e}")
         import traceback
 
-        log.error(f"Full traceback: {traceback.format_exc()}")
+        # log.error(f"Full traceback: {traceback.format_exc()}")
         return jsonify(error=str(e), success=False)
 
 
@@ -462,7 +463,7 @@ def api_chat():
 def api_screenshot():
     """Analyze screenshot(s) and provide solution."""
     try:
-        log.info("=== Screenshot API called ===")
+        # log.info("=== Screenshot API called ===")
         j = request.get_json(force=True, silent=True) or {}
 
         # Get image data and model - can be single image or array of images
@@ -477,9 +478,9 @@ def api_screenshot():
             log.error("No image data provided in request")
             return jsonify(error="No image data provided"), 400
 
-        log.info(
-            f"Received {len(images_data)} screenshot(s) for analysis with model: {model_name}"
-        )
+        # log.info(
+        #     f"Received {len(images_data)} screenshot(s) for analysis with model: {model_name}"
+        # )
 
         # Prepare prompt based on number of images
         if len(images_data) == 1:
@@ -487,20 +488,20 @@ def api_screenshot():
         else:
             prompt = f"Analyze these {len(images_data)} screenshots which show different parts of the same coding question. Solve the complete question and provide the code solution."
 
-        log.info(f"Using prompt: {prompt}")
+        # log.info(f"Using prompt: {prompt}")
 
         try:
             # Get appropriate client and model (handles API key errors)
             ai_client, actual_model = get_ai_client_and_model(model_name)
-            log.info(
-                f"Using AI client: {type(ai_client).__name__} with model: {actual_model}"
-            )
+            # log.info(
+            #     f"Using AI client: {type(ai_client).__name__} with model: {actual_model}"
+            # )
         except ValueError as e:
             # This catches our custom API key error messages
-            log.error(f"API client initialization failed: {e}")
+            # log.error(f"API client initialization failed: {e}")
             return jsonify(error=str(e), code="API_KEY_MISSING"), 400
         except Exception as e:
-            log.error(f"Unexpected error initializing AI client: {e}")
+            # log.error(f"Unexpected error initializing AI client: {e}")
             return (
                 jsonify(
                     error=f"Failed to initialize AI service: {str(e)}",
@@ -512,37 +513,37 @@ def api_screenshot():
         try:
             if model_name.startswith("gpt-"):
                 # OpenAI/ChatGPT handling
-                log.info("Calling OpenAI for screenshot analysis...")
+                # log.info("Calling OpenAI for screenshot analysis...")
                 response = ai_client.analyze_multiple_images(
                     images_base64=images_data, prompt=prompt, model=actual_model
                 )
             else:
                 # Gemini handling - use the client we got
-                log.info("Calling GeminiClient.analyze_multiple_images...")
+                # log.info("Calling GeminiClient.analyze_multiple_images...")
                 response = ai_client.analyze_multiple_images(
                     images_base64=images_data, prompt=prompt
                 )
 
-            log.info("Successfully analyzed screenshots with AI")
-            log.info(f"Response length: {len(response)}")
-            log.info(f"Response preview: {response[:200]}...")
+            # log.info("Successfully analyzed screenshots with AI")
+            # log.info(f"Response length: {len(response)}")
+            # log.info(f"Response preview: {response[:200]}...")
 
             return jsonify(solution=response, success=True)
 
         except Exception as ai_error:
-            log.error(f"AI analysis failed: {ai_error}")
-            log.error(f"Exception type: {type(ai_error).__name__}")
+            # log.error(f"AI analysis failed: {ai_error}")
+            # log.error(f"Exception type: {type(ai_error).__name__}")
             import traceback
 
-            log.error(f"Full traceback: {traceback.format_exc()}")
+            # log.error(f"Full traceback: {traceback.format_exc()}")
             return jsonify(error=f"Failed to analyze image: {str(ai_error)}"), 500
 
     except Exception as e:
-        log.error(f"Screenshot API error: {e}")
-        log.error(f"Exception type: {type(e).__name__}")
+        # log.error(f"Screenshot API error: {e}")
+        # log.error(f"Exception type: {type(e).__name__}")
         import traceback
 
-        log.error(f"Full traceback: {traceback.format_exc()}")
+        # log.error(f"Full traceback: {traceback.format_exc()}")
         return jsonify(error=str(e)), 500
 
 
@@ -551,26 +552,26 @@ def api_screenshot():
 def api_register():
     """Register a new user"""
     try:
-        log.info("=== User Registration API called ===")
+        # log.info("=== User Registration API called ===")
         j = request.get_json(force=True, silent=True) or {}
 
         email = j.get("email", "").strip()
         password = j.get("password", "").strip()
 
-        log.info(f"Registration attempt for email: {email}")
+        # log.info(f"Registration attempt for email: {email}")
 
         # Register user
         result = auth_manager.register_user(email, password)
 
         if result["success"]:
-            log.info(f"User {email} registered successfully")
+            # log.info(f"User {email} registered successfully")
             return jsonify(result), 200
         else:
-            log.warning(f"Registration failed for {email}: {result['error']}")
+            # log.warning(f"Registration failed for {email}: {result['error']}")
             return jsonify(result), 400
 
     except Exception as e:
-        log.error(f"Registration API error: {e}")
+        # log.error(f"Registration API error: {e}")
         return jsonify({"success": False, "error": "Internal server error"}), 500
 
 
@@ -578,26 +579,26 @@ def api_register():
 def api_login():
     """Login a user"""
     try:
-        log.info("=== User Login API called ===")
+        # log.info("=== User Login API called ===")
         j = request.get_json(force=True, silent=True) or {}
 
         email = j.get("email", "").strip()
         password = j.get("password", "").strip()
 
-        log.info(f"Login attempt for: {email}")
+        # log.info(f"Login attempt for: {email}")
 
         # Login user
         result = auth_manager.login_user(email, password)
 
         if result["success"]:
-            log.info(f"User {email} logged in successfully")
+            # log.info(f"User {email} logged in successfully")
             return jsonify(result), 200
         else:
-            log.warning(f"Login failed for {email}: {result['error']}")
+            # log.warning(f"Login failed for {email}: {result['error']}")
             return jsonify(result), 401
 
     except Exception as e:
-        log.error(f"Login API error: {e}")
+        # log.error(f"Login API error: {e}")
         return jsonify({"success": False, "error": "Internal server error"}), 500
 
 
@@ -605,7 +606,7 @@ def api_login():
 def api_verify_token():
     """Verify a JWT token and return user info"""
     try:
-        log.info("=== Token Verification API called ===")
+        #  log.info("=== Token Verification API called ===")
         j = request.get_json(force=True, silent=True) or {}
 
         token = j.get("token", "").strip()
@@ -617,7 +618,7 @@ def api_verify_token():
         user = auth_manager.get_user_from_token(token)
 
         if user:
-            log.info(f"Token verified for user: {user['email']}")
+            # log.info(f"Token verified for user: {user['email']}")
             return jsonify({"success": True, "user": user, "valid": True}), 200
         else:
             log.warning("Token verification failed")
@@ -642,8 +643,8 @@ def api_verify_token():
 def api_get_current_user(current_user):
     """Get current user info (requires authentication)"""
     try:
-        log.info("=== Get Current User API called ===")
-        log.info(f"Returning user info for: {current_user['email']}")
+        # log.info("=== Get Current User API called ===")
+        # log.info(f"Returning user info for: {current_user['email']}")
         return jsonify({"success": True, "user": current_user}), 200
 
     except Exception as e:
@@ -657,9 +658,9 @@ def api_get_current_user(current_user):
 def api_chat_protected(current_user):
     """Protected chat endpoint with token tracking and usage limits."""
     try:
-        log.info(
-            f"=== Protected Chat API called by user {current_user['id']} ({current_user['email']}) ==="
-        )
+        # log.info(
+        #     f"=== Protected Chat API called by user {current_user['id']} ({current_user['email']}) ==="
+        # )
 
         # Check user limits before processing
         limits = token_tracker.check_user_limits(current_user["id"])
@@ -685,11 +686,11 @@ def api_chat_protected(current_user):
             "verbosity", "medium"
         )  # Get GPT-5 verbosity setting
 
-        log.info(
-            f"Protected chat - Text: {'Yes' if user_text else 'No'}, Image: {'Yes' if image_data else 'No'}, Model: {model_name}, History: {len(chat_history)} messages"
-        )
-        log.info(f"Custom prompt: {'Yes' if custom_prompt else 'No (using default)'}")
-        log.info(f"GPT-5 Settings - Reasoning: {reasoning}, Verbosity: {verbosity}")
+        # log.info(
+        #     f"Protected chat - Text: {'Yes' if user_text else 'No'}, Image: {'Yes' if image_data else 'No'}, Model: {model_name}, History: {len(chat_history)} messages"
+        # )
+        # log.info(f"Custom prompt: {'Yes' if custom_prompt else 'No (using default)'}")
+        # log.info(f"GPT-5 Settings - Reasoning: {reasoning}, Verbosity: {verbosity}")
 
         # Allow requests with history even if no current text/image (for follow-up questions)
         if not user_text and not image_data and not chat_history:
@@ -896,7 +897,7 @@ def api_chat_protected(current_user):
             )
 
         if response_text:
-            log.info(f"Protected chat successful for user {current_user['id']}")
+            # log.info(f"Protected chat successful for user {current_user['id']}")
             return jsonify(response=response_text, success=True)
         else:
             return jsonify(error="Empty response from AI", success=False)
@@ -911,9 +912,9 @@ def api_chat_protected(current_user):
 def api_screenshot_protected(current_user):
     """Protected screenshot endpoint with token tracking"""
     try:
-        log.info(
-            f"=== Protected Screenshot API called by user {current_user['id']} ({current_user['email']}) ==="
-        )
+        # log.info(
+        #     f"=== Protected Screenshot API called by user {current_user['id']} ({current_user['email']}) ==="
+        # )
 
         # Check user limits before processing
         limits = token_tracker.check_user_limits(current_user["id"])
@@ -941,22 +942,22 @@ def api_screenshot_protected(current_user):
         elif not images_data:
             return jsonify(error="No image data provided"), 400
 
-        log.info(
-            f"Received {len(images_data)} screenshot(s) for analysis with model: {model_name}"
-        )
-        log.info(f"GPT-5 Settings - Reasoning: {reasoning}, Verbosity: {verbosity}")
+        # log.info(
+        #     f"Received {len(images_data)} screenshot(s) for analysis with model: {model_name}"
+        # )
+        # log.info(f"GPT-5 Settings - Reasoning: {reasoning}, Verbosity: {verbosity}")
 
         # Use custom prompt if provided, otherwise use default
         if custom_prompt and custom_prompt.strip():
             prompt = custom_prompt.strip()
-            log.info(f"Using custom prompt: {prompt[:100]}...")
+            # log.info(f"Using custom prompt: {prompt[:100]}...")
         else:
             prompt = (
                 "Solve this question, and give me the code for the same."
                 if len(images_data) == 1
                 else f"Analyze these {len(images_data)} screenshots which show different parts of the same coding question. Solve the complete question and provide the code solution."
             )
-            log.info(f"Using default prompt: {prompt}")
+            # log.info(f"Using default prompt: {prompt}")
 
         # Process the request with token tracking
         ai_client, actual_model = get_ai_client_and_model(model_name)
@@ -1013,11 +1014,11 @@ def api_screenshot_protected(current_user):
                 request_type="screenshot",
             )
 
-        log.info(f"Protected screenshot successful for user {current_user['id']}")
+        # log.info(f"Protected screenshot successful for user {current_user['id']}")
         return jsonify(solution=response, success=True)
 
     except Exception as e:
-        log.error(f"Protected Screenshot API error: {e}")
+        # log.error(f"Protected Screenshot API error: {e}")
         return jsonify(error=str(e)), 500
 
 
@@ -1027,9 +1028,9 @@ def api_screenshot_protected(current_user):
 def api_chat_protected_stream(current_user):
     """Protected streaming chat endpoint with token tracking and usage limits."""
     try:
-        log.info(
-            f"=== Protected Streaming Chat API called by user {current_user['id']} ({current_user['email']}) ==="
-        )
+        # log.info(
+        #     f"=== Protected Streaming Chat API called by user {current_user['id']} ({current_user['email']}) ==="
+        # )
 
         # Check user limits before processing
         limits = token_tracker.check_user_limits(current_user["id"])
@@ -1053,10 +1054,10 @@ def api_chat_protected_stream(current_user):
         reasoning = request_data.get("reasoning", "low")
         verbosity = request_data.get("verbosity", "medium")
 
-        log.info(
-            f"Protected streaming chat - Text: {'Yes' if user_text else 'No'}, Image: {'Yes' if image_data else 'No'}, Model: {model_name}, History: {len(chat_history)} messages"
-        )
-        log.info(f"GPT-5 Settings - Reasoning: {reasoning}, Verbosity: {verbosity}")
+        # log.info(
+        #     f"Protected streaming chat - Text: {'Yes' if user_text else 'No'}, Image: {'Yes' if image_data else 'No'}, Model: {model_name}, History: {len(chat_history)} messages"
+        # )
+        # log.info(f"GPT-5 Settings - Reasoning: {reasoning}, Verbosity: {verbosity}")
 
         # Allow requests with history even if no current text/image (for follow-up questions)
         if not user_text and not image_data and not chat_history:
@@ -1217,9 +1218,9 @@ def api_chat_protected_stream(current_user):
 def api_screenshot_protected_stream(current_user):
     """Protected streaming screenshot endpoint with token tracking"""
     try:
-        log.info(
-            f"=== Protected Streaming Screenshot API called by user {current_user['id']} ({current_user['email']}) ==="
-        )
+        # log.info(
+        #     f"=== Protected Streaming Screenshot API called by user {current_user['id']} ({current_user['email']}) ==="
+        # )
 
         # Check user limits before processing
         limits = token_tracker.check_user_limits(current_user["id"])
@@ -1247,22 +1248,22 @@ def api_screenshot_protected_stream(current_user):
         elif not images_data:
             return jsonify(error="No image data provided"), 400
 
-        log.info(
-            f"Received {len(images_data)} screenshot(s) for streaming analysis with model: {model_name}"
-        )
-        log.info(f"GPT-5 Settings - Reasoning: {reasoning}, Verbosity: {verbosity}")
+            # log.info(
+            #     f"Received {len(images_data)} screenshot(s) for streaming analysis with model: {model_name}"
+            # )
+            # log.info(f"GPT-5 Settings - Reasoning: {reasoning}, Verbosity: {verbosity}")
 
         # Use custom prompt if provided, otherwise use default
         if custom_prompt and custom_prompt.strip():
             prompt = custom_prompt.strip()
-            log.info(f"Using custom prompt: {prompt[:100]}...")
+            # log.info(f"Using custom prompt: {prompt[:100]}...")
         else:
             prompt = (
                 "Solve this question, and give me the code for the same."
                 if len(images_data) == 1
                 else f"Analyze these {len(images_data)} screenshots which show different parts of the same coding question. Solve the complete question and provide the code solution."
             )
-            log.info(f"Using default prompt: {prompt}")
+            # log.info(f"Using default prompt: {prompt}")
 
         def generate_streaming_response():
             try:
@@ -1307,7 +1308,7 @@ def api_screenshot_protected_stream(current_user):
                 yield f"data: {json.dumps({'complete': True})}\n\n"
 
             except Exception as e:
-                log.error(f"Streaming screenshot error: {e}")
+                # log.error(f"Streaming screenshot error: {e}")
                 yield f"data: {json.dumps({'error': str(e)})}\n\n"
 
         return Response(
@@ -1320,7 +1321,7 @@ def api_screenshot_protected_stream(current_user):
         )
 
     except Exception as e:
-        log.error(f"Protected Streaming Screenshot API error: {e}")
+        # log.error(f"Protected Streaming Screenshot API error: {e}")
         return jsonify(error=str(e)), 500
 
 
@@ -1329,7 +1330,7 @@ def api_screenshot_protected_stream(current_user):
 def api_admin_get_users():
     """Get all users with their token usage summary (no auth required for simplicity)"""
     try:
-        log.info("Admin users list requested")
+        # log.info("Admin users list requested")
 
         days = request.args.get("days", 30, type=int)
         users_usage = auth_manager.get_all_users_usage_summary(days)
@@ -1340,7 +1341,7 @@ def api_admin_get_users():
         )
 
     except Exception as e:
-        log.error(f"Admin users API error: {e}")
+        # log.error(f"Admin users API error: {e}")
         return jsonify({"success": False, "error": "Internal server error"}), 500
 
 
@@ -1348,7 +1349,7 @@ def api_admin_get_users():
 def api_admin_get_user_usage(user_id):
     """Get detailed usage for a specific user"""
     try:
-        log.info(f"User {user_id} usage requested")
+        # log.info(f"User {user_id} usage requested")
 
         days = request.args.get("days", 30, type=int)
         usage_data = auth_manager.get_user_token_usage(user_id, days)
@@ -1370,7 +1371,7 @@ def api_admin_get_user_usage(user_id):
         )
 
     except Exception as e:
-        log.error(f"Admin user usage API error: {e}")
+        # log.error(f"Admin user usage API error: {e}")
         return jsonify({"success": False, "error": "Internal server error"}), 500
 
 
@@ -1378,12 +1379,12 @@ def api_admin_get_user_usage(user_id):
 def api_admin_block_user(user_id):
     """Block a user from using the service"""
     try:
-        log.info(f"User {user_id} block requested")
+        # log.info(f"User {user_id} block requested")
 
         success = auth_manager.block_user(user_id)
 
         if success:
-            log.info(f"User {user_id} blocked successfully")
+            #   log.info(f"User {user_id} blocked successfully")
             return (
                 jsonify({"success": True, "message": "User blocked successfully"}),
                 200,
@@ -1400,12 +1401,12 @@ def api_admin_block_user(user_id):
 def api_admin_unblock_user(user_id):
     """Unblock a user"""
     try:
-        log.info(f"User {user_id} unblock requested")
+        # log.info(f"User {user_id} unblock requested")
 
         success = auth_manager.unblock_user(user_id)
 
         if success:
-            log.info(f"User {user_id} unblocked successfully")
+            # log.info(f"User {user_id} unblocked successfully")
             return (
                 jsonify({"success": True, "message": "User unblocked successfully"}),
                 200,
@@ -1414,7 +1415,7 @@ def api_admin_unblock_user(user_id):
             return jsonify({"success": False, "error": "Failed to unblock user"}), 500
 
     except Exception as e:
-        log.error(f"Admin unblock user API error: {e}")
+        # log.error(f"Admin unblock user API error: {e}")
         return jsonify({"success": False, "error": "Internal server error"}), 500
 
 
@@ -1422,7 +1423,7 @@ def api_admin_unblock_user(user_id):
 def api_admin_get_stats():
     """Get overall system statistics"""
     try:
-        log.info("Admin stats requested")
+        # log.info("Admin stats requested")
         from database import USE_POSTGRESQL
 
         # Get basic stats from database using database manager
@@ -1570,7 +1571,7 @@ def api_admin_get_stats():
 def api_get_notes(current_user):
     """Get user's notes"""
     try:
-        log.info(f"Notes requested for user {current_user['id']}")
+        # log.info(f"Notes requested for user {current_user['id']}")
 
         # Get user's notes from database
         if USE_POSTGRESQL:
@@ -1634,7 +1635,7 @@ def api_get_notes(current_user):
         )
 
     except Exception as e:
-        log.error(f"Get notes API error: {e}")
+        # log.error(f"Get notes API error: {e}")
         return jsonify({"success": False, "error": "Internal server error"}), 500
 
 
@@ -1643,7 +1644,7 @@ def api_get_notes(current_user):
 def api_save_notes(current_user):
     """Save or update user's notes"""
     try:
-        log.info(f"Notes save requested for user {current_user['id']}")
+        # log.info(f"Notes save requested for user {current_user['id']}")
 
         j = request.get_json(force=True, silent=True) or {}
         content = j.get("content", "").strip()
@@ -1682,7 +1683,7 @@ def api_save_notes(current_user):
                 query,
                 (content, note_id),
             )
-            log.info(f"Notes updated for user {current_user['id']}")
+            # log.info(f"Notes updated for user {current_user['id']}")
         else:
             # Create new notes
             if USE_POSTGRESQL:
@@ -1693,12 +1694,12 @@ def api_save_notes(current_user):
                 query,
                 (current_user["id"], content),
             )
-            log.info(f"Notes created for user {current_user['id']}")
+            # log.info(f"Notes created for user {current_user['id']}")
 
         return jsonify({"success": True, "message": "Notes saved successfully"}), 200
 
     except Exception as e:
-        log.error(f"Save notes API error: {e}")
+        # log.error(f"Save notes API error: {e}")
         return jsonify({"success": False, "error": "Internal server error"}), 500
 
 
@@ -1707,7 +1708,7 @@ def api_save_notes(current_user):
 def api_delete_notes(current_user):
     """Delete user's notes"""
     try:
-        log.info(f"Notes delete requested for user {current_user['id']}")
+        # log.info(f"Notes delete requested for user {current_user['id']}")
 
         if USE_POSTGRESQL:
             query = "DELETE FROM user_notes WHERE user_id = %s"
@@ -1917,22 +1918,22 @@ class AudioStream:
         """Send voice activity state to frontend."""
         if self.last_voice_state_sent != speaking:
             self.last_voice_state_sent = speaking
-            log.info(f"Voice activity: {'STARTED' if speaking else 'STOPPED'}")
+            # log.info(f"Voice activity: {'STARTED' if speaking else 'STOPPED'}")
             await send(json.dumps({"type": "voice_activity", "speaking": speaking}))
 
     async def _flush(self, send):
         if not self.buf:
             return
-        log.info(f"Processing speech turn ({len(self.buf)} bytes)")
+        # log.info(f"Processing speech turn ({len(self.buf)} bytes)")
         text = transcribe_int16_pcm(self.buf)
-        log.info(f"Transcription (final): {text}")
+        # log.info(f"Transcription (final): {text}")
         await send(json.dumps({"type": "transcript", "text": text, "final": True}))
         self.buf.clear()
 
 
 async def audio_websocket_handler(websocket, path):
     """Handle WebSocket connections for audio transcription."""
-    log.info("New WebSocket connection established for audio transcription")
+    # log.info("New WebSocket connection established for audio transcription")
     stream = AudioStream()
     try:
         async for message in websocket:
@@ -1964,7 +1965,7 @@ def start_websocket_server():
             stderr=subprocess.DEVNULL,
         )
 
-        log.info("🚀 Audio WebSocket server started as separate process")
+        # log.info("🚀 Audio WebSocket server started as separate process")
         return websocket_process
     except Exception as e:
         log.error(f"Failed to start WebSocket server: {e}")
@@ -1974,18 +1975,18 @@ def start_websocket_server():
 # ────────── run ───────────────────
 if __name__ == "__main__":
     # Keep minimal dev runner for Flask-only debugging if needed
-    log.info("Initializing database...")
+    # log.info("Initializing database...")
     try:
         db_manager.init_database()
     except Exception as e:
         log.error(f"Database initialization failed: {e}")
         pass
 
-    log.info("Initializing token tracker...")
+    # log.info("Initializing token tracker...")
     try:
         token_tracker.get_user_usage_summary(1)
     except Exception as e:
         log.warning(f"Token tracker initialization warning: {e}")
 
-    log.info(f"★ Backend ready on http://{HOST}:{PORT}")
+    # log.info(f"★ Backend ready on http://{HOST}:{PORT}")
     APP.run(host=HOST, port=PORT, debug=True, threaded=True)

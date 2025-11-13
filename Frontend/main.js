@@ -7,9 +7,9 @@ const http = require('http');
 const keytar = require('keytar');
 
 // Basic startup logging
-console.log('🎬 Cluemore starting...');
-console.log(`   Version: ${app.getVersion()}`);
-console.log(`   Packaged: ${app.isPackaged}`);
+// console.log('🎬 Cluemore starting...');
+// console.log(`   Version: ${app.getVersion()}`);
+// console.log(`   Packaged: ${app.isPackaged}`);
 
 // Load environment variables only in development
 // Use try-catch to handle missing dotenv in production builds
@@ -18,11 +18,11 @@ try {
     require('dotenv').config({
       path: process.env.NODE_ENV === 'production' ? '.env.production' : '.env.development'
     });
-    console.log('📄 Environment variables loaded from .env file');
+    // console.log('📄 Environment variables loaded from .env file');
   }
 } catch (error) {
   // dotenv not available in production build - this is expected
-  console.log('📄 Using system environment variables (dotenv not available)');
+  // console.log('📄 Using system environment variables (dotenv not available)');
 }
 
 let win;
@@ -47,15 +47,15 @@ let audioWsKeepaliveTimer = null;
 const BACKEND_URL = process.env.BACKEND_URL || 'https://d87005d0505e.ngrok-free.app';
 
 // Log environment configuration
-console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
-console.log(`🔗 Backend URL: ${BACKEND_URL}`);
+// console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
+// console.log(`🔗 Backend URL: ${BACKEND_URL}`);
 const SERVICE_NAME = 'Cluemore';
 const ACCOUNT_NAME = 'user_jwt_token';
 
 // Helper function to make HTTP/HTTPS requests
 function makeRequest(url, options = {}) {
   return new Promise((resolve, reject) => {
-    console.log(`Making request to: ${url}`);
+    // console.log(`Making request to: ${url}`);
     const urlObj = new URL(url);
     const isHttps = urlObj.protocol === 'https:';
 
@@ -75,15 +75,15 @@ function makeRequest(url, options = {}) {
       timeout: 30000 // 30 second timeout
     };
 
-    console.log(`Request options:`, requestOptions);
+    // console.log(`Request options:`, requestOptions);
 
     const client = isHttps ? https : http;
     const req = client.request(requestOptions, (res) => {
-      console.log(`Response status: ${res.statusCode}`);
+      // console.log(`Response status: ${res.statusCode}`);
       let data = '';
       res.on('data', (chunk) => data += chunk);
       res.on('end', () => {
-        console.log(`Response data: ${data}`);
+        // console.log(`Response data: ${data}`);
         try {
           const jsonData = JSON.parse(data);
           resolve(jsonData);
@@ -107,7 +107,7 @@ function makeRequest(url, options = {}) {
 
     if (options.body) {
       const bodyString = JSON.stringify(options.body);
-      console.log(`Request body: ${bodyString}`);
+      // console.log(`Request body: ${bodyString}`);
       try {
         // Ensure Content-Length is set for WSGI backends behind ASGI bridge
         req.setHeader('Content-Length', Buffer.byteLength(bodyString));
@@ -131,7 +131,7 @@ async function storeToken(token) {
     }, 'keychain-store');
 
     jwtToken = token;
-    console.log('JWT token stored securely');
+    // console.log('JWT token stored securely');
     return true;
   } catch (error) {
     console.error('Failed to store token:', error);
@@ -148,7 +148,7 @@ async function getStoredToken() {
 
     if (token) {
       jwtToken = token;
-      console.log('JWT token retrieved from secure storage');
+      // console.log('JWT token retrieved from secure storage');
       return token;
     }
     return null;
@@ -168,7 +168,7 @@ async function removeStoredToken() {
 
     jwtToken = null;
     currentUser = null;
-    console.log('JWT token removed from secure storage');
+    // console.log('JWT token removed from secure storage');
     return true;
   } catch (error) {
     console.error('Failed to remove token:', error);
@@ -183,7 +183,7 @@ async function verifyStoredToken() {
     }
 
     if (!jwtToken) {
-      console.log('No stored token found');
+      // console.log('No stored token found');
       return false;
     }
 
@@ -194,10 +194,10 @@ async function verifyStoredToken() {
 
     if (response.success && response.valid) {
       currentUser = response.user;
-      console.log('Token verified, user:', currentUser.email);
+      // console.log('Token verified, user:', currentUser.email);
       return true;
     } else {
-      console.log('Token verification failed, removing stored token');
+      // console.log('Token verification failed, removing stored token');
       await removeStoredToken();
       return false;
     }
@@ -218,10 +218,10 @@ async function authenticateUser(email, password) {
     if (response.success && response.token) {
       await storeToken(response.token);
       currentUser = response.user;
-      console.log('User authenticated successfully:', currentUser.email);
+      // console.log('User authenticated successfully:', currentUser.email);
       return { success: true, user: currentUser, token: response.token };
     } else {
-      console.log('Authentication failed:', response.error);
+      // console.log('Authentication failed:', response.error);
       return { success: false, error: response.error || 'Authentication failed' };
     }
   } catch (error) {
@@ -240,10 +240,10 @@ async function registerUser(email, password) {
     if (response.success && response.token) {
       await storeToken(response.token);
       currentUser = response.user;
-      console.log('User registered successfully:', currentUser.email);
+      // console.log('User registered successfully:', currentUser.email);
       return { success: true, user: currentUser, token: response.token };
     } else {
-      console.log('Registration failed:', response.error);
+      // console.log('Registration failed:', response.error);
       return { success: false, error: response.error || 'Registration failed' };
     }
   } catch (error) {
@@ -285,7 +285,7 @@ function setPinOnTopSetting(enabled) {
     settings.pinOnTop = enabled;
     fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2));
 
-    console.log(`📌 Pin on top setting saved: ${enabled}`);
+    // console.log(`📌 Pin on top setting saved: ${enabled}`);
   } catch (error) {
     console.error('Error saving pin setting:', error);
   }
@@ -324,7 +324,7 @@ function setContentProtectionSetting(enabled) {
     settings.contentProtection = enabled;
     fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2));
 
-    console.log(`🔒 Content protection setting saved: ${enabled}`);
+    // console.log(`🔒 Content protection setting saved: ${enabled}`);
   } catch (error) {
     console.error('Error saving content protection setting:', error);
   }
@@ -335,7 +335,7 @@ function togglePinOnTop(enabled) {
   isPinnedOnTop = enabled;
   setPinOnTopSetting(enabled);
 
-  console.log(`📌 ${enabled ? 'Pinning' : 'Unpinning'} all windows...`);
+  // console.log(`📌 ${enabled ? 'Pinning' : 'Unpinning'} all windows...`);
 
   // Apply to all existing windows
   if (win && !win.isDestroyed()) {
@@ -368,7 +368,7 @@ function toggleContentProtection(enabled) {
   isContentProtectionEnabled = enabled;
   setContentProtectionSetting(enabled);
 
-  console.log(`🔒 ${enabled ? 'Enabling' : 'Disabling'} content protection for all windows...`);
+  // console.log(`🔒 ${enabled ? 'Enabling' : 'Disabling'} content protection for all windows...`);
 
   // Apply to all existing windows
   if (win && !win.isDestroyed()) {
@@ -388,7 +388,7 @@ function toggleContentProtection(enabled) {
     ? '🔒 Content protection enabled - app is now invisible to screen sharing'
     : '📱 Content protection disabled - app is now visible to screen sharing';
 
-  console.log(message);
+  // console.log(message);
 
   // Send notification to the renderer if main window exists
   if (win && !win.isDestroyed()) {
@@ -434,17 +434,17 @@ class PermissionDialogManager {
       });
     }
 
-    console.log('🔒 Saved window states:', Array.from(this.originalWindowStates.keys()));
+    // console.log('🔒 Saved window states:', Array.from(this.originalWindowStates.keys()));
   }
 
     // Temporarily lower all windows to normal level for system dialogs
   async lowerAllWindowsForDialog(dialogType = 'permission') {
     if (this.isDialogActive) {
-      console.log('🔄 Dialog already active, skipping lower operation');
+      // console.log('🔄 Dialog already active, skipping lower operation');
       return;
     }
 
-    console.log(`🔽 Lowering all windows for ${dialogType} dialog...`);
+    // console.log(`🔽 Lowering all windows for ${dialogType} dialog...`);
     this.isDialogActive = true;
     
     // Save current states
@@ -452,14 +452,14 @@ class PermissionDialogManager {
     
     // Check if we have any windows to manage
     if (this.originalWindowStates.size === 0) {
-      console.log('🔽 No existing windows to lower - this is likely a startup permission request');
+      // console.log('🔽 No existing windows to lower - this is likely a startup permission request');
     } else {
       // Lower all windows to normal level
       for (const [key, state] of this.originalWindowStates) {
         if (state.window && !state.window.isDestroyed()) {
           try {
             state.window.setAlwaysOnTop(false);
-            console.log(`🔽 Lowered ${key} window to normal level`);
+            // console.log(`🔽 Lowered ${key} window to normal level`);
           } catch (error) {
             console.error(`Error lowering ${key} window:`, error);
           }
@@ -474,11 +474,11 @@ class PermissionDialogManager {
     // Restore all windows to their original states after dialog is dismissed
   async restoreAllWindowsAfterDialog(forceDelay = 0) {
     if (!this.isDialogActive) {
-      console.log('🔼 No active dialog, skipping restore operation');
+      // console.log('🔼 No active dialog, skipping restore operation');
       return;
     }
 
-    console.log('🔼 Restoring window levels after dialog dismissal...');
+    // console.log('🔼 Restoring window levels after dialog dismissal...');
     
     // Clear any existing restore timeout
     if (this.restoreTimeout) {
@@ -489,7 +489,7 @@ class PermissionDialogManager {
     // Wait for dialog to be fully dismissed
     // Use longer delay for permission dialogs to ensure they're fully dismissed
     const waitTime = Math.max(forceDelay, 500);
-    console.log(`⏳ Waiting ${waitTime}ms for dialog dismissal...`);
+    // console.log(`⏳ Waiting ${waitTime}ms for dialog dismissal...`);
     await new Promise(resolve => setTimeout(resolve, waitTime));
 
     // Restore windows based on current pin setting and original states
@@ -501,10 +501,10 @@ class PermissionDialogManager {
           // 2. Window was originally visible (don't pin hidden windows)
           if (isPinnedOnTop && state.isVisible) {
             state.window.setAlwaysOnTop(true, 'screen-saver');
-            console.log(`🔼 Restored ${key} window to screen-saver level`);
+            // console.log(`🔼 Restored ${key} window to screen-saver level`);
           } else {
             state.window.setAlwaysOnTop(false);
-            console.log(`🔼 Kept ${key} window at normal level`);
+            // console.log(`🔼 Kept ${key} window at normal level`);
           }
         } catch (error) {
           console.error(`Error restoring ${key} window:`, error);
@@ -514,12 +514,12 @@ class PermissionDialogManager {
 
     this.isDialogActive = false;
     this.originalWindowStates.clear();
-    console.log('✅ Window restoration complete');
+    // console.log('✅ Window restoration complete');
   }
 
   // Enhanced function to handle any system permission dialog
   async handleSystemDialog(operation, dialogType = 'permission') {
-    console.log(`🔐 Handling ${dialogType} dialog for operation:`, operation.name || 'anonymous');
+    // console.log(`🔐 Handling ${dialogType} dialog for operation:`, operation.name || 'anonymous');
 
     try {
       // STEP 1: Lower all windows before system dialog
@@ -552,21 +552,21 @@ class PermissionDialogManager {
 
     // Special handling for screen recording permission which has async dialog behavior
   async handleScreenRecordingPermission(operation) {
-    console.log('🔐 Special handling for screen recording permission dialog');
+    // console.log('🔐 Special handling for screen recording permission dialog');
     
     // Check initial permission status
     const initialStatus = systemPreferences.getMediaAccessStatus('screen');
-    console.log(`📺 Initial screen recording status: ${initialStatus}`);
+    // console.log(`📺 Initial screen recording status: ${initialStatus}`);
     
     if (initialStatus === 'granted') {
-      console.log('📺 Permission already granted, executing operation directly');
+      // console.log('📺 Permission already granted, executing operation directly');
       const result = await operation();
       await this.restoreAllWindowsAfterDialog();
       return result;
     }
 
     // Permission not granted - this will likely trigger a dialog
-    console.log('📺 Permission not granted, expecting system dialog to appear...');
+    // console.log('📺 Permission not granted, expecting system dialog to appear...');
     
     let operationResult = null;
     let operationError = null;
@@ -576,36 +576,36 @@ class PermissionDialogManager {
       operationResult = await operation();
     } catch (error) {
       operationError = error;
-      console.log('📺 Operation failed as expected, system dialog should appear soon...');
+      // console.log('📺 Operation failed as expected, system dialog should appear soon...');
     }
 
     // Wait for the system permission dialog to appear and be handled
-    console.log('⏳ Waiting for system permission dialog to be handled...');
+    // console.log('⏳ Waiting for system permission dialog to be handled...');
     const dialogHandled = await this.waitForPermissionDialogCompletion('screen', initialStatus);
     
     if (dialogHandled) {
-      console.log('✅ Permission dialog was handled by user');
+      // console.log('✅ Permission dialog was handled by user');
       
       // Try the operation again if it failed initially
       if (operationError) {
-        console.log('🔄 Retrying operation after permission grant...');
+        // console.log('🔄 Retrying operation after permission grant...');
         try {
           operationResult = await operation();
           operationError = null;
         } catch (retryError) {
-          console.log('❌ Operation still failed after permission dialog');
+          // console.log('❌ Operation still failed after permission dialog');
           operationError = retryError;
         }
       }
     } else {
-      console.log('⏰ Timeout waiting for permission dialog');
+      // console.log('⏰ Timeout waiting for permission dialog');
     }
 
     // Restore windows after dialog is handled (only if we have windows to restore)
     if (this.originalWindowStates.size > 0) {
       await this.restoreAllWindowsAfterDialog();
     } else {
-      console.log('🔼 No windows to restore (startup mode)');
+      // console.log('🔼 No windows to restore (startup mode)');
       this.isDialogActive = false;
       this.originalWindowStates.clear();
     }
@@ -622,7 +622,7 @@ class PermissionDialogManager {
     const startTime = Date.now();
     const pollInterval = 500; // Check every 500ms
 
-    console.log(`⏳ Polling for ${permissionType} permission status change...`);
+    // console.log(`⏳ Polling for ${permissionType} permission status change...`);
 
     while (Date.now() - startTime < maxWaitMs) {
       await new Promise(resolve => setTimeout(resolve, pollInterval));
@@ -630,7 +630,7 @@ class PermissionDialogManager {
       const currentStatus = systemPreferences.getMediaAccessStatus(permissionType);
 
       if (currentStatus !== initialStatus) {
-        console.log(`📺 Permission status changed: ${initialStatus} → ${currentStatus}`);
+        // console.log(`📺 Permission status changed: ${initialStatus} → ${currentStatus}`);
 
         // Wait a bit more for dialog to fully dismiss
         await new Promise(resolve => setTimeout(resolve, 1000));
@@ -639,11 +639,11 @@ class PermissionDialogManager {
 
       // Log every 5 seconds to show we're still waiting
       if ((Date.now() - startTime) % 5000 < pollInterval) {
-        console.log(`⏳ Still waiting for permission dialog (${Math.round((Date.now() - startTime) / 1000)}s)...`);
+        // console.log(`⏳ Still waiting for permission dialog (${Math.round((Date.now() - startTime) / 1000)}s)...`);
       }
     }
 
-    console.log(`⏰ Timeout after ${maxWaitMs}ms waiting for permission dialog`);
+    // console.log(`⏰ Timeout after ${maxWaitMs}ms waiting for permission dialog`);
     return false;
   }
 
@@ -656,7 +656,7 @@ class PermissionDialogManager {
     // Auto-restore after max wait time as safety measure
     this.restoreTimeout = setTimeout(async () => {
       if (this.isDialogActive) {
-        console.log('⚠️ Safety timeout reached, force-restoring windows');
+        // console.log('⚠️ Safety timeout reached, force-restoring windows');
         await this.restoreAllWindowsAfterDialog(100);
       }
     }, this.maxWaitTime);
@@ -664,7 +664,7 @@ class PermissionDialogManager {
 
   // Clean up any active dialogs and restore windows
   async emergencyRestore() {
-    console.log('🚨 Emergency window restore triggered');
+    // console.log('🚨 Emergency window restore triggered');
     if (this.restoreTimeout) {
       clearTimeout(this.restoreTimeout);
       this.restoreTimeout = null;
@@ -692,19 +692,19 @@ async function restoreAllWindowLevels() {
 // Permission request functions for macOS
 async function requestAllPermissions(isStartup = false) {
   if (process.platform !== 'darwin') {
-    console.log('⏭️ Permission requests only needed on macOS');
+    // console.log('⏭️ Permission requests only needed on macOS');
     return true;
   }
 
-  console.log(`🔐 Requesting necessary permissions... ${isStartup ? '(startup)' : '(runtime)'}`);
+  // console.log(`🔐 Requesting necessary permissions... ${isStartup ? '(startup)' : '(runtime)'}`);
   
   try {
     // Request Screen Recording permission (required for screenshot functionality)
     const screenAccess = systemPreferences.getMediaAccessStatus('screen');
-    console.log(`📺 Screen recording access status: ${screenAccess}`);
+    // console.log(`📺 Screen recording access status: ${screenAccess}`);
     
     if (screenAccess !== 'granted') {
-      console.log('📺 Requesting screen recording permission...');
+      // console.log('📺 Requesting screen recording permission...');
 
       // Use enhanced permission dialog manager with startup flag
       const dialogType = isStartup ? 'screen-recording-startup' : 'screen-recording';
@@ -718,9 +718,9 @@ async function requestAllPermissions(isStartup = false) {
 
     // Test keychain access (required for secure token storage)
     // Note: We'll test this when we actually need to store/retrieve tokens
-    console.log('🔑 Keychain access will be tested when needed (during authentication)');
+    // console.log('🔑 Keychain access will be tested when needed (during authentication)');
 
-    console.log('✅ Permission requests completed');
+    // console.log('✅ Permission requests completed');
     return true;
   } catch (error) {
     console.error('❌ Error requesting permissions:', error);
@@ -742,7 +742,7 @@ function checkPermissionStatus() {
 
   const allGranted = Object.values(permissions).every(status => status === 'granted');
 
-  console.log('🔍 Current permission status:', permissions);
+  // console.log('🔍 Current permission status:', permissions);
   
   return { allGranted, permissions };
 }
@@ -909,9 +909,9 @@ function createPromptEditorPanel() {
 // Chat function with streaming support
 async function sendChatMessage(text, imageData = null, model = 'gemini-2.5-flash', chatHistory = [], customPrompt = null, reasoning = 'low', verbosity = 'medium') {
   try {
-    console.log('Sending streaming chat message - Text:', !!text, 'Image:', !!imageData, 'Model:', model, 'History length:', chatHistory.length);
-    console.log('Custom prompt:', customPrompt ? customPrompt.substring(0, 100) + '...' : 'None (using default)');
-    console.log('GPT-5 Settings - Reasoning:', reasoning, 'Verbosity:', verbosity);
+    // console.log('Sending streaming chat message - Text:', !!text, 'Image:', !!imageData, 'Model:', model, 'History length:', chatHistory.length);
+    // console.log('Custom prompt:', customPrompt ? customPrompt.substring(0, 100) + '...' : 'None (using default)');
+    // console.log('GPT-5 Settings - Reasoning:', reasoning, 'Verbosity:', verbosity);
 
     const payload = {};
     if (text) payload.text = text;
@@ -936,7 +936,7 @@ async function sendChatMessage(text, imageData = null, model = 'gemini-2.5-flash
       throw new Error(`HTTP ${response.status}: ${response.statusText}`);
     }
 
-    console.log('Starting to read streaming chat response...');
+    // console.log('Starting to read streaming chat response...');
     
     // Signal start of streaming
     win.webContents.send('chat-stream-start');
@@ -963,7 +963,7 @@ async function sendChatMessage(text, imageData = null, model = 'gemini-2.5-flash
               } else if (data.complete) {
                 // Streaming completed
                 win.webContents.send('chat-stream-complete');
-                console.log('Chat streaming completed successfully');
+                // console.log('Chat streaming completed successfully');
                 return;
               } else if (data.error) {
                 // Error occurred
@@ -990,15 +990,15 @@ async function sendChatMessage(text, imageData = null, model = 'gemini-2.5-flash
 // Screenshot function
 async function takeScreenshot(forChat = false) {
   try {
-    console.log('Taking screenshot...', forChat ? 'for chat' : 'for analysis');
+    // console.log('Taking screenshot...', forChat ? 'for chat' : 'for analysis');
 
     // Check screen recording permission first (macOS only)
     if (process.platform === 'darwin') {
       const screenAccess = systemPreferences.getMediaAccessStatus('screen');
-      console.log(`📺 Screen recording permission status: ${screenAccess}`);
+      // console.log(`📺 Screen recording permission status: ${screenAccess}`);
       
       if (screenAccess !== 'granted') {
-        console.log('📺 Screen recording permission required, attempting to request...');
+        // console.log('📺 Screen recording permission required, attempting to request...');
 
         try {
           // Use enhanced permission dialog manager for screenshot permission request
@@ -1023,7 +1023,7 @@ async function takeScreenshot(forChat = false) {
             }
             return;
           }
-          console.log('📺 Screen recording permission granted after request');
+          // console.log('📺 Screen recording permission granted after request');
         } catch (permissionError) {
           console.error('Error requesting screen recording permission:', permissionError);
           const errorMessage = `🔐 Permission Request Failed\n\nUnable to request screen recording permission. Please manually grant it in System Preferences.\n\nError: ${permissionError.message}`;
@@ -1062,17 +1062,17 @@ async function takeScreenshot(forChat = false) {
 
     // Convert to base64
     const base64Data = screenshot.toPNG().toString('base64');
-    console.log(`Screenshot captured successfully, size: ${base64Data.length} characters`);
+    // console.log(`Screenshot captured successfully, size: ${base64Data.length} characters`);
 
     if (forChat) {
       // Send screenshot data to chat interface
-      console.log('Sending screenshot to chat interface');
+      // console.log('Sending screenshot to chat interface');
       win.webContents.send('chat-screenshot-captured', base64Data);
       return;
     }
 
     // Send screenshot to LeetCode Helper for accumulation
-    console.log('Sending screenshot to LeetCode Helper for accumulation');
+    // console.log('Sending screenshot to LeetCode Helper for accumulation');
     win.webContents.send('leetcode-screenshot-captured', base64Data);
 
   } catch (error) {
@@ -1101,9 +1101,9 @@ async function takeScreenshot(forChat = false) {
 // Process accumulated screenshots with streaming
 async function processAccumulatedScreenshots(screenshots, model = 'gemini-2.5-flash', customPrompt = null, reasoning = 'low', verbosity = 'medium') {
   try {
-    console.log('Processing accumulated screenshots with streaming:', screenshots.length, 'Model:', model);
-    console.log('Custom prompt:', customPrompt ? customPrompt.substring(0, 100) + '...' : 'None (using default)');
-    console.log('GPT-5 Settings - Reasoning:', reasoning, 'Verbosity:', verbosity);
+    // console.log('Processing accumulated screenshots with streaming:', screenshots.length, 'Model:', model);
+    // console.log('Custom prompt:', customPrompt ? customPrompt.substring(0, 100) + '...' : 'None (using default)');
+    // console.log('GPT-5 Settings - Reasoning:', reasoning, 'Verbosity:', verbosity);
 
     const payload = {
       images: screenshots,
@@ -1127,7 +1127,7 @@ async function processAccumulatedScreenshots(screenshots, model = 'gemini-2.5-fl
       throw new Error(`HTTP ${response.status}: ${response.statusText}`);
     }
 
-    console.log('Starting to read streaming screenshot response...');
+    // console.log('Starting to read streaming screenshot response...');
     
     // Signal start of streaming
     win.webContents.send('screenshot-stream-start');
@@ -1154,7 +1154,7 @@ async function processAccumulatedScreenshots(screenshots, model = 'gemini-2.5-fl
               } else if (data.complete) {
                 // Streaming completed
                 win.webContents.send('screenshot-stream-complete');
-                console.log('Screenshot streaming completed successfully');
+                // console.log('Screenshot streaming completed successfully');
                 return;
               } else if (data.error) {
                 // Error occurred
@@ -1181,7 +1181,7 @@ async function processAccumulatedScreenshots(screenshots, model = 'gemini-2.5-fl
 
 // Manual update checker setup
 function setupAutoUpdater() {
-  console.log('🔧 Setting up manual update checking');
+  // console.log('🔧 Setting up manual update checking');
   
   // Configure GitHub provider
   autoUpdater.setFeedURL({
@@ -1206,12 +1206,12 @@ function setupAutoUpdater() {
     const currentNormalized = normalizeVersion(currentVersion);
     const availableNormalized = normalizeVersion(availableVersion);
 
-    console.log('🔄 Update available!');
-    console.log(`   Current: ${currentVersion}, Available: ${availableVersion}`);
+    // console.log('🔄 Update available!');
+    // console.log(`   Current: ${currentVersion}, Available: ${availableVersion}`);
 
     // Check if this is actually a newer version
     if (currentNormalized === availableNormalized) {
-      console.log('⚠️ Same version detected, skipping download');
+      // console.log('⚠️ Same version detected, skipping download');
       if (win && !win.isDestroyed()) {
         win.webContents.send('update-notification', {
           type: 'up-to-date',
@@ -1231,7 +1231,7 @@ function setupAutoUpdater() {
       });
     }
 
-    console.log(`📥 Starting download for v${info.version}...`);
+    // console.log(`📥 Starting download for v${info.version}...`);
   });
 
   // Download progress
@@ -1240,7 +1240,7 @@ function setupAutoUpdater() {
     const transferredMB = Math.round(progressObj.transferred / 1024 / 1024);
     const totalMB = Math.round(progressObj.total / 1024 / 1024);
 
-    console.log(`📥 Download progress: ${percent}% (${transferredMB}MB / ${totalMB}MB)`);
+    // console.log(`📥 Download progress: ${percent}% (${transferredMB}MB / ${totalMB}MB)`);
 
     // Send progress to renderer
     if (win && !win.isDestroyed()) {
@@ -1255,8 +1255,8 @@ function setupAutoUpdater() {
 
   // Update downloaded - automatically install and restart
   autoUpdater.on('update-downloaded', (info) => {
-    console.log('✅ Update downloaded:', info.version);
-    console.log('🔄 Auto-installing update and restarting...');
+    // console.log('✅ Update downloaded:', info.version);
+    // console.log('🔄 Auto-installing update and restarting...');
     
     // Send notification to renderer
     if (win && !win.isDestroyed()) {
@@ -1275,7 +1275,7 @@ function setupAutoUpdater() {
 
   // Update not available
   autoUpdater.on('update-not-available', (info) => {
-    console.log('✅ App is up to date!');
+    // console.log('✅ App is up to date!');
     if (win && !win.isDestroyed()) {
       win.webContents.send('update-notification', {
         type: 'up-to-date',
@@ -1298,25 +1298,25 @@ function setupAutoUpdater() {
 
   // Simple checking event
   autoUpdater.on('checking-for-update', () => {
-    console.log('🔍 Checking for updates...');
+    // console.log('🔍 Checking for updates...');
   });
 
-  console.log('✅ Manual update checking configured');
+  // console.log('✅ Manual update checking configured');
 }
 
 app.whenReady().then(async () => {
-  console.log('🚀 App is ready, starting initialization...');
+  // console.log('🚀 App is ready, starting initialization...');
 
   // Set up display media request handler for proper system audio capture
-  console.log('🎬 Setting up display media request handler...');
+  // console.log('🎬 Setting up display media request handler...');
   try {
     session.defaultSession.setDisplayMediaRequestHandler((request, callback) => {
-      console.log('🎬 Display media request received:', request);
-      console.log('🎬 Request details - video:', request.video, 'audio:', request.audio);
+      // console.log('🎬 Display media request received:', request);
+      // console.log('🎬 Request details - video:', request.video, 'audio:', request.audio);
 
       desktopCapturer.getSources({ types: ['screen', 'window'] }).then((sources) => {
-        console.log('📺 Available sources:', sources.length);
-        console.log('📺 Sources list:', sources.map(s => ({ id: s.id, name: s.name })));
+        // console.log('📺 Available sources:', sources.length);
+        // console.log('📺 Sources list:', sources.map(s => ({ id: s.id, name: s.name })));
 
         // Find the first screen source (preferred for system audio)
         const screenSource = sources.find(source => source.id.startsWith('screen:'));
@@ -1330,14 +1330,14 @@ app.whenReady().then(async () => {
           // Add audio only if requested and we have a screen source
           if (request.audioRequested && screenSource) {
             response.audio = 'loopback';
-            console.log('✅ Adding system audio (loopback) to response');
+            // console.log('✅ Adding system audio (loopback) to response');
           } else if (request.audioRequested) {
             console.warn('⚠️ Audio requested but no screen source available for system audio');
           } else {
-            console.log('🔇 No audio requested in this call');
+            // console.log('🔇 No audio requested in this call');
           }
 
-          console.log('✅ Calling callback with:', response);
+          // console.log('✅ Calling callback with:', response);
           callback(response);
         } else {
           console.warn('⚠️ No sources available');
@@ -1350,32 +1350,32 @@ app.whenReady().then(async () => {
     }, {
       useSystemPicker: false  // Disable system picker to ensure our handler runs
     });
-    console.log('✅ Display media request handler set up successfully');
+    // console.log('✅ Display media request handler set up successfully');
   } catch (error) {
     console.error('❌ Failed to set up display media request handler:', error);
   }
 
   // Load pin on top setting
   isPinnedOnTop = getPinOnTopSetting();
-  console.log(`📌 Pin on top setting loaded: ${isPinnedOnTop}`);
+  // console.log(`📌 Pin on top setting loaded: ${isPinnedOnTop}`);
 
   // Load content protection setting
   isContentProtectionEnabled = getContentProtectionSetting();
-  console.log(`🔒 Content protection setting loaded: ${isContentProtectionEnabled}`);
+  // console.log(`🔒 Content protection setting loaded: ${isContentProtectionEnabled}`);
 
   // Request all necessary permissions upfront BEFORE creating any windows (macOS only)
   if (process.platform === 'darwin') {
-    console.log('🚀 Starting permission request flow...');
+    // console.log('🚀 Starting permission request flow...');
     try {
       await requestAllPermissions(true); // Pass startup flag
-      console.log('✅ Permission request flow completed');
+      // console.log('✅ Permission request flow completed');
     } catch (error) {
       console.error('❌ Permission request flow failed:', error);
       // Continue anyway - user can grant permissions later
     }
     
     // Additional delay to ensure all permission dialogs are fully settled
-    console.log('⏳ Allowing time for permission dialogs to settle...');
+    // console.log('⏳ Allowing time for permission dialogs to settle...');
     await new Promise(resolve => setTimeout(resolve, 2000));
   }
 
@@ -1383,16 +1383,16 @@ app.whenReady().then(async () => {
   const isAuthenticated = await verifyStoredToken();
 
   if (isAuthenticated) {
-    console.log('User already authenticated, opening main app');
+    // console.log('User already authenticated, opening main app');
     createMainWindow();
   } else {
-    console.log('No valid authentication, showing login');
+    // console.log('No valid authentication, showing login');
     createAuthWindow();
   }
 
   // Setup manual update checking
   if (app.isPackaged) {
-    console.log('✅ Setting up manual update checking...');
+    // console.log('✅ Setting up manual update checking...');
     setupAutoUpdater();
   }
 
@@ -1470,7 +1470,7 @@ app.whenReady().then(async () => {
 
   // Screenshot shortcut: cmd + shift + 1
   globalShortcut.register('CommandOrControl+Shift+1', async () => {
-    console.log('Screenshot shortcut pressed');
+    // console.log('Screenshot shortcut pressed');
 
     // Ask renderer which mode we're in and let it handle the screenshot
     if (win) {
@@ -1480,7 +1480,7 @@ app.whenReady().then(async () => {
 
   // Global shortcut for Cmd+Enter: cmd + enter
   globalShortcut.register('CommandOrControl+Enter', async () => {
-    console.log('Cmd+Enter shortcut pressed (global)');
+    // console.log('Cmd+Enter shortcut pressed (global)');
 
     // Ask renderer to handle based on current mode
     if (win) {
@@ -1490,7 +1490,7 @@ app.whenReady().then(async () => {
 
   // Global shortcut for quick answer from transcription: cmd + shift + enter
   globalShortcut.register('CommandOrControl+Shift+Enter', async () => {
-    console.log('Cmd+Shift+Enter shortcut pressed (quick answer from transcription)');
+    // console.log('Cmd+Shift+Enter shortcut pressed (quick answer from transcription)');
 
     // Ask renderer to generate quick answer from latest transcription
     if (win) {
@@ -1500,7 +1500,7 @@ app.whenReady().then(async () => {
 
   // Global shortcut for chat mode: cmd + shift + i (STEALTH MODE - no focus stealing)
   globalShortcut.register('CommandOrControl+Shift+I', async () => {
-    console.log('Cmd+Shift+I shortcut pressed (global)');
+    // console.log('Cmd+Shift+I shortcut pressed (global)');
 
     // Ensure window is visible WITHOUT stealing focus, then switch to chat mode
     if (win) {
@@ -1529,9 +1529,9 @@ app.whenReady().then(async () => {
     `).toString('base64')}`);
 
     tray = new Tray(icon);
-    console.log('✅ Tray icon created successfully');
+    // console.log('✅ Tray icon created successfully');
   } catch (error) {
-    console.log('Could not create tray icon, using empty icon');
+    // console.log('Could not create tray icon, using empty icon');
     tray = new Tray(nativeImage.createEmpty());
   }
 
@@ -1655,7 +1655,7 @@ app.whenReady().then(async () => {
   // Helper to re-request screen recording permission specifically
   ipcMain.handle('permissions:request-screen-recording', async (event) => {
     try {
-      console.log('🔐 Re-requesting screen recording permission...');
+      // console.log('🔐 Re-requesting screen recording permission...');
       
       if (process.platform !== 'darwin') {
         return { success: true, message: 'Permission requests only needed on macOS' };
@@ -1663,7 +1663,7 @@ app.whenReady().then(async () => {
 
       // Check current status
       const currentStatus = systemPreferences.getMediaAccessStatus('screen');
-      console.log(`Current screen recording status: ${currentStatus}`);
+      // console.log(`Current screen recording status: ${currentStatus}`);
 
       if (currentStatus === 'granted') {
         return { success: true, message: 'Screen recording permission already granted' };
@@ -1679,7 +1679,7 @@ app.whenReady().then(async () => {
 
       // Check status again after request
       const newStatus = systemPreferences.getMediaAccessStatus('screen');
-      console.log(`New screen recording status: ${newStatus}`);
+      // console.log(`New screen recording status: ${newStatus}`);
 
       if (newStatus === 'granted') {
         return {
@@ -1708,7 +1708,7 @@ app.whenReady().then(async () => {
     }
     
     try {
-      console.log('🔄 Checking for updates...');
+      // console.log('🔄 Checking for updates...');
       const result = await autoUpdater.checkForUpdates();
       
       if (result && result.updateInfo) {
@@ -1724,7 +1724,7 @@ app.whenReady().then(async () => {
           return { success: true, updateInfo: null, message: 'You are running the latest version!' };
         }
         
-        console.log(`📥 Update v${availableVersion} found, downloading...`);
+        // console.log(`📥 Update v${availableVersion} found, downloading...`);
         return { success: true, updateInfo: result.updateInfo, message: `Update v${availableVersion} found. Downloading automatically...` };
       } else {
         return { success: true, updateInfo: null, message: 'You are running the latest version!' };
@@ -1782,7 +1782,7 @@ app.whenReady().then(async () => {
   // Emergency window restoration IPC handler
   ipcMain.handle('window:emergency-restore', async (event) => {
     try {
-      console.log('🚨 Emergency window restoration requested from renderer');
+      // console.log('🚨 Emergency window restoration requested from renderer');
       await permissionDialogManager.emergencyRestore();
       return { success: true, message: 'Windows restored to correct levels' };
     } catch (error) {
@@ -1798,7 +1798,7 @@ app.whenReady().then(async () => {
 
   ipcMain.handle('window:toggle-content-protection', async (event, enabled) => {
     try {
-      console.log(`🔒 Content protection toggle requested from renderer: ${enabled}`);
+      // console.log(`🔒 Content protection toggle requested from renderer: ${enabled}`);
       toggleContentProtection(enabled);
       return { success: true, enabled: isContentProtectionEnabled };
     } catch (error) {
@@ -1934,7 +1934,7 @@ Final rule: be useful in one message—answer first, steps second.`
       audioWebSocket = new WebSocket(wsUrl);
 
       audioWebSocket.on('open', () => {
-        console.log('🔊 WebSocket connection established for audio transcription');
+        // console.log('🔊 WebSocket connection established for audio transcription');
         isAudioCapturing = true;
         // Client-side keepalive: send ping frames every 20s
         try {
@@ -1982,7 +1982,7 @@ Final rule: be useful in one message—answer first, steps second.`
       });
 
       audioWebSocket.on('close', (code, reason) => {
-        console.log('WebSocket connection closed', code, reason?.toString?.());
+        // console.log('WebSocket connection closed', code, reason?.toString?.());
         isAudioCapturing = false;
         if (audioWsKeepaliveTimer) { clearInterval(audioWsKeepaliveTimer); audioWsKeepaliveTimer = null; }
       });
@@ -2049,7 +2049,7 @@ Final rule: be useful in one message—answer first, steps second.`
           // Debug logging
           if (Math.random() < 0.02) { // 2% of packets
             const maxSample = Math.max(...processedData.map(Math.abs));
-            console.log(`Sent audio chunk: ${buffer.length} bytes, ${processedData.length} samples, max=${maxSample}`);
+            // console.log(`Sent audio chunk: ${buffer.length} bytes, ${processedData.length} samples, max=${maxSample}`);
           }
         }
       } catch (error) {
